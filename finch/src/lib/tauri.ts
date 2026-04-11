@@ -17,3 +17,14 @@ export async function greet(name: string): Promise<string> {
   }
   return await invoke<string>("greet", { name });
 }
+
+/**
+ * Sends a message to the Rust backend to communicate with the Anthropic API.
+ */
+export async function sendMessage(prompt: string): Promise<string> {
+  if (!isTauri()) {
+    console.warn("sendMessage called outside of Tauri context. Returning mock response.");
+    return `Mock: Rust received: ${prompt}`;
+  }
+  return await invoke<string>("send_message", { prompt });
+}

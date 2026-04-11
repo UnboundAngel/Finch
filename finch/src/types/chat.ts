@@ -16,6 +16,7 @@ export type Message = {
   reasoning?: string;
   metadata?: MessageMetadata;
   branchPoint?: boolean;
+  streaming?: boolean;
 };
 
 export type ChatSession = {
