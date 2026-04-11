@@ -75,7 +75,7 @@ export const SettingsDialog = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1.5 overflow-visible items-center">
+          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1 overflow-visible">
             <TabsTrigger value="general" className="rounded-lg py-2">General</TabsTrigger>
             <TabsTrigger value="models" className="rounded-lg py-2">Models & Keys</TabsTrigger>
           </TabsList>
