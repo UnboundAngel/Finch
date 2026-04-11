@@ -5,7 +5,7 @@
 ### Architecture & Foundation (ARCH)
 - [x] **ARCH-01**: Modular Component Architecture. Split the 1000-line `dashboard.tsx` into a maintainable component structure (Hooks, Types, Chat Components, Sidebar, Dialogs).
 - [x] **ARCH-02**: Tauri v2 Migration. Migrate the `src-tauri` prototype to Tauri v2 standards, updating configurations and capabilities.
-- [ ] **ARCH-03**: Backend/Renderer Isolation. Ensure all LLM API calls and sensitive data handling occur strictly in the Rust backend, never exposing keys to the React renderer.
+- [x] **ARCH-03**: Backend/Renderer Isolation. Ensure all LLM API calls and sensitive data handling occur strictly in the Rust backend, never exposing keys to the React renderer.
 
 ### AI Integration (AI)
 - [x] **AI-01**: Rust LLM Bridge. Implement a secure IPC bridge in Rust for communicating with the Anthropic API.
@@ -43,7 +43,7 @@
 |--------|-------|--------|
 | ARCH-01 | Phase 2 | Complete |
 | ARCH-02 | Phase 1 | Complete |
-| ARCH-03 | Phase 1 | Pending |
+| ARCH-03 | Phase 1 | Complete |
 | AI-01 | Phase 3 | Complete |
 | AI-02 | Phase 3 | Pending |
 | AI-03 | Phase 3 | Pending |
