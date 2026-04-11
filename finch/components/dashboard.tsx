@@ -69,62 +69,8 @@ import ReactMarkdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { ShiningText } from '@/components/ui/shining-text';
-
-type MessageMetadata = {
-  promptTokens?: number;
-  completionTokens?: number;
-  totalTokens?: number;
-  tokensPerSecond?: number;
-  timeToFirstToken?: number;
-  totalDuration?: number;
-  model?: string;
-  stopReason?: string;
-  timestamp?: Date;
-};
-
-type Message = {
-  role: 'user' | 'ai';
-  content: string;
-  reasoning?: string;
-  metadata?: MessageMetadata;
-  branchPoint?: boolean;
-};
-
-type ChatSession = {
-  id: string;
-  title: string;
-  messages: Message[];
-  timestamp: number;
-  type?: string;
-  pinned: boolean;
-  incognito: boolean;
-  systemPrompt: string;
-  generationParams: {
-    temperature: number;
-    maxTokens: number;
-    topP: number;
-  };
-  stats: {
-    totalTokens: number;
-    totalMessages: number;
-    averageSpeed: number;
-  };
-};
-
-const getChatIcon = (type?: string) => {
-  switch (type) {
-    case 'active':
-      return <MessageSquare className="h-4 w-4 fill-foreground text-foreground shrink-0" />;
-    case 'inactive':
-      return <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />;
-    case 'web':
-      return <Globe className="h-4 w-4 text-muted-foreground shrink-0" />;
-    case 'file':
-      return <FileText className="h-4 w-4 text-muted-foreground shrink-0" />;
-    default:
-      return <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />;
-  }
-};
+import { Message, ChatSession, MessageMetadata } from '../src/types/chat';
+import { getChatIcon } from '../src/lib/chatHelpers';
 
 const ThinkingBox = ({ content, isActivelyThinking }: { content?: string, isActivelyThinking?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
