@@ -64,14 +64,14 @@ export const ChatInput = ({
       isIncognito ? 'bg-transparent' : 'bg-background/80 backdrop-blur-md'
     }`}>
       <div className="max-w-3xl mx-auto relative">
-        <div className={`relative flex items-end w-full rounded-2xl transition-all overflow-hidden ${
+        <div className={`relative flex items-end w-full rounded-2xl transition-all overflow-hidden border-[1.5px] ${
           isWebSearchActive 
-            ? 'ring-[1.5px] ring-inset ring-blue-500/50 border-blue-500/50' 
+            ? 'border-blue-500/50' 
             : (isIncognito 
                 ? (isDark 
-                    ? 'bg-neutral-900 border border-neutral-800 focus-within:border-neutral-700' 
-                    : 'bg-white border border-neutral-300 focus-within:border-neutral-400')
-                : 'bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50')
+                    ? 'bg-neutral-900 border-neutral-800 focus-within:border-neutral-700' 
+                    : 'bg-white border-neutral-300 focus-within:border-neutral-400')
+                : 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50')
         }`}>
           <div className="flex flex-col w-full">
             {attachedFile && (

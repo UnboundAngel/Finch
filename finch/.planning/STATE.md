@@ -52,7 +52,7 @@ progress:
 | Fix SettingsDialog visuals | Fixed Save button hover visibility and active tab pill clipping/alignment. | `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
 | Fix active tab alignment | Ensured active tab indicator perfectly matches the container bounds. | `components/ui/tabs.tsx`, `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
 | Fix sidebar active highlight | Improved visibility (30% opacity) and aligned pill width/radius with header. | `src/components/sidebar/ChatSidebar.tsx` | 2026-04-11 |
-| Fix web search layout shift | Applied `ring-inset` to input container to prevent layout reflow when active. | `src/components/chat/ChatInput.tsx` | 2026-04-11 |
+| Fix web search layout shift | Applied `border-[1.5px]` consistently to prevent layout reflow when toggling web search. | `src/components/chat/ChatInput.tsx` | 2026-04-11 |
 | Implement grainy frosted toasts | Created noise.svg and toasts.css for frosted look with grain texture. | `src/assets/noise.svg`, `src/styles/toasts.css`, `src/App.tsx` | 2026-04-11 |
 | Fix toast styling & position | Moved toasts to bottom-right, enabled adaptive dark/light backgrounds, and enhanced noise texture. | `src/App.tsx`, `src/assets/noise.svg`, `src/styles/toasts.css` | 2026-04-11 |
 
