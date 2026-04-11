@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-11T16:20:00.000Z"
+last_updated: "2026-04-11T21:55:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -54,8 +54,7 @@ progress:
 | Fix sidebar active highlight | Improved visibility (30% opacity) and aligned pill width/radius with header. | `src/components/sidebar/ChatSidebar.tsx` | 2026-04-11 |
 | Fix web search layout shift | Applied `border-[1.5px]` consistently to prevent layout reflow when toggling web search. | `src/components/chat/ChatInput.tsx` | 2026-04-11 |
 | Implement grainy frosted toasts | Created noise.svg and toasts.css for frosted look with grain texture. | `src/assets/noise.svg`, `src/styles/toasts.css`, `src/App.tsx` | 2026-04-11 |
-| Fix toast styling & position | Moved toasts to bottom-right, enabled adaptive dark/light backgrounds, and enhanced noise texture. | `src/App.tsx`, `src/assets/noise.svg`, `src/styles/toasts.css` | 2026-04-11 |
-| Restore Toaster state | Restored App.tsx to commit 941c85f state and set position to top-right. | `src/App.tsx`, `src/styles/toasts.css` | 2026-04-11 |
+| Refine Toast UI & Position | Repositioned to top-right (72px offset), enabled adaptive light/dark grain styling using PNG assets. | `src/App.tsx`, `src/styles/toasts.css`, `public/assets/*` | 2026-04-11 |
 
 ## Performance Metrics
 
