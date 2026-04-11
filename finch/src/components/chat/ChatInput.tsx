@@ -65,11 +65,13 @@ export const ChatInput = ({
     }`}>
       <div className="max-w-3xl mx-auto relative">
         <div className={`relative flex items-end w-full rounded-2xl transition-all overflow-hidden ${
-          isIncognito 
-            ? (isDark 
-                ? 'bg-neutral-900 border border-neutral-800 focus-within:border-neutral-700' 
-                : 'bg-white border border-neutral-300 focus-within:border-neutral-400')
-            : 'bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50'
+          isWebSearchActive 
+            ? 'ring-[1.5px] ring-blue-500/50 border-blue-500/50' 
+            : (isIncognito 
+                ? (isDark 
+                    ? 'bg-neutral-900 border border-neutral-800 focus-within:border-neutral-700' 
+                    : 'bg-white border border-neutral-300 focus-within:border-neutral-400')
+                : 'bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50')
         }`}>
           <div className="flex flex-col w-full">
             {attachedFile && (
@@ -114,13 +116,13 @@ export const ChatInput = ({
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                  className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-blue-500 bg-blue-500/10 hover:bg-blue-500/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
                   onClick={() => {
                     setIsWebSearchActive(!isWebSearchActive);
                     toast(isWebSearchActive ? 'Web Search disabled' : 'Web Search enabled');
                   }}
                 >
-                  <Globe className={`h-4 w-4 ${isWebSearchActive ? 'fill-primary' : ''}`} />
+                  <Globe className="h-4 w-4" />
                 </Button>
               </div>
               <Button 
