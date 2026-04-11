@@ -23,6 +23,7 @@ import { ChatArea } from '@/src/components/chat/ChatArea';
 import { ChatInput } from '@/src/components/chat/ChatInput';
 import { ChatSidebar } from '@/src/components/sidebar/ChatSidebar';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
+import { useAIStreaming } from '@/src/hooks/useAIStreaming';
 import { ProfileDialog } from '@/src/components/dashboard/ProfileDialog';
 import { SettingsDialog } from '@/src/components/dashboard/SettingsDialog';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -60,6 +61,8 @@ export function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+
+  const { streamMessage } = useAIStreaming();
 
   useChatPersistence({
     setRecentChats,
@@ -165,26 +168,54 @@ export function Dashboard() {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsThinking(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      setIsThinking(false);
-      setMessages(prev => [...prev, { 
-        role: 'ai', 
-        content: `This is a simulated response from ${selectedModel}. You said: "${userMessage}"`,
-        reasoning: `Analyzing the user's request...\nIdentifying key entities: "${userMessage}"\nFormulating a helpful and concise response based on the selected model parameters.\nChecking for safety and policy compliance.\nGenerating final output.`,
-        // TODO: wire from API response
-        metadata: {
-          promptTokens: 142,
-          completionTokens: 318,
-          tokensPerSecond: 24.6,
-          timeToFirstToken: 340,
-          totalDuration: 3200,
-          model: selectedModel,
-          stopReason: 'stop',
-          timestamp: new Date()
+    let isFirstToken = true;
+    streamMessage(
+      userMessage,
+      (token) => {
+        if (isFirstToken) {
+          setIsThinking(false);
+          isFirstToken = false;
+          setMessages(prev => [...prev, {
+            role: 'ai',
+            content: token,
+            streaming: true,
+            metadata: {
+              timestamp: new Date(),
+              model: selectedModel,
+            }
+          }]);
+        } else {
+          setMessages(prev => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage && lastMessage.role === 'ai') {
+              return [
+                ...prev.slice(0, -1),
+                { ...lastMessage, content: lastMessage.content + token }
+              ];
+            }
+            return prev;
+          });
         }
-      }]);
-    }, 3000);
+      },
+      () => {
+        // onComplete
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage && lastMessage.role === 'ai') {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMessage, streaming: false }
+            ];
+          }
+          return prev;
+        });
+      },
+      (error) => {
+        // onError
+        setIsThinking(false);
+        toast.error(`Error: ${error}`);
+      }
+    );
   };
 
   return (
