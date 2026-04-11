@@ -145,7 +145,7 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton 
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/15 text-foreground' : ''}`} 
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold' : ''}`} 
                             onClick={() => !isIncognito && handleSwitchSession(chat.id)}
                             disabled={isIncognito}
                           >
@@ -199,7 +199,7 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton 
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/15 text-foreground' : ''}`} 
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold' : ''}`} 
                             onClick={() => !isIncognito && handleSwitchSession(chat.id)}
                             disabled={isIncognito}
                           >

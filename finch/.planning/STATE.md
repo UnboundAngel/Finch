@@ -51,6 +51,7 @@ progress:
 | Fix prompt card wrapping | Fixed horizontal overflow and ensured row stretching for prompt cards. | `src/components/chat/ChatArea.tsx` | 2026-04-11 |
 | Fix SettingsDialog visuals | Fixed Save button hover visibility and active tab pill clipping/alignment. | `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
 | Fix active tab alignment | Ensured active tab indicator perfectly matches the container bounds. | `components/ui/tabs.tsx`, `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
+| Fix sidebar active highlight | Improved visibility (30% opacity) and aligned pill width/radius with header. | `src/components/sidebar/ChatSidebar.tsx` | 2026-04-11 |
 
 ## Performance Metrics
 
