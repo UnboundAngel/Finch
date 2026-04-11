@@ -71,34 +71,12 @@ import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/pris
 import { ShiningText } from '@/components/ui/shining-text';
 import { Message, ChatSession, MessageMetadata } from '../src/types/chat';
 import { getChatIcon } from '../src/lib/chatHelpers';
-
-const ThinkingBox = ({ content, isActivelyThinking }: { content?: string, isActivelyThinking?: boolean }) => {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className="mb-2 w-full">
-      <div className="flex flex-col items-start">
-        <button 
-          onClick={() => content && setExpanded(!expanded)}
-          className={`flex items-center gap-1 text-xs text-muted-foreground italic transition-colors ${content ? 'hover:text-foreground cursor-pointer' : 'cursor-default'}`}
-          disabled={!content}
-        >
-          {isActivelyThinking ? <ShiningText text="Finch is thinking..." /> : <span>Finch is thinking...</span>}
-          {content && (expanded ? <ChevronUp className="h-3.5 w-3.5 not-italic" /> : <ChevronDown className="h-3.5 w-3.5 not-italic" />)}
-        </button>
-        {content && (
-          <div 
-            className={`mt-1 text-xs text-muted-foreground border-l-2 border-muted-foreground/20 pl-3 transition-all ${expanded ? 'max-h-[140px] overflow-y-auto' : 'h-auto line-clamp-1 overflow-hidden cursor-pointer hover:text-foreground'}`}
-            onClick={() => !expanded && setExpanded(true)}
-          >
-            <div className="whitespace-pre-wrap">{content}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+import { ThinkingBox } from '../src/components/chat/ThinkingBox';
+import { MetadataRow } from '../src/components/chat/MetadataRow';
+import { useChatPersistence } from '../src/hooks/useChatPersistence';
 
 const SidebarToggleButton = () => {
+
   const { state, toggleSidebar } = useSidebar();
   return (
     <Button
@@ -155,49 +133,6 @@ const CodeBlock = ({ children, language, isDark }: { children: string, language:
   );
 };
 
-const MetadataRow = ({ metadata, isLatest }: { metadata: MessageMetadata, isLatest: boolean }) => {
-  return (
-    <div className={`text-xs text-muted-foreground/60 flex flex-wrap items-center gap-5 mt-2 transition-opacity duration-300 ${isLatest ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-      {metadata.model && (
-        <div className="flex items-center gap-1.5">
-          <Bot className="h-3 w-3" />
-          <span>{metadata.model}</span>
-        </div>
-      )}
-      {metadata.timeToFirstToken !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <Timer className="h-3 w-3" />
-          <span>{metadata.timeToFirstToken}ms</span>
-        </div>
-      )}
-      {metadata.tokensPerSecond !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <Zap className="h-3 w-3" />
-          <span>{metadata.tokensPerSecond} t/s</span>
-        </div>
-      )}
-      {metadata.completionTokens !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <Hash className="h-3 w-3" />
-          <span>{metadata.completionTokens}</span>
-        </div>
-      )}
-      {metadata.totalDuration !== undefined && (
-        <div className="flex items-center gap-1.5">
-          <Clock className="h-3 w-3" />
-          <span>{(metadata.totalDuration / 1000).toFixed(1)}s</span>
-        </div>
-      )}
-      {metadata.stopReason === 'length' && (
-        <div className="flex items-center gap-1.5">
-          <AlertTriangle className="h-3 w-3" />
-          <span>cut off</span>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export function Dashboard() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -220,42 +155,12 @@ export function Dashboard() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const savedChats = localStorage.getItem('finch_chats');
-    if (savedChats) {
-      try {
-        const parsed = JSON.parse(savedChats);
-        const migrated = parsed.map((chat: any) => ({
-          ...chat,
-          pinned: chat.pinned ?? false,
-          incognito: chat.incognito ?? false,
-          systemPrompt: chat.systemPrompt ?? '',
-          generationParams: chat.generationParams ?? { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
-          stats: chat.stats ?? { totalTokens: 0, totalMessages: chat.messages?.length || 0, averageSpeed: 0 }
-        }));
-        setRecentChats(migrated);
-      } catch (e) {}
-    }
-    const savedProfile = localStorage.getItem('finch_profile');
-    if (savedProfile) {
-      try {
-        const { name, email } = JSON.parse(savedProfile);
-        if (name) setProfileName(name);
-        if (email) setProfileEmail(email);
-      } catch (e) {}
-    }
-    const savedEnterToSend = localStorage.getItem('finch_enter_to_send');
-    if (savedEnterToSend !== null) {
-      setEnterToSend(savedEnterToSend === 'true');
-    }
-
-    const handleBeforeUnload = () => {
-      // React state is naturally purged on unload, but this satisfies the requirement
-      // to use the beforeunload event to ensure incognito data is purged.
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
+  useChatPersistence({
+    setRecentChats,
+    setProfileName,
+    setProfileEmail,
+    setEnterToSend,
+  });
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && enterToSend) {
