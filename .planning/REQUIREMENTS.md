@@ -14,8 +14,8 @@
 - [ ] **AI-04**: Model Selection. Provide a UI for users to switch between different supported AI models (Anthropic focus for v1).
 
 ### UI/UX (UI)
-- [ ] **UI-01**: Rich Markdown Rendering. Render AI responses with full Markdown support (lists, bold, etc.) using `react-markdown` v10.
-- [ ] **UI-02**: Syntax Highlighting. Implement theme-aware code syntax highlighting within Markdown blocks.
+- [x] **UI-01**: Rich Markdown Rendering. Render AI responses with full Markdown support (lists, bold, etc.) using `react-markdown` v10.
+- [x] **UI-02**: Syntax Highlighting. Implement theme-aware code syntax highlighting within Markdown blocks.
 - [x] **UI-03**: Theme Support. Maintain and refine Light/Dark mode switching using Tailwind CSS 4.
 - [ ] **UI-04**: Sidebar Navigation. Functional sidebar for managing pinned/recent chats and searching history.
 
@@ -48,8 +48,8 @@
 | AI-02 | Phase 3 | Pending |
 | AI-03 | Phase 3 | Pending |
 | AI-04 | Phase 3 | Pending |
-| UI-01 | Phase 2 | Pending |
-| UI-02 | Phase 2 | Pending |
+| UI-01 | Phase 2 | Complete |
+| UI-02 | Phase 2 | Complete |
 | UI-03 | Phase 2 | Complete |
 | UI-04 | Phase 2 | Pending |
 | SESS-01 | Phase 4 | Pending |

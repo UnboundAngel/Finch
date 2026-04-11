@@ -27,7 +27,7 @@ Plans:
 - [x] 01-03-PLAN.md — Message Rendering Components (CodeBlock, MessageBubble, ChatArea)
 - [ ] 01-04-PLAN.md — Chat Input & Sidebar (Composer and Navigation)
 - [x] 01-05-PLAN.md — Final Dashboard Orchestrator (Monolith replacement and wiring)
-- [ ] 01-06-PLAN.md — Rich Rendering Upgrade (Shiki and GFM)
+- [x] 01-06-PLAN.md — Rich Rendering Upgrade (Shiki and GFM)
 
 ### Phase 2: Foundation & Shell
 **Goal**: Establish the secure desktop foundation and communication layer.
@@ -63,7 +63,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Modular Architecture | 3/6 | In Progress|  |
+| 1. Modular Architecture | 4/6 | In Progress|  |
 | 2. Foundation & Shell | 0/1 | Not started | - |
 | 3. Secure AI Streaming | 0/1 | Not started | - |
 | 4. Session Persistence | 0/1 | Not started | - |
