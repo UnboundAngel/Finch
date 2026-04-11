@@ -1,18 +1,22 @@
-.finch-toast {
-  max-width: 40vw !important;
-  background: white !important;
-  position: relative !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+[data-sonner-toaster] {
+  --width: 380px !important;
 }
 
-.dark .finch-toast {
+[data-sonner-toast] {
+  background: white !important;
+  color: #111 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.dark [data-sonner-toast] {
   background: #1e1e1e !important;
   color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.finch-toast::after {
+[data-sonner-toast]::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -23,12 +27,8 @@
   background-repeat: repeat;
   mix-blend-mode: overlay;
   background-image: url('/assets/light-grain.png');
-  z-index: 10;
 }
 
-.dark .finch-toast::after {
+.dark [data-sonner-toast]::after {
   background-image: url('/assets/dark-grain.png');
 }
-
-/* Ensure toast content is below the overlay if needed, or above. 
-   Usually overlay is top. Mix-blend-mode overlay works best on top. */
