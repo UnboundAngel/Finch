@@ -2,6 +2,7 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Message } from '../../types/chat';
 import { ThinkingBox } from './ThinkingBox';
 import { MetadataRow } from './MetadataRow';
@@ -32,6 +33,7 @@ export const MessageBubble = ({ msg, selectedModel, isDark, isLatest }: MessageB
         {msg.reasoning && <ThinkingBox content={msg.reasoning} />}
         <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90">
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-4" {...props} />,
               h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-3" {...props} />,
@@ -39,6 +41,14 @@ export const MessageBubble = ({ msg, selectedModel, isDark, isLatest }: MessageB
               ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4 space-y-1" {...props} />,
               ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4 space-y-1" {...props} />,
               li: ({node, ...props}) => <li className="mb-1" {...props} />,
+              table: ({node, ...props}) => (
+                <div className="overflow-x-auto my-4 rounded-lg border border-muted-foreground/10">
+                  <table className="min-w-full divide-y divide-muted-foreground/10" {...props} />
+                </div>
+              ),
+              thead: ({node, ...props}) => <thead className="bg-muted/50" {...props} />,
+              th: ({node, ...props}) => <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider" {...props} />,
+              td: ({node, ...props}) => <td className="px-4 py-2 text-sm border-t border-muted-foreground/10" {...props} />,
               code(props) {
                 const {children, className, node, ...rest} = props
                 const match = /language-(\w+)/.exec(className || '')
