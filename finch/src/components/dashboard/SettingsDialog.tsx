@@ -65,7 +65,6 @@ export const SettingsDialog = ({
                 checked={enterToSend} 
                 onChange={(e) => {
                   setEnterToSend(e.target.checked);
-                  localStorage.setItem('finch_enter_to_send', String(e.target.checked));
                 }} 
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
               />
@@ -78,7 +77,6 @@ export const SettingsDialog = ({
               <Button variant="destructive" size="sm" className="rounded-lg" onClick={() => {
                 setMessages([]);
                 setRecentChats([]);
-                localStorage.removeItem('finch_chats');
                 toast.error('Chat history cleared');
               }}>Clear</Button>
             </div>

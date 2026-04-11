@@ -47,6 +47,7 @@ export function Dashboard() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [selectedModel, setSelectedModel] = useState('Finch 3.5 Sonnet');
@@ -62,34 +63,30 @@ export function Dashboard() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
-  const { streamMessage, abort } = useAIStreaming();
+  const { streamMessage, abort, isStreaming } = useAIStreaming();
 
   useChatPersistence({
+    recentChats,
     setRecentChats,
+    profileName,
     setProfileName,
+    profileEmail,
     setProfileEmail,
+    enterToSend,
     setEnterToSend,
   });
 
-  const handleNewChat = () => {
-    if (messages.length > 0 && !isIncognito) {
-      const title = messages[0].content.substring(0, 40);
-      const newSession: ChatSession = {
-        id: Date.now().toString(),
-        title,
-        messages,
-        timestamp: Date.now(),
-        type: 'active',
-        pinned: false,
-        incognito: false,
-        systemPrompt: '',
-        generationParams: { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
-        stats: { totalTokens: 0, totalMessages: messages.length, averageSpeed: 0 }
-      };
-      const updatedChats = [newSession, ...recentChats];
-      setRecentChats(updatedChats);
-      localStorage.setItem('finch_chats', JSON.stringify(updatedChats));
+  // Auto-load most recent session on startup
+  React.useEffect(() => {
+    if (recentChats.length > 0 && !activeSessionId && !isIncognito && messages.length === 0) {
+      const mostRecent = recentChats[0];
+      setActiveSessionId(mostRecent.id);
+      setMessages(mostRecent.messages);
     }
+  }, [recentChats, activeSessionId, isIncognito, messages.length]);
+
+  const handleNewChat = () => {
+    setActiveSessionId(null);
     setMessages([]);
     if (!isIncognito) {
       toast.info('Started a new chat');
@@ -100,8 +97,10 @@ export function Dashboard() {
     if (isIncognito) {
       setIsIncognito(false);
       setMessages([]);
+      setActiveSessionId(null);
     } else {
       setIsIncognito(true);
+      setActiveSessionId(null);
     }
   };
 
@@ -112,7 +111,10 @@ export function Dashboard() {
     
     const updatedChats = recentChats.filter(c => c.id !== id);
     setRecentChats(updatedChats);
-    localStorage.setItem('finch_chats', JSON.stringify(updatedChats));
+    
+    if (activeSessionId === id) {
+      handleNewChat();
+    }
     
     toast('Chat deleted', {
       action: {
@@ -120,7 +122,6 @@ export function Dashboard() {
         onClick: () => {
           const restoredChats = [...updatedChats, chatToDelete].sort((a, b) => b.timestamp - a.timestamp);
           setRecentChats(restoredChats);
-          localStorage.setItem('finch_chats', JSON.stringify(restoredChats));
         }
       },
       duration: 4000
@@ -131,17 +132,16 @@ export function Dashboard() {
     e.stopPropagation();
     const updatedChats = recentChats.map(c => c.id === id ? { ...c, pinned: !c.pinned } : c);
     setRecentChats(updatedChats);
-    localStorage.setItem('finch_chats', JSON.stringify(updatedChats));
   };
 
   const handleRenameCommit = (id: string) => {
     if (editingTitle.trim()) {
       const updatedChats = recentChats.map(c => c.id === id ? { ...c, title: editingTitle.trim() } : c);
       setRecentChats(updatedChats);
-      localStorage.setItem('finch_chats', JSON.stringify(updatedChats));
     }
     setEditingSessionId(null);
   };
+
 
   const handleRenameKeyDown = (e: React.KeyboardEvent, id: string) => {
     if (e.key === 'Enter') {
@@ -160,12 +160,57 @@ export function Dashboard() {
     }
   };
 
+  const updateActiveSessionInList = (updatedMessages: Message[]) => {
+    if (isIncognito) return;
+
+    let currentSessionId = activeSessionId;
+    if (!currentSessionId) {
+      currentSessionId = Date.now().toString();
+      setActiveSessionId(currentSessionId);
+    }
+
+    setRecentChats(prev => {
+      const existing = prev.find(c => c.id === currentSessionId);
+      if (existing) {
+        // Move to top if updated
+        const updated = prev.map(c => 
+          c.id === currentSessionId 
+            ? { ...c, messages: updatedMessages, timestamp: Date.now() } 
+            : c
+        );
+        return updated.sort((a, b) => {
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          return b.timestamp - a.timestamp;
+        });
+      } else if (updatedMessages.length > 0) {
+        const title = updatedMessages[0].content.substring(0, 40);
+        const newSession: ChatSession = {
+          id: currentSessionId!,
+          title,
+          messages: updatedMessages,
+          timestamp: Date.now(),
+          type: 'active',
+          pinned: false,
+          incognito: false,
+          systemPrompt: '',
+          generationParams: { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
+          stats: { totalTokens: 0, totalMessages: updatedMessages.length, averageSpeed: 0 }
+        };
+        return [newSession, ...prev];
+      }
+      return prev;
+    });
+  };
+
   const handleSend = () => {
-    if (!input.trim() || isThinking) return;
+    if (!input.trim() || isThinking || isStreaming) return;
     
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    const updatedMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
+    setMessages(updatedMessages);
+    updateActiveSessionInList(updatedMessages);
     setIsThinking(true);
 
     let isFirstToken = true;
@@ -176,15 +221,18 @@ export function Dashboard() {
         if (isFirstToken) {
           setIsThinking(false);
           isFirstToken = false;
-          setMessages(prev => [...prev, {
-            role: 'ai',
-            content: token,
-            streaming: true,
-            metadata: {
-              timestamp: new Date(),
-              model: selectedModel,
-            }
-          }]);
+          setMessages(prev => {
+            const next = [...prev, {
+              role: 'ai',
+              content: token,
+              streaming: true,
+              metadata: {
+                timestamp: new Date(),
+                model: selectedModel,
+              }
+            }];
+            return next;
+          });
         } else {
           setMessages(prev => {
             const lastMessage = prev[prev.length - 1];
@@ -203,10 +251,12 @@ export function Dashboard() {
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1];
           if (lastMessage && lastMessage.role === 'ai') {
-            return [
+            const finalMessages: Message[] = [
               ...prev.slice(0, -1),
               { ...lastMessage, streaming: false }
             ];
+            updateActiveSessionInList(finalMessages);
+            return finalMessages;
           }
           return prev;
         });
@@ -220,6 +270,7 @@ export function Dashboard() {
     );
   };
 
+
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -227,6 +278,8 @@ export function Dashboard() {
           {/* Sidebar */}
           <ChatSidebar 
             recentChats={recentChats}
+            activeSessionId={activeSessionId}
+            setActiveSessionId={setActiveSessionId}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             handleNewChat={handleNewChat}
@@ -248,6 +301,7 @@ export function Dashboard() {
             setProfileName={setProfileName}
             setProfileEmail={setProfileEmail}
           />
+
 
           {/* Main Content */}
           <div className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-colors duration-300 ${

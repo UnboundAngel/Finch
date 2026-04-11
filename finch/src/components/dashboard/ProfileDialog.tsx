@@ -69,7 +69,6 @@ export const ProfileDialog = ({
         <div className="flex justify-end gap-3 mt-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl">Cancel</Button>
           <Button onClick={() => { 
-            localStorage.setItem('finch_profile', JSON.stringify({ name: profileName, email: profileEmail }));
             onOpenChange(false); 
             toast.success('Profile updated successfully'); 
           }} className="rounded-xl">Save Changes</Button>

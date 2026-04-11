@@ -36,6 +36,8 @@ import { getChatIcon } from '../../lib/chatHelpers';
 
 interface ChatSidebarProps {
   recentChats: ChatSession[];
+  activeSessionId: string | null;
+  setActiveSessionId: (id: string | null) => void;
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   handleNewChat: () => void;
@@ -60,6 +62,8 @@ interface ChatSidebarProps {
 
 export const ChatSidebar = ({
   recentChats,
+  activeSessionId,
+  setActiveSessionId,
   searchQuery,
   setSearchQuery,
   handleNewChat,
@@ -125,9 +129,11 @@ export const ChatSidebar = ({
                       {pinnedChats.map((chat) => (
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton 
-                            className="h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group" 
+                            isActive={activeSessionId === chat.id}
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-muted text-foreground' : ''}`} 
                             onClick={() => { 
                               if (isIncognito) setIsIncognito(false);
+                              setActiveSessionId(chat.id);
                               setMessages(chat.messages || []); 
                               toast(`Opened chat: ${chat.title}`); 
                             }}
@@ -178,9 +184,11 @@ export const ChatSidebar = ({
                       {unpinnedChats.map((chat) => (
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton 
-                            className="h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group" 
+                            isActive={activeSessionId === chat.id}
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-muted text-foreground' : ''}`} 
                             onClick={() => { 
                               if (isIncognito) setIsIncognito(false);
+                              setActiveSessionId(chat.id);
                               setMessages(chat.messages || []); 
                               toast(`Opened chat: ${chat.title}`); 
                             }}
@@ -227,6 +235,7 @@ export const ChatSidebar = ({
           );
         })()}
       </SidebarContent>
+
       <SidebarFooter className="p-4">
         <DropdownMenu>
           <DropdownMenuTrigger className={buttonVariants({ variant: "ghost", className: "w-full justify-start gap-3 h-12 px-2 rounded-xl hover:bg-muted/50 transition-colors" })}>
@@ -252,8 +261,6 @@ export const ChatSidebar = ({
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
-              localStorage.removeItem('finch_chats');
-              localStorage.removeItem('finch_profile');
               setRecentChats([]);
               setMessages([]);
               setProfileName('Jane Doe');
