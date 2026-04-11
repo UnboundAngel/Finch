@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { invoke } from '@tauri-apps/api/core';
 import { Cloud, Cpu, Sparkles, Zap, Key, Globe, RefreshCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import {
   AlertDialog,
@@ -51,6 +52,18 @@ export const SettingsDialog = ({
   setRecentChats,
   setActiveSessionId,
 }: SettingsDialogProps) => {
+  const [activeTab, setActiveTab] = React.useState('general');
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.06,
+      },
+    },
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] rounded-2xl max-h-[90vh] overflow-y-auto">
@@ -61,129 +74,156 @@ export const SettingsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1">
             <TabsTrigger value="general" className="rounded-lg py-2">General</TabsTrigger>
             <TabsTrigger value="models" className="rounded-lg py-2">Models & Keys</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="flex flex-col gap-6 py-6 animate-in slide-in-from-left-2 duration-300">
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Appearance</h4>
-              <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Theme</span>
-                  <span className="text-xs text-muted-foreground">Toggle between light and dark mode</span>
-                </div>
-                <Switch checked={isDark} onChange={onThemeChange} />
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Chat</h4>
-              <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Enter to Send</span>
-                  <span className="text-xs text-muted-foreground">Send messages by pressing Enter</span>
-                </div>
-                <input 
-                  type="checkbox" 
-                  checked={enterToSend} 
-                  onChange={(e) => {
-                    setEnterToSend(e.target.checked);
-                  }} 
-                  className="h-5 w-5 rounded-lg border-muted-foreground/30 text-primary focus:ring-primary cursor-pointer" 
-                />
-              </div>
-            </div>
+          <AnimatePresence mode="wait">
+            {activeTab === 'general' && (
+              <TabsContent value="general" key="general" forceMount asChild>
+                <motion.div 
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex flex-col gap-6 py-6"
+                >
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Appearance</h4>
+                    <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">Theme</span>
+                        <span className="text-xs text-muted-foreground">Toggle between light and dark mode</span>
+                      </div>
+                      <Switch checked={isDark} onChange={onThemeChange} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Chat</h4>
+                    <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium">Enter to Send</span>
+                        <span className="text-xs text-muted-foreground">Send messages by pressing Enter</span>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={enterToSend} 
+                        onChange={(e) => {
+                          setEnterToSend(e.target.checked);
+                        }} 
+                        className="h-5 w-5 rounded-lg border-muted-foreground/30 text-primary focus:ring-primary cursor-pointer" 
+                      />
+                    </div>
+                  </div>
 
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-destructive uppercase tracking-widest pl-1">Danger Zone</h4>
-              <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-2xl bg-destructive/5">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium text-destructive">Clear All Conversations</span>
-                  <span className="text-xs text-muted-foreground">Permanently delete all your chat history.</span>
-                </div>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="rounded-xl px-4">Clear All</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="rounded-2xl border-muted-foreground/20 shadow-2xl">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription className="text-muted-foreground">
-                        This action cannot be undone. This will permanently delete all your 
-                        local chat sessions and clear the current conversation.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2">
-                      <AlertDialogCancel className="rounded-xl border-muted-foreground/20">Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={() => {
-                          setMessages([]);
-                          setRecentChats([]);
-                          setActiveSessionId(null);
-                          toast.error('All chat history cleared');
-                          onOpenChange(false);
-                        }}
-                      >
-                        Delete Everything
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          </TabsContent>
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-destructive uppercase tracking-widest pl-1">Danger Zone</h4>
+                    <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-2xl bg-destructive/5">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-destructive">Clear All Conversations</span>
+                        <span className="text-xs text-muted-foreground">Permanently delete all your chat history.</span>
+                      </div>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" className="rounded-xl px-4">Clear All</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-2xl border-muted-foreground/20 shadow-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-muted-foreground">
+                              This action cannot be undone. This will permanently delete all your 
+                              local chat sessions and clear the current conversation.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="gap-2">
+                            <AlertDialogCancel className="rounded-xl border-muted-foreground/20">Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => {
+                                setMessages([]);
+                                setRecentChats([]);
+                                setActiveSessionId(null);
+                                toast.error('All chat history cleared');
+                                onOpenChange(false);
+                              }}
+                            >
+                              Delete Everything
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </motion.div>
+              </TabsContent>
+            )}
 
-          <TabsContent value="models" className="py-6 animate-in slide-in-from-right-2 duration-300">
-            <div className="space-y-8 h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-              <ProviderSection 
-                title="Anthropic" 
-                icon={Sparkles} 
-                description="Power Finch with Claude-3 series models."
-                storeKey="anthropic_api_key"
-                type="key"
-                testCommand="list_anthropic_models"
-              />
-              <ProviderSection 
-                title="OpenAI" 
-                icon={Cloud} 
-                description="Use GPT-4o, o1, and more."
-                storeKey="openai_api_key"
-                type="key"
-                testCommand="list_openai_models"
-              />
-              <ProviderSection 
-                title="Google Gemini" 
-                icon={Zap} 
-                description="Connect Gemini 1.5 Pro and Flash."
-                storeKey="gemini_api_key"
-                type="key"
-                testCommand="list_gemini_models"
-              />
-              <ProviderSection 
-                title="LM Studio" 
-                icon={Cpu} 
-                description="Connect local models via LM Studio OpenAI server."
-                storeKey="lmstudio_endpoint"
-                type="url"
-                placeholder="http://localhost:1234"
-                provider="local_lmstudio"
-              />
-              <ProviderSection 
-                title="Ollama" 
-                icon={Cpu} 
-                description="Connect local models running in Ollama."
-                storeKey="ollama_endpoint"
-                type="url"
-                placeholder="http://localhost:11434"
-                provider="local_ollama"
-              />
-            </div>
-          </TabsContent>
+            {activeTab === 'models' && (
+              <TabsContent value="models" key="models" forceMount asChild>
+                <motion.div 
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="py-6"
+                >
+                  <motion.div 
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-8 h-[400px] overflow-y-auto pr-2 scrollbar-hide"
+                  >
+                    <ProviderSection 
+                      title="Anthropic" 
+                      icon={Sparkles} 
+                      description="Power Finch with Claude-3 series models."
+                      storeKey="anthropic_api_key"
+                      type="key"
+                      testCommand="list_anthropic_models"
+                    />
+                    <ProviderSection 
+                      title="OpenAI" 
+                      icon={Cloud} 
+                      description="Use GPT-4o, o1, and more."
+                      storeKey="openai_api_key"
+                      type="key"
+                      testCommand="list_openai_models"
+                    />
+                    <ProviderSection 
+                      title="Google Gemini" 
+                      icon={Zap} 
+                      description="Connect Gemini 1.5 Pro and Flash."
+                      storeKey="gemini_api_key"
+                      type="key"
+                      testCommand="list_gemini_models"
+                    />
+                    <ProviderSection 
+                      title="LM Studio" 
+                      icon={Cpu} 
+                      description="Connect local models via LM Studio OpenAI server."
+                      storeKey="lmstudio_endpoint"
+                      type="url"
+                      placeholder="http://localhost:1234"
+                      provider="local_lmstudio"
+                    />
+                    <ProviderSection 
+                      title="Ollama" 
+                      icon={Cpu} 
+                      description="Connect local models running in Ollama."
+                      storeKey="ollama_endpoint"
+                      type="url"
+                      placeholder="http://localhost:11434"
+                      provider="local_ollama"
+                    />
+                  </motion.div>
+                </motion.div>
+              </TabsContent>
+            )}
+          </AnimatePresence>
         </Tabs>
 
         <div className="flex justify-end pt-2">
@@ -209,6 +249,11 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
   const [value, setValue] = React.useState('');
   const [isSaving, setIsSaving] = React.useState(false);
   const [isTesting, setIsTesting] = React.useState(false);
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
+  };
 
   React.useEffect(() => {
     const loadValue = async () => {
@@ -281,7 +326,12 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
   };
 
   return (
-    <div className="space-y-4 p-5 border rounded-2xl bg-muted/5 transition-all hover:bg-muted/10 group">
+    <motion.div 
+      variants={itemVariants}
+      whileHover={{ scale: 1.01, translateY: -2 }}
+      whileTap={{ scale: 0.98 }}
+      className="space-y-4 p-5 border rounded-2xl bg-muted/5 transition-all hover:bg-muted/10 hover:border-primary/30 group"
+    >
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
           <Icon className="h-5 w-5" />
@@ -331,6 +381,6 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
           {type === 'key' ? 'Load Models' : 'Detect Models'}
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 };
