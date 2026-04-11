@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-11T20:14:14.996Z"
+last_updated: "2026-04-11T16:20:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 2
-  percent: 40
+  total_plans: 6
+  completed_plans: 4
+  percent: 66
 ---
 
 # STATE — Finch
 
-## Current Phase: Phase 05
+## Current Phase: Phase 06
 
 ## Status: In Progress
 
-## Current Plan: 05-02
+## Current Plan: 06-01
 
 ## Progress: 100% [==========]
 
@@ -28,10 +28,11 @@ progress:
 - Phase 02: Core UI Scaffolding (Simulated)
 - Phase 03: Rust IPC Implementation (Simulated)
 - Phase 04: Basic Chat & Persistence (Simulated)
+- Phase 05: Dashboard & Settings Polish (Planned)
 
 ## Active Phase
 
-- Phase 05: Dashboard & Settings Polish (Planned)
+- Phase 06: Chat Sidebar & Input Refinement (Planned)
 
 ## Decisions
 
@@ -39,6 +40,9 @@ progress:
 - Implemented custom height/opacity animation for ModelSelector using AnimatePresence.
 - [Phase 05]: Used AnimatePresence (mode='wait') on controlled Tabs for sequential exit/entry.
 - [Phase 05]: Implemented staggered children with motion variants (0.06s stagger).
+- [Phase 06]: Use oklch(0.488 0.243 264.376) for violet accent at 15% opacity for active highlights.
+- [Phase 06]: Implement AI name distinction using a heuristic ('Claude', 'GPT', etc.) with italic and muted styles.
+- [Phase 06]: Indicator for web search uses blue-500 ring and border glow to differentiate from normal active state.
 
 ## Quick Tasks Completed
 
@@ -54,13 +58,13 @@ progress:
 |-------|------|----------|-------|-------|
 | 05    | 05-01| 30m      | 2     | 2     |
 | 05    | 05-02| 15m      | 2     | 1     |
+| 06    | 06-01| 10m      | 3     | 4     |
 
 ## Session Info
 
-- Last session: 2026-04-11T16:15:00Z
-- Stopped at: Completed 05-02-PLAN.md
+- Last session: 2026-04-11T16:20:00Z
+- Stopped at: Completed 06-01-PLAN.md
 
 ## Upcoming Phases
 
-- Phase 06: Chat Sidebar & Input Refinement (Planned)
 - Phase 07: Chat System Fixes (Planned)

@@ -7,9 +7,9 @@
 - [x] R-04: Model selector must use compact grouping and motion.
 
 ## Phase 06: Chat Sidebar & Input Refinement
-- R-05: Sidebar active chats must use violet accent and clear distinction.
-- R-06: Web search toggle must use blue stroke and border glow.
-- R-07: Dark mode toasts must be frosted semi-transparent.
+- [x] R-05: Sidebar active chats must use violet accent and clear distinction.
+- [x] R-06: Web search toggle must use blue stroke and border glow.
+- [x] R-07: Dark mode toasts must be frosted semi-transparent.
 - R-08: Message stats must show real-time speed/cost with auto-fade.
 
 ## Phase 07: Chat System Fixes
