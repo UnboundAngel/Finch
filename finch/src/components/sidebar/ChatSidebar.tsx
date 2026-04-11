@@ -83,23 +83,25 @@ export const ChatSidebar = ({
 }: ChatSidebarProps) => {
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
-        <Button 
-          variant="outline" 
-          className="w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm bg-background hover:bg-muted/50 border-muted-foreground/20"
-          onClick={handleNewChat}
-        >
-          <Plus className="h-4 w-4" />
-          <span className="font-medium">New Chat</span>
-        </Button>
-        <div className="mt-4 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search chats..." 
-            className="pl-9 h-9 rounded-lg bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-primary/50"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <SidebarHeader data-tauri-drag-region className="p-4 select-none">
+        <div className="no-drag">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm bg-background hover:bg-muted/50 border-muted-foreground/20"
+            onClick={handleNewChat}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="font-medium">New Chat</span>
+          </Button>
+          <div className="mt-4 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search chats..." 
+              className="pl-9 h-9 rounded-lg bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-primary/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>

@@ -26,6 +26,7 @@ import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { ProfileDialog } from '@/src/components/dashboard/ProfileDialog';
 import { SettingsDialog } from '@/src/components/dashboard/SettingsDialog';
 import { useSidebar } from '@/components/ui/sidebar';
+import { WindowControls } from '@/src/components/dashboard/WindowControls';
 
 const SidebarToggleButton = () => {
   const { state, toggleSidebar } = useSidebar();
@@ -222,8 +223,11 @@ export function Dashboard() {
               : "bg-background text-foreground"
           }`}>
             {/* Header */}
-            <header className={`h-14 flex items-center justify-between px-4 sticky top-0 z-10 backdrop-blur-md border-b ${isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-muted-foreground/10'}`}>
-              <div className="flex items-center gap-2">
+            <header 
+              data-tauri-drag-region
+              className={`h-14 flex items-center justify-between px-4 sticky top-0 z-10 backdrop-blur-md border-b select-none ${isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-muted-foreground/10'}`}
+            >
+              <div className="flex items-center gap-2 no-drag">
                 <SidebarToggleButton />
                 {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
                 <DropdownMenu>
@@ -249,7 +253,7 @@ export function Dashboard() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="flex items-center gap-2 mr-4">
+              <div className="flex items-center gap-2 mr-4 no-drag">
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -259,6 +263,7 @@ export function Dashboard() {
                   <Ghost className="h-5 w-5" />
                 </Button>
                 <Switch checked={isDark} onChange={handleThemeChange} />
+                <WindowControls isIncognito={isIncognito} />
               </div>
             </header>
 
