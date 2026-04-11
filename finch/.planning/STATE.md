@@ -55,6 +55,7 @@ progress:
 | Fix web search layout shift | Applied `border-[1.5px]` consistently to prevent layout reflow when toggling web search. | `src/components/chat/ChatInput.tsx` | 2026-04-11 |
 | Implement grainy frosted toasts | Created noise.svg and toasts.css for frosted look with grain texture. | `src/assets/noise.svg`, `src/styles/toasts.css`, `src/App.tsx` | 2026-04-11 |
 | Fix toast styling & position | Moved toasts to bottom-right, enabled adaptive dark/light backgrounds, and enhanced noise texture. | `src/App.tsx`, `src/assets/noise.svg`, `src/styles/toasts.css` | 2026-04-11 |
+| Restore Toaster state | Restored App.tsx to commit 941c85f state and set position to top-right. | `src/App.tsx`, `src/styles/toasts.css` | 2026-04-11 |
 
 ## Performance Metrics
 

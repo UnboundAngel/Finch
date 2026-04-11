@@ -5,16 +5,12 @@
 
 import { Dashboard } from '@/src/components/dashboard/Dashboard';
 import { Toaster } from 'sonner';
-import '@/src/styles/toasts.css';
 
 export default function App() {
   return (
     <>
       <Dashboard />
-      <Toaster 
-        position="bottom-right" 
-        expand={false}
-      />
+      <Toaster position="top-right" visibleToasts={3} />
     </>
   );
 }
