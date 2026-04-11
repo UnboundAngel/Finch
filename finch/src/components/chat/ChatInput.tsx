@@ -66,7 +66,7 @@ export const ChatInput = ({
       <div className="max-w-3xl mx-auto relative">
         <div className={`relative flex items-end w-full rounded-2xl transition-all overflow-hidden ${
           isWebSearchActive 
-            ? 'ring-[1.5px] ring-blue-500/50 border-blue-500/50' 
+            ? 'ring-[1.5px] ring-inset ring-blue-500/50 border-blue-500/50' 
             : (isIncognito 
                 ? (isDark 
                     ? 'bg-neutral-900 border border-neutral-800 focus-within:border-neutral-700' 
