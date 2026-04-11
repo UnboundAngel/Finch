@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Globe, Image as ImageIcon, Plus } from 'lucide-react';
+import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import { BackgroundPlus } from '@/components/ui/background-plus';
 import { Message } from '../../types/chat';
 import { MessageBubble } from './MessageBubble';
@@ -13,9 +14,10 @@ interface ChatAreaProps {
   selectedModel: string;
   isDark: boolean;
   setInput: (val: string) => void;
+  isIncognito?: boolean;
 }
 
-export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput }: ChatAreaProps) => {
+export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput, isIncognito }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -41,47 +43,66 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
           
           {/* Empty State / Welcome */}
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center text-center mt-20 mb-10 space-y-6">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 shadow-sm border border-primary/20">
-                <MessageSquare className="h-8 w-8 text-primary" />
+            isIncognito ? (
+              <div className="flex flex-col items-center justify-center text-center mt-20 mb-10">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center space-y-6"
+                >
+                  <div className="flex items-center gap-3 text-4xl md:text-5xl font-serif tracking-tight">
+                    <Sparkles className="h-10 w-10 text-orange-400" />
+                    <span>You're incognito</span>
+                  </div>
+                  <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
+                    Incognito chats aren't saved, added to memory, or used to train models. 
+                    <a href="#" className="text-primary hover:underline ml-1">Learn more</a> about how your data is used.
+                  </p>
+                </motion.div>
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight">How can I help you today?</h1>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                  onClick={() => { setInput('Summarize this article: '); toast('Added prompt to input'); }}
-                >
-                  <span className="font-medium flex items-center gap-2"><Globe className="h-4 w-4 text-blue-500" /> Summarize an article</span>
-                  <span className="text-xs text-muted-foreground font-normal line-clamp-2">Paste a URL or text to get a quick summary of the main points.</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                  onClick={() => { setInput('Analyze this image: '); toast('Added prompt to input'); }}
-                >
-                  <span className="font-medium flex items-center gap-2"><ImageIcon className="h-4 w-4 text-purple-500" /> Analyze an image</span>
-                  <span className="text-xs text-muted-foreground font-normal line-clamp-2">Upload an image and ask questions about its contents.</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                  onClick={() => { setInput('Draft an email about: '); toast('Added prompt to input'); }}
-                >
-                  <span className="font-medium flex items-center gap-2"><MessageSquare className="h-4 w-4 text-green-500" /> Draft an email</span>
-                  <span className="text-xs text-muted-foreground font-normal line-clamp-2">Get help writing a professional or casual email.</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                  onClick={() => { setInput('Brainstorm ideas for: '); toast('Added prompt to input'); }}
-                >
-                  <span className="font-medium flex items-center gap-2"><Plus className="h-4 w-4 text-orange-500" /> Brainstorm ideas</span>
-                  <span className="text-xs text-muted-foreground font-normal line-clamp-2">Generate creative ideas for your next project.</span>
-                </Button>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center mt-20 mb-10 space-y-6">
+                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 shadow-sm border border-primary/20">
+                  <MessageSquare className="h-8 w-8 text-primary" />
+                </div>
+                <h1 className="text-3xl font-semibold tracking-tight">How can I help you today?</h1>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-[1fr_1fr] gap-3 w-full max-w-2xl mt-8">
+                  <Button 
+                    variant="outline" 
+                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group"
+                    onClick={() => { setInput('Summarize this article: '); toast('Added prompt to input'); }}
+                  >
+                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><Globe className="h-4 w-4 text-blue-500" /> Summarize an article</span>
+                    <span className="text-xs text-muted-foreground font-normal line-clamp-2 leading-relaxed">Paste a URL or text to get a quick summary of the main points.</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group"
+                    onClick={() => { setInput('Analyze this image: '); toast('Added prompt to input'); }}
+                  >
+                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><ImageIcon className="h-4 w-4 text-purple-500" /> Analyze an image</span>
+                    <span className="text-xs text-muted-foreground font-normal line-clamp-2 leading-relaxed">Upload an image and ask questions about its contents.</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group"
+                    onClick={() => { setInput('Draft an email about: '); toast('Added prompt to input'); }}
+                  >
+                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><MessageSquare className="h-4 w-4 text-green-500" /> Draft an email</span>
+                    <span className="text-xs text-muted-foreground font-normal line-clamp-2 leading-relaxed">Get help writing a professional or casual email.</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group"
+                    onClick={() => { setInput('Brainstorm ideas for: '); toast('Added prompt to input'); }}
+                  >
+                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><Plus className="h-4 w-4 text-orange-500" /> Brainstorm ideas</span>
+                    <span className="text-xs text-muted-foreground font-normal line-clamp-2 leading-relaxed">Generate creative ideas for your next project.</span>
+                  </Button>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {/* Messages */}
@@ -92,6 +113,7 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
               selectedModel={selectedModel} 
               isDark={isDark} 
               isLatest={index === messages.length - 1 && !isThinking} 
+              isIncognito={isIncognito}
             />
           ))}
 
