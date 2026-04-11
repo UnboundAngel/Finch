@@ -1,0 +1,27 @@
+[data-sonner-toast] {
+  background: rgba(23, 23, 23, 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border-radius: 16px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-sonner-toast]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url('../assets/noise.svg');
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Ensure the success/error/info icons and content are above the noise */
+[data-sonner-toast] [data-icon],
+[data-sonner-toast] [data-content] {
+  position: relative;
+  z-index: 1;
+}

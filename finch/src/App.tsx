@@ -5,6 +5,7 @@
 
 import { Dashboard } from '@/src/components/dashboard/Dashboard';
 import { Toaster } from 'sonner';
+import '@/src/styles/toasts.css';
 
 export default function App() {
   return (
@@ -13,9 +14,6 @@ export default function App() {
       <Toaster 
         position="top-center" 
         visibleToasts={3} 
-        toastOptions={{
-          className: "bg-neutral-900/90 backdrop-blur-md border border-white/10 text-white rounded-2xl",
-        }}
       />
     </>
   );

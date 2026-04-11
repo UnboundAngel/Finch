@@ -53,6 +53,7 @@ progress:
 | Fix active tab alignment | Ensured active tab indicator perfectly matches the container bounds. | `components/ui/tabs.tsx`, `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
 | Fix sidebar active highlight | Improved visibility (30% opacity) and aligned pill width/radius with header. | `src/components/sidebar/ChatSidebar.tsx` | 2026-04-11 |
 | Fix web search layout shift | Applied `ring-inset` to input container to prevent layout reflow when active. | `src/components/chat/ChatInput.tsx` | 2026-04-11 |
+| Implement grainy frosted toasts | Created noise.svg and toasts.css for frosted look with grain texture. | `src/assets/noise.svg`, `src/styles/toasts.css`, `src/App.tsx` | 2026-04-11 |
 
 ## Performance Metrics
 
