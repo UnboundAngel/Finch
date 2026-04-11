@@ -11,44 +11,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BackgroundPlus } from '@/components/ui/background-plus';
 import {
-  MessageSquare,
-  Plus,
   Settings,
   User,
   LogOut,
   MoreHorizontal,
   Send,
   Paperclip,
-  Mic,
   Globe,
-  Image as ImageIcon,
   ChevronDown,
-  ChevronUp,
-  FileText,
   PanelLeftClose,
   PanelLeftOpen,
-  Copy,
-  Check,
-  Zap,
-  Hash,
-  Clock,
-  Timer,
-  Bot,
-  AlertTriangle,
-  Trash2,
-  Pin,
+  Plus,
   Search,
   Ghost,
+  Pin,
+  Trash2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -58,20 +42,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import Switch from '@/components/ui/sky-toggle';
-import ReactMarkdown from 'react-markdown';
-import SyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism';
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { ShiningText } from '@/components/ui/shining-text';
-import { Message, ChatSession, MessageMetadata } from '../src/types/chat';
+import { Message, ChatSession } from '../src/types/chat';
 import { getChatIcon } from '../src/lib/chatHelpers';
-import { ThinkingBox } from '../src/components/chat/ThinkingBox';
-import { MetadataRow } from '../src/components/chat/MetadataRow';
+import { ChatArea } from '../src/components/chat/ChatArea';
 import { useChatPersistence } from '../src/hooks/useChatPersistence';
 import { ProfileDialog } from '../src/components/dashboard/ProfileDialog';
 import { SettingsDialog } from '../src/components/dashboard/SettingsDialog';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const SidebarToggleButton = () => {
-
   const { state, toggleSidebar } = useSidebar();
   return (
     <Button
@@ -82,49 +61,6 @@ const SidebarToggleButton = () => {
     >
       {state === "expanded" ? <PanelLeftClose className="h-5 w-5 text-muted-foreground" /> : <PanelLeftOpen className="h-5 w-5 text-muted-foreground" />}
     </Button>
-  );
-};
-
-const CodeBlock = ({ children, language, isDark }: { children: string, language: string, isDark: boolean }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(children);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative group my-4 rounded-xl overflow-hidden border border-muted-foreground/10 bg-muted/20">
-      <div className="absolute right-3 top-3 z-20">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 bg-background/50 hover:bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all rounded-lg border border-muted-foreground/10"
-          onClick={handleCopy}
-        >
-          {copied ? (
-            <Check className="h-4 w-4 text-green-500 transition-all scale-110" />
-          ) : (
-            <Copy className="h-4 w-4 text-muted-foreground transition-all" />
-          )}
-        </Button>
-      </div>
-      <SyntaxHighlighter
-        PreTag="div"
-        language={language}
-        style={isDark ? oneDark : oneLight}
-        customStyle={{
-          margin: 0,
-          padding: '1.5rem',
-          fontSize: '0.875rem',
-          background: 'transparent',
-        }}
-        codeTagProps={{ style: { background: 'transparent' } }}
-      >
-        {children}
-      </SyntaxHighlighter>
-    </div>
   );
 };
 
@@ -147,7 +83,6 @@ export function Dashboard() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useChatPersistence({
@@ -253,14 +188,6 @@ export function Dashboard() {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isThinking]);
-
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = '56px'; // Reset height to recalculate
@@ -355,12 +282,11 @@ export function Dashboard() {
                               <SidebarMenuItem key={chat.id}>
                                 <SidebarMenuButton 
                                   className="h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group" 
-                                  render={<a href="#" onClick={(e) => { 
-                                    e.preventDefault(); 
+                                  onClick={() => { 
                                     if (isIncognito) setIsIncognito(false);
                                     setMessages(chat.messages || []); 
                                     toast(`Opened chat: ${chat.title}`); 
-                                  }} />}
+                                  }}
                                 >
                                   {getChatIcon(chat.type)}
                                   {editingSessionId === chat.id ? (
@@ -409,12 +335,11 @@ export function Dashboard() {
                               <SidebarMenuItem key={chat.id}>
                                 <SidebarMenuButton 
                                   className="h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group" 
-                                  render={<a href="#" onClick={(e) => { 
-                                    e.preventDefault(); 
+                                  onClick={() => { 
                                     if (isIncognito) setIsIncognito(false);
                                     setMessages(chat.messages || []); 
                                     toast(`Opened chat: ${chat.title}`); 
-                                  }} />}
+                                  }}
                                 >
                                   {getChatIcon(chat.type)}
                                   {editingSessionId === chat.id ? (
@@ -547,204 +472,84 @@ export function Dashboard() {
             </header>
 
             {/* Chat Area */}
-            <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
-              {/* Background Pattern */}
-              <BackgroundPlus 
-                plusColor="#888888" 
-                className="opacity-[0.05] dark:opacity-[0.1]" 
-                fade={true}
-                plusSize={40}
-              />
-              
-              <div className="flex-1 min-h-0 overflow-y-auto w-full relative z-10 scroll-smooth">
-                <div className="max-w-3xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-8 pb-12">
-                  
-                  {/* Empty State / Welcome */}
-                  {messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center text-center mt-20 mb-10 space-y-6">
-                      <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 shadow-sm border border-primary/20">
-                        <MessageSquare className="h-8 w-8 text-primary" />
-                      </div>
-                      <h1 className="text-3xl font-semibold tracking-tight">How can I help you today?</h1>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
-                        <Button 
-                          variant="outline" 
-                          className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                          onClick={() => { setInput('Summarize this article: '); toast('Added prompt to input'); }}
-                        >
-                          <span className="font-medium flex items-center gap-2"><Globe className="h-4 w-4 text-blue-500" /> Summarize an article</span>
-                          <span className="text-xs text-muted-foreground font-normal line-clamp-2">Paste a URL or text to get a quick summary of the main points.</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                          onClick={() => { setInput('Analyze this image: '); toast('Added prompt to input'); }}
-                        >
-                          <span className="font-medium flex items-center gap-2"><ImageIcon className="h-4 w-4 text-purple-500" /> Analyze an image</span>
-                          <span className="text-xs text-muted-foreground font-normal line-clamp-2">Upload an image and ask questions about its contents.</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                          onClick={() => { setInput('Draft an email about: '); toast('Added prompt to input'); }}
-                        >
-                          <span className="font-medium flex items-center gap-2"><MessageSquare className="h-4 w-4 text-green-500" /> Draft an email</span>
-                          <span className="text-xs text-muted-foreground font-normal line-clamp-2">Get help writing a professional or casual email.</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="h-auto p-4 justify-start text-left flex flex-col items-start gap-2 rounded-xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm"
-                          onClick={() => { setInput('Brainstorm ideas for: '); toast('Added prompt to input'); }}
-                        >
-                          <span className="font-medium flex items-center gap-2"><Plus className="h-4 w-4 text-orange-500" /> Brainstorm ideas</span>
-                          <span className="text-xs text-muted-foreground font-normal line-clamp-2">Generate creative ideas for your next project.</span>
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+            <ChatArea 
+              messages={messages} 
+              isThinking={isThinking} 
+              selectedModel={selectedModel} 
+              isDark={isDark} 
+              setInput={setInput} 
+            />
 
-                  {/* Messages */}
-                  {messages.map((msg, index) => {
-                    const isLatest = index === messages.length - 1 && !isThinking;
-                    return (
-                    <div key={index} className="flex gap-4 w-full group">
-                      {msg.role === 'user' ? (
-                        <Avatar className="h-8 w-8 shrink-0 mt-0.5 rounded-lg border border-muted-foreground/20">
-                          <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" alt="User" />
-                          <AvatarFallback className="rounded-lg bg-primary/10 text-primary">U</AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="h-8 w-8 shrink-0 mt-0.5 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-                          <MessageSquare className="h-4 w-4 text-primary-foreground" />
-                        </div>
-                      )}
-                      <div className="flex-1 space-y-2 overflow-hidden">
-                        <div className="font-medium text-sm">{msg.role === 'user' ? 'You' : selectedModel}</div>
-                        {msg.reasoning && <ThinkingBox content={msg.reasoning} />}
-                        <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90">
-                          <ReactMarkdown
-                            components={{
-                              h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-4" {...props} />,
-                              h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-3" {...props} />,
-                              h3: ({node, ...props}) => <h3 className="text-base font-bold mb-2" {...props} />,
-                              ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-4 space-y-1" {...props} />,
-                              ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-4 space-y-1" {...props} />,
-                              li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                              code(props) {
-                                const {children, className, node, ...rest} = props
-                                const match = /language-(\w+)/.exec(className || '')
-                                return match ? (
-                                  <CodeBlock 
-                                    children={String(children).replace(/\n$/, '')} 
-                                    language={match[1]} 
-                                    isDark={isDark} 
-                                  />
-                                ) : (
-                                  <code className="bg-muted/80 px-1.5 py-0.5 rounded text-sm font-mono font-medium" {...rest}>
-                                    {children}
-                                  </code>
-                                )
-                              }
-                            }}
+            {/* Input Area */}
+            <div className="flex-shrink-0 w-full p-4 md:p-6 bg-background/80 backdrop-blur-md z-20">
+              <div className="max-w-3xl mx-auto relative">
+                
+                <div className="relative flex items-end w-full rounded-2xl bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50 transition-all overflow-hidden">
+                  <div className="flex flex-col w-full">
+                    {attachedFile && (
+                      <div className="px-4 pt-3 pb-1">
+                        <div className="inline-flex items-center gap-2 bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-1.5 text-sm">
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="truncate max-w-[200px] font-medium">{attachedFile.name}</span>
+                          <button 
+                            onClick={() => setAttachedFile(null)}
+                            className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            {msg.content}
-                          </ReactMarkdown>
+                            &times;
+                          </button>
                         </div>
-                        {msg.role === 'ai' && msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest} />}
                       </div>
-                    </div>
-                    );
-                  })}
-
-                  {/* Thinking State */}
-                  {isThinking && (
-                    <div className="flex gap-4 w-full">
-                      <div className="h-8 w-8 shrink-0 mt-0.5 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-                        <MessageSquare className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                      <div className="flex-1 space-y-2 overflow-hidden">
-                        <div className="font-medium text-sm">{selectedModel}</div>
-                        <ThinkingBox isActivelyThinking={true} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div ref={messagesEndRef} />
-                </div>
-              </div>
-
-              {/* Input Area */}
-              <div className="flex-shrink-0 w-full p-4 md:p-6 bg-background/80 backdrop-blur-md z-20">
-                <div className="max-w-3xl mx-auto relative">
-                  
-                  <div className="relative flex items-end w-full rounded-2xl bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50 transition-all overflow-hidden">
-                    <div className="flex flex-col w-full">
-                      {attachedFile && (
-                        <div className="px-4 pt-3 pb-1">
-                          <div className="inline-flex items-center gap-2 bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-1.5 text-sm">
-                            <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="truncate max-w-[200px] font-medium">{attachedFile.name}</span>
-                            <button 
-                              onClick={() => setAttachedFile(null)}
-                              className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      <textarea
-                        ref={textareaRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Message Finch..."
-                        className="w-full max-h-[40vh] min-h-[56px] resize-none bg-transparent px-4 py-4 text-sm focus:outline-none placeholder:text-muted-foreground/70"
-                        rows={1}
-                      />
-                      <div className="flex items-center justify-between px-3 pb-3 pt-1">
-                        <div className="flex items-center gap-1">
-                          <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            onChange={handleFileChange} 
-                            className="hidden" 
-                          />
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className={`h-8 w-8 rounded-lg transition-colors ${attachedFile ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <Paperclip className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                            onClick={() => {
-                              setIsWebSearchActive(!isWebSearchActive);
-                              toast(isWebSearchActive ? 'Web Search disabled' : 'Web Search enabled');
-                            }}
-                          >
-                            <Globe className={`h-4 w-4 ${isWebSearchActive ? 'fill-primary' : ''}`} />
-                          </Button>
-                        </div>
+                    )}
+                    <textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Message Finch..."
+                      className="w-full max-h-[40vh] min-h-[56px] resize-none bg-transparent px-4 py-4 text-sm focus:outline-none placeholder:text-muted-foreground/70"
+                      rows={1}
+                    />
+                    <div className="flex items-center justify-between px-3 pb-3 pt-1">
+                      <div className="flex items-center gap-1">
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                          className="hidden" 
+                        />
                         <Button 
+                          variant="ghost" 
                           size="icon" 
-                          className={`h-8 w-8 rounded-lg transition-all ${input.trim() && !isThinking ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground cursor-not-allowed'}`}
-                          disabled={!input.trim() || isThinking}
-                          onClick={handleSend}
+                          className={`h-8 w-8 rounded-lg transition-colors ${attachedFile ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                          onClick={() => fileInputRef.current?.click()}
                         >
-                          <Send className="h-4 w-4" />
+                          <Paperclip className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                          onClick={() => {
+                            setIsWebSearchActive(!isWebSearchActive);
+                            toast(isWebSearchActive ? 'Web Search disabled' : 'Web Search enabled');
+                          }}
+                        >
+                          <Globe className={`h-4 w-4 ${isWebSearchActive ? 'fill-primary' : ''}`} />
                         </Button>
                       </div>
+                      <Button 
+                        size="icon" 
+                        className={`h-8 w-8 rounded-lg transition-all ${input.trim() && !isThinking ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground cursor-not-allowed'}`}
+                        disabled={!input.trim() || isThinking}
+                        onClick={handleSend}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="text-center mt-2">
-                    <span className="text-[10px] text-muted-foreground/70">Finch can make mistakes. Please verify important information.</span>
-                  </div>
+                </div>
+                <div className="text-center mt-2">
+                  <span className="text-[10px] text-muted-foreground/70">Finch can make mistakes. Please verify important information.</span>
                 </div>
               </div>
             </div>
