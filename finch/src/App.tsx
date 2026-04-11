@@ -11,7 +11,21 @@ export default function App() {
   return (
     <>
       <Dashboard />
-      <Toaster position="top-right" visibleToasts={3} offset={72} />
+      <Toaster 
+        position="top-right" 
+        visibleToasts={3} 
+        offset={72} 
+        style={{ 
+          right: '16px',
+          '--width': 'auto' 
+        } as React.CSSProperties}
+        toastOptions={{
+          style: {
+            maxWidth: '40vw',
+            width: 'auto'
+          }
+        }}
+      />
     </>
   );
 }
