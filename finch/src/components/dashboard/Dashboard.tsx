@@ -114,6 +114,14 @@ export function Dashboard() {
     }
   };
 
+  useKeyboardShortcuts({
+    onNewChat: handleNewChat,
+    onOpenSettings: () => setIsSettingsOpen(true),
+    onSearchFocus: () => {
+      document.getElementById('sidebar-search-input')?.focus();
+    }
+  });
+
   const toggleIncognito = () => {
     if (isIncognito) {
       setIsIncognito(false);

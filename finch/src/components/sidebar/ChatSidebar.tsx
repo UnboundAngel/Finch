@@ -98,6 +98,7 @@ export const ChatSidebar = ({
           <div className="mt-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
+              id="sidebar-search-input"
               placeholder="Search chats..." 
               className="pl-9 h-9 rounded-lg bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-primary/50"
               value={searchQuery}
