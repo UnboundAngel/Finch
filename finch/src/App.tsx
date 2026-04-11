@@ -12,8 +12,8 @@ export default function App() {
     <>
       <Dashboard />
       <Toaster 
-        position="top-center" 
-        visibleToasts={3} 
+        position="bottom-right" 
+        expand={false}
       />
     </>
   );

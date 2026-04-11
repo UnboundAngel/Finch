@@ -1,9 +1,20 @@
+:root {
+  --toast-bg: rgba(255, 255, 255, 0.9);
+  --toast-border: rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --toast-bg: rgba(23, 23, 23, 0.9);
+    --toast-border: rgba(255, 255, 255, 0.1);
+  }
+}
+
 [data-sonner-toast] {
-  background: rgba(23, 23, 23, 0.9) !important;
+  background: var(--toast-bg) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
+  border: 1px solid var(--toast-border) !important;
   border-radius: 16px !important;
   position: relative;
   overflow: hidden;
@@ -15,7 +26,7 @@
   inset: 0;
   z-index: -1;
   background-image: url('../assets/noise.svg');
-  opacity: 0.04;
+  opacity: 0.08;
   pointer-events: none;
 }
 
