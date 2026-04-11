@@ -92,6 +92,11 @@ export const ChatSidebar = ({
 }: ChatSidebarProps) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  const isAiNamed = (title: string) => {
+    const aiNames = ['Claude', 'GPT', 'Gemini', 'Llama', 'DeepSeek', 'Mistral'];
+    return aiNames.some(name => title.toLowerCase().includes(name.toLowerCase()));
+  };
+
   return (
     <Sidebar>
       <SidebarHeader data-tauri-drag-region className="p-4 select-none">
@@ -140,11 +145,11 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton 
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-muted text-foreground' : ''}`} 
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/15 text-foreground' : ''}`} 
                             onClick={() => !isIncognito && handleSwitchSession(chat.id)}
                             disabled={isIncognito}
                           >
-                            {getChatIcon(chat.type)}
+                            {getChatIcon(activeSessionId === chat.id ? 'active' : chat.type)}
                             {editingSessionId === chat.id ? (
                               <Input 
                                 autoFocus
@@ -157,7 +162,7 @@ export const ChatSidebar = ({
                               />
                             ) : (
                               <span 
-                                className="truncate text-sm font-medium flex-1"
+                                className={`truncate text-sm font-medium flex-1 ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
                                 onDoubleClick={(e) => {
                                   if (isIncognito) return;
                                   e.preventDefault();
@@ -194,11 +199,11 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton 
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-muted text-foreground' : ''}`} 
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/15 text-foreground' : ''}`} 
                             onClick={() => !isIncognito && handleSwitchSession(chat.id)}
                             disabled={isIncognito}
                           >
-                            {getChatIcon(chat.type)}
+                            {getChatIcon(activeSessionId === chat.id ? 'active' : chat.type)}
                             {editingSessionId === chat.id ? (
                               <Input 
                                 autoFocus
@@ -211,7 +216,7 @@ export const ChatSidebar = ({
                               />
                             ) : (
                               <span 
-                                className="truncate text-sm font-medium flex-1"
+                                className={`truncate text-sm font-medium flex-1 ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
                                 onDoubleClick={(e) => {
                                   if (isIncognito) return;
                                   e.preventDefault();
