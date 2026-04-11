@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, Cloud, Cpu, Sparkles, Zap } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface ModelSelectorProps {
   selectedProvider: string;
@@ -33,6 +35,7 @@ export const ModelSelector = ({
   selectedModel,
   setSelectedModel,
 }: ModelSelectorProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [models, setModels] = useState<{ [key: string]: string[] }>({
     anthropic: [],
     openai: [],
@@ -93,58 +96,87 @@ export const ModelSelector = ({
 
   useEffect(() => {
     fetchModels();
-    // Refresh models every 30 seconds if dropdown is open? 
-    // For now just on mount or when called.
   }, []);
 
   const handleSelect = (providerId: string, modelId: string) => {
     setSelectedProvider(providerId);
     setSelectedModel(modelId);
     toast.success(`Switched to ${modelId}`);
+    setIsOpen(false);
   };
 
   const currentProvider = providers.find(p => p.id === selectedProvider);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center h-9 px-3 gap-2 rounded-lg hover:bg-muted/50 transition-colors font-semibold text-lg border-0 bg-transparent cursor-pointer outline-none">
-        {currentProvider?.icon && <currentProvider.icon className="h-4 w-4 text-muted-foreground" />}
-        <span className="truncate max-w-[200px]">{selectedModel}</span>
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger className="flex items-center h-9 px-3 gap-2 rounded-xl hover:bg-muted/50 transition-all font-semibold text-lg border-0 bg-transparent cursor-pointer outline-none active:scale-95 group">
+        <div className="p-1 rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+          {currentProvider?.icon && <currentProvider.icon className="h-4 w-4" />}
+        </div>
+        <span className="truncate max-w-[200px] bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{selectedModel}</span>
+        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72 rounded-xl shadow-lg border-muted-foreground/20 max-h-[500px] overflow-y-auto z-50 bg-popover text-popover-foreground p-1">
-        {providers.map((provider) => (
-          <DropdownMenuGroup key={provider.id}>
-            <DropdownMenuLabel className="flex items-center gap-2 text-xs text-muted-foreground py-2 px-3">
-              <provider.icon className="h-3 w-3" />
-              {provider.name}
-            </DropdownMenuLabel>
-            {provider.models.length > 0 ? (
-              provider.models.map((modelId) => (
-                <DropdownMenuItem
-                  key={`${provider.id}-${modelId}`}
-                  className="p-3 cursor-pointer rounded-lg focus:bg-muted/50"
-                  onClick={() => handleSelect(provider.id, modelId)}
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{modelId}</span>
+      
+      <DropdownMenuContent 
+        align="start" 
+        className="w-72 rounded-2xl shadow-2xl border-muted-foreground/10 bg-popover/95 backdrop-blur-xl p-1.5 z-50 overflow-hidden"
+      >
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              animate={{ opacity: 1, height: 'auto', scale: 1 }}
+              exit={{ opacity: 0, height: 0, scale: 0.95 }}
+              transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="max-h-[400px] overflow-y-auto pr-1">
+                {providers.map((provider) => (
+                  <div key={provider.id}>
+                    {provider.models.length > 0 && (
+                      <div className="mb-2 last:mb-0">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 flex items-center gap-2 select-none">
+                          <provider.icon className="h-3 w-3" />
+                          {provider.name}
+                        </div>
+                        <div className="space-y-0.5">
+                          {provider.models.map((modelId) => (
+                            <DropdownMenuItem
+                              key={`${provider.id}-${modelId}`}
+                              className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                              onClick={() => handleSelect(provider.id, modelId)}
+                            >
+                              <span className={cn(
+                                "text-sm transition-colors",
+                                selectedModel === modelId ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+                              )}>
+                                {modelId}
+                              </span>
+                              {selectedModel === modelId && (
+                                <motion.div 
+                                  layoutId="active-model-indicator"
+                                  className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
+                                />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                        <DropdownMenuSeparator className="my-1.5 opacity-40" />
+                      </div>
+                    )}
                   </div>
+                ))}
+                
+                <DropdownMenuItem 
+                  className="mt-1 px-3 py-2 cursor-pointer rounded-xl focus:bg-primary/10 text-center justify-center font-bold text-[11px] uppercase tracking-tighter text-primary/80 hover:text-primary transition-all active:scale-95"
+                  onClick={(e) => { e.stopPropagation(); fetchModels(); }}
+                >
+                  Refresh Models
                 </DropdownMenuItem>
-              ))
-            ) : (
-              <div className="px-3 py-2 text-xs text-muted-foreground italic">
-                Add API key in Settings to load models
               </div>
-            )}
-            <DropdownMenuSeparator />
-          </DropdownMenuGroup>
-        ))}
-        <DropdownMenuItem 
-          className="p-3 cursor-pointer rounded-lg focus:bg-muted/50 text-center justify-center font-medium text-primary"
-          onClick={fetchModels}
-        >
-          Refresh Models
-        </DropdownMenuItem>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DropdownMenuContent>
     </DropdownMenu>
   );
