@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDebounce } from '../../hooks/useDebounce';
 import {
   Sidebar,
   SidebarContent,
@@ -53,11 +54,13 @@ interface ChatSidebarProps {
   handlePinChat: (id: string, e: React.MouseEvent) => void;
   handleDeleteChat: (id: string, e: React.MouseEvent) => void;
   profileName: string;
+  profileEmail: string;
   setIsProfileOpen: (val: boolean) => void;
   setIsSettingsOpen: (val: boolean) => void;
   setRecentChats: (chats: ChatSession[]) => void;
   setProfileName: (name: string) => void;
   setProfileEmail: (email: string) => void;
+  handleSwitchSession: (id: string) => void;
 }
 
 export const ChatSidebar = ({
@@ -77,12 +80,18 @@ export const ChatSidebar = ({
   handlePinChat,
   handleDeleteChat,
   profileName,
+  profileEmail,
   setIsProfileOpen,
   setIsSettingsOpen,
   setRecentChats,
   setProfileName,
   setProfileEmail,
+  handleSwitchSession,
+  isIncognito,
+  setIsIncognito,
 }: ChatSidebarProps) => {
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
   return (
     <Sidebar>
       <SidebarHeader data-tauri-drag-region className="p-4 select-none">
@@ -110,8 +119,8 @@ export const ChatSidebar = ({
       <SidebarContent>
         {(() => {
           const filteredChats = recentChats.filter(chat => {
-            if (!searchQuery.trim()) return true;
-            const query = searchQuery.toLowerCase();
+            if (!debouncedSearchQuery.trim()) return true;
+            const query = debouncedSearchQuery.toLowerCase();
             if (chat.title.toLowerCase().includes(query)) return true;
             return chat.messages.some(m => m.content.toLowerCase().includes(query));
           });
@@ -156,12 +165,12 @@ export const ChatSidebar = ({
                               </span>
                             )}
                             <div className="hidden group-hover:flex items-center gap-1 ml-auto">
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={(e) => handlePinChat(chat.id, e)}>
+                              <button className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={(e) => handlePinChat(chat.id, e)}>
                                 <Pin className="h-3.5 w-3.5 fill-current" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => handleDeleteChat(chat.id, e)}>
+                              </button>
+                              <button className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => handleDeleteChat(chat.id, e)}>
                                 <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              </button>
                             </div>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -206,12 +215,12 @@ export const ChatSidebar = ({
                               </span>
                             )}
                             <div className="hidden group-hover:flex items-center gap-1 ml-auto">
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={(e) => handlePinChat(chat.id, e)}>
+                              <button className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={(e) => handlePinChat(chat.id, e)}>
                                 <Pin className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => handleDeleteChat(chat.id, e)}>
+                              </button>
+                              <button className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => handleDeleteChat(chat.id, e)}>
                                 <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              </button>
                             </div>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -250,22 +259,6 @@ export const ChatSidebar = ({
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
-              setRecentChats([]);
-              setMessages([]);
-              setProfileName('Jane Doe');
-              setProfileEmail('jane.doe@example.com');
-              toast.success('Logged out');
-            }}>
-              <LogOut className="h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarFooter>
-    </Sidebar>
-  );
-};
-nuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
               setRecentChats([]);
               setMessages([]);
               setProfileName('Jane Doe');

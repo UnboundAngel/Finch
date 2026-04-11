@@ -18,14 +18,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import Switch from '@/components/ui/sky-toggle';
-import { Message, ChatSession } from '@/src/types/chat';
+import { Message, ChatSession } from '../../types/chat';
 import { ChatArea } from '@/src/components/chat/ChatArea';
 import { ChatInput } from '@/src/components/chat/ChatInput';
 import { ChatSidebar } from '@/src/components/sidebar/ChatSidebar';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
+import { useKeyboardShortcuts } from '@/src/hooks/useKeyboardShortcuts';
 import { ProfileDialog } from '@/src/components/dashboard/ProfileDialog';
 import { SettingsDialog } from '@/src/components/dashboard/SettingsDialog';
+import { ModelSelector } from '@/src/components/chat/ModelSelector';
+import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/ui/sidebar';
 import { WindowControls } from '@/src/components/dashboard/WindowControls';
 
@@ -50,7 +53,8 @@ export function Dashboard() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
-  const [selectedModel, setSelectedModel] = useState('Finch 3.5 Sonnet');
+  const [selectedProvider, setSelectedProvider] = useState('anthropic');
+  const [selectedModel, setSelectedModel] = useState('claude-3-5-sonnet-20240620');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
@@ -93,6 +97,31 @@ export function Dashboard() {
       console.error('Failed to initialize most recent session:', e);
     }
   }, [recentChats, activeSessionId, isIncognito, messages.length]);
+
+  // Load provider config and check for models
+  React.useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config: any = await invoke('get_provider_config');
+        if (config) {
+          // If we have an anthropic key, default to anthropic
+          if (config.anthropic_api_key) {
+            setSelectedProvider('anthropic');
+            setSelectedModel('claude-3-5-sonnet-20240620');
+          } else if (config.openai_api_key) {
+            setSelectedProvider('openai');
+            setSelectedModel('gpt-4o');
+          } else if (config.gemini_api_key) {
+            setSelectedProvider('gemini');
+            setSelectedModel('gemini-1.5-pro');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load provider config:', e);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const handleSwitchSession = (id: string) => {
     const session = recentChats.find(c => c.id === id);
@@ -149,8 +178,10 @@ export function Dashboard() {
       action: {
         label: 'Undo',
         onClick: () => {
-          const restoredChats = [...updatedChats, chatToDelete].sort((a, b) => b.timestamp - a.timestamp);
-          setRecentChats(restoredChats);
+          setRecentChats(prev => {
+            const restoredChats = [...prev, chatToDelete].sort((a, b) => b.timestamp - a.timestamp);
+            return restoredChats;
+          });
         }
       },
       duration: 4000
@@ -246,22 +277,20 @@ export function Dashboard() {
     streamMessage(
       userMessage,
       selectedModel,
+      selectedProvider,
       (token) => {
         if (isFirstToken) {
           setIsThinking(false);
           isFirstToken = false;
-          setMessages(prev => {
-            const next = [...prev, {
-              role: 'ai',
-              content: token,
-              streaming: true,
-              metadata: {
-                timestamp: new Date(),
-                model: selectedModel,
-              }
-            }];
-            return next;
-          });
+          setMessages(prev => [...prev, { 
+            role: 'ai' as const, 
+            content: token, 
+            streaming: true,
+            metadata: {
+              timestamp: new Date(),
+              model: selectedModel
+            }
+          }]);
         } else {
           setMessages(prev => {
             const lastMessage = prev[prev.length - 1];
@@ -284,7 +313,10 @@ export function Dashboard() {
               ...prev.slice(0, -1),
               { ...lastMessage, streaming: false }
             ];
-            updateActiveSessionInList(finalMessages);
+            // Escape React render phase to perform side-effects based on computed new state
+            setTimeout(() => {
+              updateActiveSessionInList(finalMessages);
+            }, 0);
             return finalMessages;
           }
           return prev;
@@ -307,13 +339,23 @@ export function Dashboard() {
           {/* Sidebar */}
           <ChatSidebar 
             recentChats={recentChats}
-            activeSessionId={activeSessionId}
+            activeSessionId={activeSessionId || ''}
             handleSwitchSession={handleSwitchSession}
-            setActiveSessionId={setActiveSessionId}
+            setActiveSessionId={setActiveSessionId as any}
+            setMessages={setMessages}
+            setRecentChats={setRecentChats}
+            handleNewChat={() => {
+              setActiveSessionId(null);
+              setMessages([]);
+            }}
+            profileName={profileName}
+            setProfileName={setProfileName}
+            profileEmail={profileEmail}
+            setProfileEmail={setProfileEmail}
+            isIncognito={isIncognito}
+            setIsIncognito={setIsIncognito}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            handleNewChat={handleNewChat}
-            setMessages={setMessages}
             editingSessionId={editingSessionId}
             setEditingSessionId={setEditingSessionId}
             editingTitle={editingTitle}
@@ -322,12 +364,8 @@ export function Dashboard() {
             handleRenameCommit={handleRenameCommit}
             handlePinChat={handlePinChat}
             handleDeleteChat={handleDeleteChat}
-            profileName={profileName}
             setIsProfileOpen={setIsProfileOpen}
             setIsSettingsOpen={setIsSettingsOpen}
-            setRecentChats={setRecentChats}
-            setProfileName={setProfileName}
-            setProfileEmail={setProfileEmail}
           />
 
 
@@ -345,28 +383,12 @@ export function Dashboard() {
               <div className="flex items-center gap-2 no-drag">
                 <SidebarToggleButton />
                 {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
-                <DropdownMenu>
-                  <DropdownMenuTrigger className={buttonVariants({ variant: "ghost", className: "h-9 px-3 gap-2 rounded-lg hover:bg-muted/50 transition-colors font-semibold text-lg" })}>
-                    {selectedModel}
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-64 rounded-xl shadow-lg border-muted-foreground/20">
-                    <DropdownMenuItem 
-                      className="flex flex-col items-start p-3 cursor-pointer rounded-lg focus:bg-muted/50"
-                      onClick={() => { setSelectedModel('Finch 3.5 Sonnet'); toast.success('Switched to Finch 3.5 Sonnet'); }}
-                    >
-                      <span className="font-medium">Finch 3.5 Sonnet</span>
-                      <span className="text-xs text-muted-foreground mt-1">Most intelligent model</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="flex flex-col items-start p-3 cursor-pointer rounded-lg focus:bg-muted/50"
-                      onClick={() => { setSelectedModel('Finch 3 Haiku'); toast.success('Switched to Finch 3 Haiku'); }}
-                    >
-                      <span className="font-medium">Finch 3 Haiku</span>
-                      <span className="text-xs text-muted-foreground mt-1">Fastest and most compact</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ModelSelector 
+                  selectedProvider={selectedProvider}
+                  setSelectedProvider={setSelectedProvider}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                />
               </div>
               <div className="flex items-center gap-2 mr-4 no-drag">
                 <Button 

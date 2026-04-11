@@ -21,6 +21,7 @@ export function useAIStreaming() {
   const streamMessage = useCallback(async (
     prompt: string,
     model: string,
+    provider: string,
     onToken: (token: string) => void,
     onComplete?: () => void,
     onError?: (error: string) => void
@@ -31,7 +32,7 @@ export function useAIStreaming() {
     if (!isTauri()) {
       console.warn("streamMessage called outside of Tauri context. Mocking stream.");
       // Mock stream
-      const tokens = `This is a mocked streaming response from Rust using ${model}. You said: "${prompt}"`.split(" ");
+      const tokens = `This is a mocked streaming response from Rust using ${provider}:${model}. You said: "${prompt}"`.split(" ");
       for (let i = 0; i < tokens.length; i++) {
         if (!isStreaming) break; // Simple mock abort
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -44,11 +45,11 @@ export function useAIStreaming() {
 
     try {
       const channel = new Channel<string>();
-      channel.onData((token) => {
+      channel.onmessage = (token) => {
         onToken(token);
-      });
+      };
 
-      await invoke("stream_message", { prompt, model, channel });
+      await invoke("stream_message", { prompt, model, provider, channel });
       setIsStreaming(false);
       onComplete?.();
     } catch (err: any) {

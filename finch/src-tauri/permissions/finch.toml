@@ -1,0 +1,44 @@
+[[permission]]
+identifier = "allow-get-provider-config"
+description = "Allows the get_provider_config command"
+commands.allow = ["get_provider_config"]
+
+[[permission]]
+identifier = "allow-save-provider-config"
+description = "Allows the save_provider_config command"
+commands.allow = ["save_provider_config"]
+
+[[permission]]
+identifier = "allow-list-anthropic-models"
+description = "Allows the list_anthropic_models command"
+commands.allow = ["list_anthropic_models"]
+
+[[permission]]
+identifier = "allow-list-openai-models"
+description = "Allows the list_openai_models command"
+commands.allow = ["list_openai_models"]
+
+[[permission]]
+identifier = "allow-list-gemini-models"
+description = "Allows the list_gemini_models command"
+commands.allow = ["list_gemini_models"]
+
+[[permission]]
+identifier = "allow-list-local-models"
+description = "Allows the list_local_models command"
+commands.allow = ["list_local_models"]
+
+[[permission]]
+identifier = "allow-send-message"
+description = "Allows the send_message command"
+commands.allow = ["send_message"]
+
+[[permission]]
+identifier = "allow-stream-message"
+description = "Allows the stream_message command"
+commands.allow = ["stream_message"]
+
+[[permission]]
+identifier = "allow-abort-generation"
+description = "Allows the abort_generation command"
+commands.allow = ["abort_generation"]

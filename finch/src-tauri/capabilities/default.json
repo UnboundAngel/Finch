@@ -11,6 +11,15 @@
     "core:window:allow-maximize",
     "core:window:allow-set-resizable",
     "core:window:allow-start-dragging",
-    "allow-greet"
+    "allow-get-provider-config",
+    "allow-save-provider-config",
+    "allow-list-anthropic-models",
+    "allow-list-openai-models",
+    "allow-list-gemini-models",
+    "allow-list-local-models",
+    "allow-send-message",
+    "allow-stream-message",
+    "allow-abort-generation",
+    "store:default"
   ]
 }
