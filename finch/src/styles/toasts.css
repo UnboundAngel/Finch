@@ -10,4 +10,5 @@
 .dark [data-sonner-toast] {
   background: #1e1e1e !important;
   color: white !important;
+  border: none !important;
 }
