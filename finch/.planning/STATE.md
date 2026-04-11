@@ -18,6 +18,11 @@
 - Used grid-rows-[1fr_1fr] for prompt cards to ensure identical height.
 - Implemented custom height/opacity animation for ModelSelector using AnimatePresence.
 
+## Quick Tasks Completed
+| Task | Description | Files | Date |
+|------|-------------|-------|------|
+| Fix prompt card wrapping | Fixed horizontal overflow and ensured row stretching for prompt cards. | `src/components/chat/ChatArea.tsx` | 2026-04-11 |
+
 ## Performance Metrics
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|

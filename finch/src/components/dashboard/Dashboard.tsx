@@ -46,6 +46,18 @@ const SidebarToggleButton = () => {
   );
 };
 
+const SidebarIncognitoController = ({ isIncognito, children }: { isIncognito: boolean, children: React.ReactNode }) => {
+  const { setOpen } = useSidebar();
+  
+  React.useEffect(() => {
+    if (isIncognito) {
+      setOpen(false);
+    }
+  }, [isIncognito, setOpen]);
+
+  return <>{children}</>;
+};
+
 export function Dashboard() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -335,7 +347,11 @@ export function Dashboard() {
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
+        <div className={`flex h-screen w-full overflow-hidden font-sans transition-colors duration-500 ${
+          isIncognito 
+            ? (isDark ? "bg-black" : "bg-neutral-100") 
+            : "bg-background text-foreground"
+        }`}>
           {/* Sidebar */}
           <ChatSidebar 
             recentChats={recentChats}
@@ -370,63 +386,72 @@ export function Dashboard() {
 
 
           {/* Main Content */}
-          <div className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-colors duration-300 ${
-            isIncognito 
-              ? (isDark ? "bg-[#0a0a0a] border-4 border-[#222] text-[#e5e5e5]" : "bg-[#fcfaf2] border-4 border-black text-[#333]")
-              : "bg-background text-foreground"
-          }`}>
-            {/* Header */}
-            <header 
-              data-tauri-drag-region
-              className={`h-14 flex items-center justify-between px-4 sticky top-0 z-10 backdrop-blur-md border-b select-none ${isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-muted-foreground/10'}`}
-            >
-              <div className="flex items-center gap-2 no-drag">
-                <SidebarToggleButton />
-                {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
-                <ModelSelector 
-                  selectedProvider={selectedProvider}
-                  setSelectedProvider={setSelectedProvider}
-                  selectedModel={selectedModel}
-                  setSelectedModel={setSelectedModel}
-                />
-              </div>
-              <div className="flex items-center gap-2 mr-4 no-drag">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={toggleIncognito} 
-                  className={isIncognito ? (isDark ? "text-white" : "text-black") : "text-muted-foreground"}
-                >
-                  <Ghost className="h-5 w-5" />
-                </Button>
-                <Switch checked={isDark} onChange={handleThemeChange} />
-                <WindowControls isIncognito={isIncognito} />
-              </div>
-            </header>
+          <SidebarIncognitoController isIncognito={isIncognito}>
+            <main className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-500 ease-in-out overflow-hidden ${
+              isIncognito 
+                ? (isDark 
+                    ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]" 
+                    : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
+                : "bg-background text-foreground"
+            }`}>
+              {/* Header */}
+              <header 
+                data-tauri-drag-region
+                className={`h-14 flex items-center justify-between px-4 sticky top-0 z-10 backdrop-blur-md transition-all ${
+                  isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-b border-muted-foreground/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 no-drag">
+                  <SidebarToggleButton />
+                  {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
+                  <ModelSelector 
+                    selectedProvider={selectedProvider}
+                    setSelectedProvider={setSelectedProvider}
+                    selectedModel={selectedModel}
+                    setSelectedModel={setSelectedModel}
+                  />
+                </div>
+                <div className="flex items-center gap-2 mr-4 no-drag">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={toggleIncognito} 
+                    className={isIncognito ? (isDark ? "text-white" : "text-black") : "text-muted-foreground"}
+                  >
+                    <Ghost className="h-5 w-5" />
+                  </Button>
+                  <Switch checked={isDark} onChange={handleThemeChange} />
+                  <WindowControls isIncognito={isIncognito} />
+                </div>
+              </header>
 
-            {/* Chat Area */}
-            <ChatArea 
-              messages={messages} 
-              isThinking={isThinking} 
-              selectedModel={selectedModel} 
-              isDark={isDark} 
-              setInput={setInput} 
-            />
+              {/* Chat Area */}
+              <ChatArea 
+                messages={messages} 
+                isThinking={isThinking} 
+                selectedModel={selectedModel} 
+                isDark={isDark} 
+                setInput={setInput}
+                isIncognito={isIncognito}
+              />
 
-            {/* Input Area */}
-            <ChatInput 
-              input={input}
-              setInput={setInput}
-              handleSend={handleSend}
-              onStop={abort}
-              isThinking={isThinking || isStreaming}
-              attachedFile={attachedFile}
-              setAttachedFile={setAttachedFile}
-              isWebSearchActive={isWebSearchActive}
-              setIsWebSearchActive={setIsWebSearchActive}
-              enterToSend={enterToSend}
-            />
-          </div>
+              {/* Input Area */}
+              <ChatInput 
+                input={input}
+                setInput={setInput}
+                handleSend={handleSend}
+                onStop={abort}
+                isThinking={isThinking || isStreaming}
+                attachedFile={attachedFile}
+                setAttachedFile={setAttachedFile}
+                isWebSearchActive={isWebSearchActive}
+                setIsWebSearchActive={setIsWebSearchActive}
+                enterToSend={enterToSend}
+                isIncognito={isIncognito}
+                isDark={isDark}
+              />
+            </main>
+          </SidebarIncognitoController>
         </div>
       </SidebarProvider>
 

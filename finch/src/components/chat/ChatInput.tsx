@@ -14,6 +14,8 @@ interface ChatInputProps {
   isWebSearchActive: boolean;
   setIsWebSearchActive: (val: boolean) => void;
   enterToSend: boolean;
+  isIncognito?: boolean;
+  isDark?: boolean;
 }
 
 export const ChatInput = ({
@@ -27,6 +29,8 @@ export const ChatInput = ({
   isWebSearchActive,
   setIsWebSearchActive,
   enterToSend,
+  isIncognito,
+  isDark,
 }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,9 +60,17 @@ export const ChatInput = ({
   };
 
   return (
-    <div className="flex-shrink-0 w-full p-4 md:p-6 bg-background/80 backdrop-blur-md z-20">
+    <div className={`flex-shrink-0 w-full p-4 md:p-6 z-20 transition-all ${
+      isIncognito ? 'bg-transparent' : 'bg-background/80 backdrop-blur-md'
+    }`}>
       <div className="max-w-3xl mx-auto relative">
-        <div className="relative flex items-end w-full rounded-2xl bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50 transition-all overflow-hidden">
+        <div className={`relative flex items-end w-full rounded-2xl transition-all overflow-hidden ${
+          isIncognito 
+            ? (isDark 
+                ? 'bg-neutral-900 border border-neutral-800 focus-within:border-neutral-700' 
+                : 'bg-white border border-neutral-300 focus-within:border-neutral-400')
+            : 'bg-background border border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50'
+        }`}>
           <div className="flex flex-col w-full">
             {attachedFile && (
               <div className="px-4 pt-3 pb-1">
