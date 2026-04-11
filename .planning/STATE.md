@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-last_updated: "2026-04-11T02:34:16.540Z"
+last_updated: "2026-04-11T02:50:25.533Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 9
-  completed_plans: 7
-  percent: 78
+  total_plans: 12
+  completed_plans: 8
+  percent: 67
 ---
 
 # Project State: Finch
@@ -17,19 +17,19 @@ progress:
 ## Project Reference
 
 - **Core Value**: A fast, local, and extensible desktop AI chat interface that feels like a native application and maintains strict security by routing all LLM calls through Rust IPC.
-- **Current Focus**: Phase 2 - Foundation & Shell.
+- **Current Focus**: Phase 2 complete.
 
 ## Current Position
 
-- **Phase**: 2 - Foundation & Shell
-- **Plan**: 03 - Native Shell & Window UI
-- **Status**: IN_PROGRESS
-- **Progress**: [########--] 88%
+- **Phase**: 3 - Secure AI Streaming
+- **Plan**: 01 - Secure AI Streaming Bridge
+- **Status**: COMPLETED
+- **Progress**: [###       ] 33%
 
 ## Performance Metrics
 
-- **Phases**: 1/4 complete
-- **Plans**: 8/9 complete
+- **Phases**: 2/4 complete
+- **Plans**: 10/12 complete
 - **Success Rate**: 100%
 
 ## Accumulated Context
@@ -49,7 +49,8 @@ progress:
 - [Phase 01-modular-architecture-rich-rendering]: Added remark-gfm to ReactMarkdown to support GitHub Flavored Markdown features like tables and task lists.
 - [Phase 02-foundation-shell]: Migrated Tauri backend from prototype and modernized environment for Tauri v2 standards.
 - [Phase 02-foundation-shell]: Established secure IPC bridge and capability-based permissions for Tauri v2.
-- [Phase 02-foundation-shell]: Icon style (Lucide vs Sketch) is toggled automatically based on Incognito mode.
+- [Phase 02-foundation-shell]: Integrated native window controls (Minimize, Maximize, Close) and drag regions for a native desktop feel.
+- [Phase 03]: Rust-Mediated LLM Communication: Protect the ANTHROPIC_API_KEY by keeping it only in Rust backend.
 
 ### Todos & Blockers
 
@@ -61,7 +62,8 @@ progress:
 - [x] Complete Plan 01-06 (Rich Rendering Upgrade).
 - [x] Complete Plan 02-01 (Tauri v2 Core Migration).
 - [x] Complete Plan 02-02 (Capabilities & Secure Bridge).
-- [ ] Complete Plan 02-03 (Native Shell & Window UI).
+- [x] Complete Plan 02-03 (Native Shell & Window UI).
+- [x] Complete Plan 03-01 (Secure AI Streaming Bridge).
 
 ## Session Continuity
 
@@ -73,5 +75,6 @@ progress:
 ### Current Session
 
 - Completed Phase 1 modularization and rendering upgrades.
-- Started Phase 2: Foundation & Shell.
-- Executed 02-01: Migrated Tauri v2 backend and synchronized build environment.
+- Completed Phase 2: Foundation & Shell (Tauri v2 Shell & IPC Bridge).
+- Started Phase 3: Secure AI Streaming.
+- Completed Phase 3 Plan 01: Secure AI Streaming Bridge.

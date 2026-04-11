@@ -3,7 +3,7 @@
 ## Phases
 
 - [x] **Phase 1: Modular Architecture & Rich Rendering** - Refactor component monolith and implement high-quality Markdown rendering.
-- [ ] **Phase 2: Foundation & Shell** - Establish Tauri v2 shell and secure Rust-to-React bridge.
+- [x] **Phase 2: Foundation & Shell** - Establish Tauri v2 shell and secure Rust-to-React bridge.
 - [ ] **Phase 3: Secure AI Streaming** - Implement real-time Anthropic streaming via secure Rust IPC.
 - [ ] **Phase 4: Session Persistence & Polish** - Enable persistent chat history and manage session lifecycle.
 
@@ -38,7 +38,7 @@ Plans:
   1. The application launches as a native desktop window using Tauri v2.
   2. The React renderer is strictly isolated; all external LLM API calls are routed through Rust IPC commands.
 **Plans**: 3 plans
-**Status**: [To be started]
+**Status**: COMPLETED
 
 Plans:
 - [x] 02-01-PLAN.md — Tauri v2 Core Migration (Dependencies and scripts)
@@ -53,8 +53,14 @@ Plans:
   1. Tokens appear in the UI one-by-one as they are received from the Anthropic API.
   2. User can switch between different AI models (e.g., Claude 3.5 Sonnet vs Haiku) via a UI selector.
   3. User can interrupt/stop an ongoing AI response generation at any time.
-**Plans**: TBD
+**Plans**: 3 plans
+**Status**: IN PROGRESS
 **UI hint**: yes
+
+Plans:
+- [x] 03-01-PLAN.md — Secure Rust AI Bridge & Types
+- [ ] 03-02-PLAN.md — Real-time Token Streaming with Channels
+- [ ] 03-03-PLAN.md — Controls & Interrupts (Abort & Model Selection)
 
 ### Phase 4: Session Persistence & Polish
 **Goal**: Making the application a reliable daily tool with history.
@@ -71,6 +77,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Modular Architecture | 6/6 | Completed | 2026-04-10 |
-| 2. Foundation & Shell | 1/3 | In Progress|  |
-| 3. Secure AI Streaming | 0/1 | Not started | - |
+| 2. Foundation & Shell | 3/3 | Completed | 2026-04-10 |
+| 3. Secure AI Streaming | 1/3 | In Progress|  |
 | 4. Session Persistence | 0/1 | Not started | - |

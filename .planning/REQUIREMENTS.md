@@ -8,7 +8,7 @@
 - [ ] **ARCH-03**: Backend/Renderer Isolation. Ensure all LLM API calls and sensitive data handling occur strictly in the Rust backend, never exposing keys to the React renderer.
 
 ### AI Integration (AI)
-- [ ] **AI-01**: Rust LLM Bridge. Implement a secure IPC bridge in Rust for communicating with the Anthropic API.
+- [x] **AI-01**: Rust LLM Bridge. Implement a secure IPC bridge in Rust for communicating with the Anthropic API.
 - [ ] **AI-02**: Real-time Streaming. Enable token-by-token streaming of AI responses from Rust to the React frontend using Tauri v2 Channels.
 - [ ] **AI-03**: Stop Generation. Allow users to interrupt an ongoing AI response generation.
 - [ ] **AI-04**: Model Selection. Provide a UI for users to switch between different supported AI models (Anthropic focus for v1).
@@ -44,7 +44,7 @@
 | ARCH-01 | Phase 2 | Complete |
 | ARCH-02 | Phase 1 | Complete |
 | ARCH-03 | Phase 1 | Pending |
-| AI-01 | Phase 3 | Pending |
+| AI-01 | Phase 3 | Complete |
 | AI-02 | Phase 3 | Pending |
 | AI-03 | Phase 3 | Pending |
 | AI-04 | Phase 3 | Pending |
