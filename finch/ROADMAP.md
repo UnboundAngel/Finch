@@ -2,8 +2,8 @@
 
 ## Phase 05: Dashboard & Settings Polish
 - [x] R-01: Prompt cards must have equal height and 16px rounded corners.
-- R-02: Settings tabs must use AnimatePresence for non-simultaneous rendering.
-- R-03: Provider cards must use staggered entry animations.
+- [x] R-02: Settings tabs must use AnimatePresence for non-simultaneous rendering.
+- [x] R-03: Provider cards must use staggered entry animations.
 - [x] R-04: Model selector must use compact grouping and motion.
 
 ## Phase 06: Chat Sidebar & Input Refinement
