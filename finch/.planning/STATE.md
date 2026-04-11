@@ -45,6 +45,7 @@ progress:
 | Task | Description | Files | Date |
 |------|-------------|-------|------|
 | Fix prompt card wrapping | Fixed horizontal overflow and ensured row stretching for prompt cards. | `src/components/chat/ChatArea.tsx` | 2026-04-11 |
+| Fix SettingsDialog visuals | Fixed Save button hover visibility and active tab pill clipping/alignment. | `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
 
 ## Performance Metrics
 

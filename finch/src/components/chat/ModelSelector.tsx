@@ -9,11 +9,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Cloud, Cpu, Sparkles, Zap } from 'lucide-react';
+import { ChevronDown, Cloud, Cpu, Sparkles, Zap, Bookmark } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { BookmarkIconButton } from '@/components/ui/bookmark-icon-button';
 
 interface ModelSelectorProps {
   selectedProvider: string;
@@ -29,6 +30,11 @@ interface ProviderModels {
   models: string[];
 }
 
+interface BookmarkedModel {
+  providerId: string;
+  modelId: string;
+}
+
 export const ModelSelector = ({
   selectedProvider,
   setSelectedProvider,
@@ -36,6 +42,7 @@ export const ModelSelector = ({
   setSelectedModel,
 }: ModelSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [bookmarkedModels, setBookmarkedModels] = useState<BookmarkedModel[]>([]);
   const [models, setModels] = useState<{ [key: string]: string[] }>({
     anthropic: [],
     openai: [],
@@ -96,7 +103,35 @@ export const ModelSelector = ({
 
   useEffect(() => {
     fetchModels();
+    // Load bookmarks
+    const saved = localStorage.getItem('finch_bookmarked_models');
+    if (saved) {
+      try {
+        setBookmarkedModels(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse bookmarks", e);
+      }
+    }
   }, []);
+
+  const saveBookmarks = (bookmarks: BookmarkedModel[]) => {
+    localStorage.setItem('finch_bookmarked_models', JSON.stringify(bookmarks));
+  };
+
+  const toggleBookmark = (e: React.MouseEvent, providerId: string, modelId: string) => {
+    e.stopPropagation();
+    const isBookmarked = bookmarkedModels.some(b => b.providerId === providerId && b.modelId === modelId);
+    let newBookmarks;
+    if (isBookmarked) {
+      newBookmarks = bookmarkedModels.filter(b => !(b.providerId === providerId && b.modelId === modelId));
+      toast.info(`Removed ${modelId} from bookmarks`);
+    } else {
+      newBookmarks = [...bookmarkedModels, { providerId, modelId }];
+      toast.success(`Bookmarked ${modelId}`);
+    }
+    setBookmarkedModels(newBookmarks);
+    saveBookmarks(newBookmarks);
+  };
 
   const handleSelect = (providerId: string, modelId: string) => {
     setSelectedProvider(providerId);
@@ -131,6 +166,52 @@ export const ModelSelector = ({
               className="overflow-hidden"
             >
               <div className="max-h-[400px] overflow-y-auto pr-1">
+                {/* Bookmarked Section */}
+                {bookmarkedModels.length > 0 && (
+                  <div className="mb-2">
+                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-500/80 flex items-center gap-2 select-none">
+                      <Bookmark className="h-3 w-3" />
+                      Bookmarked
+                    </div>
+                    <div className="space-y-0.5">
+                      {bookmarkedModels.map((bm) => (
+                        <DropdownMenuItem
+                          key={`bookmark-${bm.providerId}-${bm.modelId}`}
+                          className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                          onClick={() => handleSelect(bm.providerId, bm.modelId)}
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            {(() => {
+                              const provider = providers.find(p => p.id === bm.providerId);
+                              const Icon = provider?.icon;
+                              return Icon ? <Icon className="h-3 w-3 text-muted-foreground/60" /> : null;
+                            })()}
+                            <span className={cn(
+                              "text-sm truncate transition-colors",
+                              selectedModel === bm.modelId ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+                            )}>
+                              {bm.modelId}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <BookmarkIconButton 
+                              isBookmarked={true} 
+                              onToggle={(e) => toggleBookmark(e, bm.providerId, bm.modelId)} 
+                            />
+                            {selectedModel === bm.modelId && (
+                              <motion.div 
+                                layoutId="active-model-indicator-bm"
+                                className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
+                              />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                    <DropdownMenuSeparator className="my-1.5 opacity-40" />
+                  </div>
+                )}
+
                 {providers.map((provider) => (
                   <div key={provider.id}>
                     {provider.models.length > 0 && (
@@ -140,26 +221,35 @@ export const ModelSelector = ({
                           {provider.name}
                         </div>
                         <div className="space-y-0.5">
-                          {provider.models.map((modelId) => (
-                            <DropdownMenuItem
-                              key={`${provider.id}-${modelId}`}
-                              className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
-                              onClick={() => handleSelect(provider.id, modelId)}
-                            >
-                              <span className={cn(
-                                "text-sm transition-colors",
-                                selectedModel === modelId ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
-                              )}>
-                                {modelId}
-                              </span>
-                              {selectedModel === modelId && (
-                                <motion.div 
-                                  layoutId="active-model-indicator"
-                                  className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
-                                />
-                              )}
-                            </DropdownMenuItem>
-                          ))}
+                          {provider.models.map((modelId) => {
+                            const isBookmarked = bookmarkedModels.some(b => b.providerId === provider.id && b.modelId === modelId);
+                            return (
+                              <DropdownMenuItem
+                                key={`${provider.id}-${modelId}`}
+                                className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                                onClick={() => handleSelect(provider.id, modelId)}
+                              >
+                                <span className={cn(
+                                  "text-sm transition-colors",
+                                  selectedModel === modelId ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+                                )}>
+                                  {modelId}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <BookmarkIconButton 
+                                    isBookmarked={isBookmarked} 
+                                    onToggle={(e) => toggleBookmark(e, provider.id, modelId)} 
+                                  />
+                                  {selectedModel === modelId && (
+                                    <motion.div 
+                                      layoutId="active-model-indicator"
+                                      className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
+                                    />
+                                  )}
+                                </div>
+                              </DropdownMenuItem>
+                            );
+                          })}
                         </div>
                         <DropdownMenuSeparator className="my-1.5 opacity-40" />
                       </div>

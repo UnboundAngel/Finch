@@ -75,155 +75,155 @@ export const SettingsDialog = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1">
+          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1.5 overflow-visible items-center">
             <TabsTrigger value="general" className="rounded-lg py-2">General</TabsTrigger>
             <TabsTrigger value="models" className="rounded-lg py-2">Models & Keys</TabsTrigger>
           </TabsList>
 
-          <AnimatePresence mode="wait">
-            {activeTab === 'general' && (
-              <TabsContent value="general" key="general" forceMount asChild>
-                <motion.div 
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="flex flex-col gap-6 py-6"
-                >
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Appearance</h4>
-                    <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">Theme</span>
-                        <span className="text-xs text-muted-foreground">Toggle between light and dark mode</span>
-                      </div>
-                      <Switch checked={isDark} onChange={onThemeChange} />
+          <div className="grid grid-cols-1 grid-rows-1 py-6">
+            <TabsContent value="general" key="general">
+              <motion.div 
+                animate={{ 
+                  opacity: activeTab === 'general' ? 1 : 0,
+                  y: activeTab === 'general' ? 0 : 8,
+                  pointerEvents: activeTab === 'general' ? 'auto' : 'none'
+                }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="col-start-1 row-start-1 flex flex-col gap-6"
+              >
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Appearance</h4>
+                  <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">Theme</span>
+                      <span className="text-xs text-muted-foreground">Toggle between light and dark mode</span>
                     </div>
+                    <Switch checked={isDark} onChange={onThemeChange} />
                   </div>
-                  
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Chat</h4>
-                    <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">Enter to Send</span>
-                        <span className="text-xs text-muted-foreground">Send messages by pressing Enter</span>
-                      </div>
-                      <input 
-                        type="checkbox" 
-                        checked={enterToSend} 
-                        onChange={(e) => {
-                          setEnterToSend(e.target.checked);
-                        }} 
-                        className="h-5 w-5 rounded-lg border-muted-foreground/30 text-primary focus:ring-primary cursor-pointer" 
-                      />
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Chat</h4>
+                  <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">Enter to Send</span>
+                      <span className="text-xs text-muted-foreground">Send messages by pressing Enter</span>
                     </div>
+                    <input 
+                      type="checkbox" 
+                      checked={enterToSend} 
+                      onChange={(e) => {
+                        setEnterToSend(e.target.checked);
+                      }} 
+                      className="h-5 w-5 rounded-lg border-muted-foreground/30 text-primary focus:ring-primary cursor-pointer" 
+                    />
                   </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <h4 className="text-xs font-bold text-destructive uppercase tracking-widest pl-1">Danger Zone</h4>
-                    <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-2xl bg-destructive/5">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-destructive">Clear All Conversations</span>
-                        <span className="text-xs text-muted-foreground">Permanently delete all your chat history.</span>
-                      </div>
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" className="rounded-xl px-4">Clear All</Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-2xl border-muted-foreground/20 shadow-2xl">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-muted-foreground">
-                              This action cannot be undone. This will permanently delete all your 
-                              local chat sessions and clear the current conversation.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter className="gap-2">
-                            <AlertDialogCancel className="rounded-xl border-muted-foreground/20">Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => {
-                                setMessages([]);
-                                setRecentChats([]);
-                                setActiveSessionId(null);
-                                toast.error('All chat history cleared');
-                                onOpenChange(false);
-                              }}
-                            >
-                              Delete Everything
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-destructive uppercase tracking-widest pl-1">Danger Zone</h4>
+                  <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-2xl bg-destructive/5">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium text-destructive">Clear All Conversations</span>
+                      <span className="text-xs text-muted-foreground">Permanently delete all your chat history.</span>
                     </div>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="destructive" size="sm" className="rounded-xl px-4" />}>
+                        Clear All
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-2xl border-muted-foreground/20 shadow-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-muted-foreground">
+                            This action cannot be undone. This will permanently delete all your 
+                            local chat sessions and clear the current conversation.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="gap-2">
+                          <AlertDialogCancel className="rounded-xl border-muted-foreground/20">Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => {
+                              setMessages([]);
+                              setRecentChats([]);
+                              setActiveSessionId(null);
+                              toast.error('All chat history cleared');
+                              onOpenChange(false);
+                            }}
+                          >
+                            Delete Everything
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                </motion.div>
-              </TabsContent>
-            )}
+                </div>
+              </motion.div>
+            </TabsContent>
 
-            {activeTab === 'models' && (
-              <TabsContent value="models" key="models" forceMount asChild>
+            <TabsContent value="models" key="models">
+              <motion.div 
+                animate={{ 
+                  opacity: activeTab === 'models' ? 1 : 0,
+                  y: activeTab === 'models' ? 0 : 8,
+                  pointerEvents: activeTab === 'models' ? 'auto' : 'none'
+                }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="col-start-1 row-start-1"
+              >
                 <motion.div 
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="py-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate={activeTab === 'models' ? "show" : "hidden"}
+                  className="space-y-8 h-[400px] overflow-y-auto px-4 pb-12 scrollbar-hide"
                 >
-                  <motion.div 
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-8 h-[400px] overflow-y-auto pr-2 scrollbar-hide"
-                  >
-                    <ProviderSection 
-                      title="Anthropic" 
-                      icon={Sparkles} 
-                      description="Power Finch with Claude-3 series models."
-                      storeKey="anthropic_api_key"
-                      type="key"
-                      testCommand="list_anthropic_models"
-                    />
-                    <ProviderSection 
-                      title="OpenAI" 
-                      icon={Cloud} 
-                      description="Use GPT-4o, o1, and more."
-                      storeKey="openai_api_key"
-                      type="key"
-                      testCommand="list_openai_models"
-                    />
-                    <ProviderSection 
-                      title="Google Gemini" 
-                      icon={Zap} 
-                      description="Connect Gemini 1.5 Pro and Flash."
-                      storeKey="gemini_api_key"
-                      type="key"
-                      testCommand="list_gemini_models"
-                    />
-                    <ProviderSection 
-                      title="LM Studio" 
-                      icon={Cpu} 
-                      description="Connect local models via LM Studio OpenAI server."
-                      storeKey="lmstudio_endpoint"
-                      type="url"
-                      placeholder="http://localhost:1234"
-                      provider="local_lmstudio"
-                    />
-                    <ProviderSection 
-                      title="Ollama" 
-                      icon={Cpu} 
-                      description="Connect local models running in Ollama."
-                      storeKey="ollama_endpoint"
-                      type="url"
-                      placeholder="http://localhost:11434"
-                      provider="local_ollama"
-                    />
-                  </motion.div>
+                  <ProviderSection 
+                    title="Anthropic" 
+                    icon={Sparkles} 
+                    description="Power Finch with Claude-3 series models."
+                    storeKey="anthropic_api_key"
+                    type="key"
+                    testCommand="list_anthropic_models"
+                  />
+                  <ProviderSection 
+                    title="OpenAI" 
+                    icon={Cloud} 
+                    description="Use GPT-4o, o1, and more."
+                    storeKey="openai_api_key"
+                    type="key"
+                    testCommand="list_openai_models"
+                  />
+                  <ProviderSection 
+                    title="Google Gemini" 
+                    icon={Zap} 
+                    description="Connect Gemini 1.5 Pro and Flash."
+                    storeKey="gemini_api_key"
+                    type="key"
+                    testCommand="list_gemini_models"
+                  />
+                  <ProviderSection 
+                    title="LM Studio" 
+                    icon={Cpu} 
+                    description="Connect local models via LM Studio OpenAI server."
+                    storeKey="lmstudio_endpoint"
+                    type="url"
+                    placeholder="http://localhost:1234"
+                    provider="local_lmstudio"
+                  />
+                  <ProviderSection 
+                    title="Ollama" 
+                    icon={Cpu} 
+                    description="Connect local models running in Ollama."
+                    storeKey="ollama_endpoint"
+                    type="url"
+                    placeholder="http://localhost:11434"
+                    provider="local_ollama"
+                  />
                 </motion.div>
-              </TabsContent>
-            )}
-          </AnimatePresence>
+              </motion.div>
+            </TabsContent>
+          </div>
         </Tabs>
 
         <div className="flex justify-end pt-2">
@@ -328,7 +328,6 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
   return (
     <motion.div 
       variants={itemVariants}
-      whileHover={{ scale: 1.01, translateY: -2 }}
       whileTap={{ scale: 0.98 }}
       className="space-y-4 p-5 border rounded-2xl bg-muted/5 transition-all hover:bg-muted/10 hover:border-primary/30 group"
     >
@@ -362,7 +361,7 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
             </div>
             <Button 
               variant="outline" 
-              className="rounded-xl h-11 px-4 hover:bg-primary hover:text-primary-foreground transition-all"
+              className="rounded-xl h-11 px-4 hover:bg-primary hover:text-white transition-all"
               onClick={handleSave}
               disabled={isSaving}
             >
