@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use reqwest::Client;
 use futures_util::StreamExt;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Message {
@@ -121,7 +123,12 @@ impl AnthropicClient {
         Ok(anthropic_response)
     }
 
-    pub async fn stream_anthropic(&self, request: AnthropicRequest, channel: tauri::ipc::Channel<String>) -> Result<(), String> {
+    pub async fn stream_anthropic(
+        &self, 
+        request: AnthropicRequest, 
+        channel: tauri::ipc::Channel<String>,
+        abort_flag: Arc<AtomicBool>
+    ) -> Result<(), String> {
         let response = self.client
             .post("https://api.anthropic.com/v1/messages")
             .header("x-api-key", &self.api_key)
@@ -141,6 +148,12 @@ impl AnthropicClient {
         let mut buffer = String::new();
 
         while let Some(item) = stream.next().await {
+            // Check for abort
+            if abort_flag.load(Ordering::SeqCst) {
+                println!("Stream aborted by user in Rust loop.");
+                break;
+            }
+
             let chunk = item.map_err(|e| e.to_string())?;
             let text = String::from_utf8_lossy(&chunk);
             buffer.push_str(&text);

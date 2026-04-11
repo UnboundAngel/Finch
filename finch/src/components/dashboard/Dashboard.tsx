@@ -62,7 +62,7 @@ export function Dashboard() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
-  const { streamMessage } = useAIStreaming();
+  const { streamMessage, abort } = useAIStreaming();
 
   useChatPersistence({
     setRecentChats,
@@ -171,6 +171,7 @@ export function Dashboard() {
     let isFirstToken = true;
     streamMessage(
       userMessage,
+      selectedModel,
       (token) => {
         if (isFirstToken) {
           setIsThinking(false);
@@ -209,6 +210,7 @@ export function Dashboard() {
           }
           return prev;
         });
+        setIsThinking(false);
       },
       (error) => {
         // onError
@@ -312,7 +314,8 @@ export function Dashboard() {
               input={input}
               setInput={setInput}
               handleSend={handleSend}
-              isThinking={isThinking}
+              onStop={abort}
+              isThinking={isThinking || isStreaming}
               attachedFile={attachedFile}
               setAttachedFile={setAttachedFile}
               isWebSearchActive={isWebSearchActive}

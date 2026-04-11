@@ -1,12 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Globe, Send } from 'lucide-react';
+import { Paperclip, Globe, Send, Square } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ChatInputProps {
   input: string;
   setInput: (val: string) => void;
   handleSend: () => void;
+  onStop?: () => void;
   isThinking: boolean;
   attachedFile: File | null;
   setAttachedFile: (file: File | null) => void;
@@ -19,6 +20,7 @@ export const ChatInput = ({
   input,
   setInput,
   handleSend,
+  onStop,
   isThinking,
   attachedFile,
   setAttachedFile,
@@ -111,11 +113,15 @@ export const ChatInput = ({
               </div>
               <Button 
                 size="icon" 
-                className={`h-8 w-8 rounded-lg transition-all ${input.trim() && !isThinking ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground cursor-not-allowed'}`}
-                disabled={!input.trim() || isThinking}
-                onClick={handleSend}
+                className={`h-8 w-8 rounded-lg transition-all ${
+                  isThinking 
+                    ? 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90' 
+                    : (input.trim() ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed')
+                }`}
+                disabled={!isThinking && !input.trim()}
+                onClick={isThinking ? onStop : handleSend}
               >
-                <Send className="h-4 w-4" />
+                {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
               </Button>
             </div>
           </div>
