@@ -1,34 +1,9 @@
-[data-sonner-toaster] {
-  --width: 380px !important;
-}
-
 [data-sonner-toast] {
   background: white !important;
   color: #111 !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  position: relative !important;
-  overflow: hidden !important;
 }
 
 .dark [data-sonner-toast] {
   background: #1e1e1e !important;
   color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-[data-sonner-toast]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.06;
-  background-size: 256px 256px;
-  background-repeat: repeat;
-  mix-blend-mode: overlay;
-  background-image: url('/assets/light-grain.png');
-}
-
-.dark [data-sonner-toast]::after {
-  background-image: url('/assets/dark-grain.png');
 }
