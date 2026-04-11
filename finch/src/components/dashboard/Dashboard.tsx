@@ -76,14 +76,35 @@ export function Dashboard() {
     setEnterToSend,
   });
 
+  const hasInitialized = React.useRef(false);
+
   // Auto-load most recent session on startup
   React.useEffect(() => {
-    if (recentChats.length > 0 && !activeSessionId && !isIncognito && messages.length === 0) {
-      const mostRecent = recentChats[0];
-      setActiveSessionId(mostRecent.id);
-      setMessages(mostRecent.messages);
+    try {
+      if (!hasInitialized.current && recentChats.length > 0) {
+        hasInitialized.current = true;
+        if (!activeSessionId && !isIncognito && messages.length === 0) {
+          const mostRecent = recentChats[0];
+          setActiveSessionId(mostRecent.id);
+          setMessages(mostRecent.messages);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to initialize most recent session:', e);
     }
   }, [recentChats, activeSessionId, isIncognito, messages.length]);
+
+  const handleSwitchSession = (id: string) => {
+    const session = recentChats.find(c => c.id === id);
+    if (session) {
+      if (isIncognito) {
+        setIsIncognito(false);
+      }
+      setActiveSessionId(id);
+      setMessages(session.messages || []);
+      toast(`Opened chat: ${session.title}`);
+    }
+  };
 
   const handleNewChat = () => {
     setActiveSessionId(null);
@@ -279,12 +300,11 @@ export function Dashboard() {
           <ChatSidebar 
             recentChats={recentChats}
             activeSessionId={activeSessionId}
+            handleSwitchSession={handleSwitchSession}
             setActiveSessionId={setActiveSessionId}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             handleNewChat={handleNewChat}
-            isIncognito={isIncognito}
-            setIsIncognito={setIsIncognito}
             setMessages={setMessages}
             editingSessionId={editingSessionId}
             setEditingSessionId={setEditingSessionId}

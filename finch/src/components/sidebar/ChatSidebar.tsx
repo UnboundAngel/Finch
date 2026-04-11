@@ -67,8 +67,6 @@ export const ChatSidebar = ({
   searchQuery,
   setSearchQuery,
   handleNewChat,
-  isIncognito,
-  setIsIncognito,
   setMessages,
   editingSessionId,
   setEditingSessionId,
@@ -131,12 +129,7 @@ export const ChatSidebar = ({
                           <SidebarMenuButton 
                             isActive={activeSessionId === chat.id}
                             className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-muted text-foreground' : ''}`} 
-                            onClick={() => { 
-                              if (isIncognito) setIsIncognito(false);
-                              setActiveSessionId(chat.id);
-                              setMessages(chat.messages || []); 
-                              toast(`Opened chat: ${chat.title}`); 
-                            }}
+                            onClick={() => handleSwitchSession(chat.id)}
                           >
                             {getChatIcon(chat.type)}
                             {editingSessionId === chat.id ? (
@@ -186,12 +179,7 @@ export const ChatSidebar = ({
                           <SidebarMenuButton 
                             isActive={activeSessionId === chat.id}
                             className={`h-10 px-4 hover:bg-muted/50 rounded-lg mx-2 transition-colors text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-muted text-foreground' : ''}`} 
-                            onClick={() => { 
-                              if (isIncognito) setIsIncognito(false);
-                              setActiveSessionId(chat.id);
-                              setMessages(chat.messages || []); 
-                              toast(`Opened chat: ${chat.title}`); 
-                            }}
+                            onClick={() => handleSwitchSession(chat.id)}
                           >
                             {getChatIcon(chat.type)}
                             {editingSessionId === chat.id ? (
@@ -261,6 +249,22 @@ export const ChatSidebar = ({
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
+              setRecentChats([]);
+              setMessages([]);
+              setProfileName('Jane Doe');
+              setProfileEmail('jane.doe@example.com');
+              toast.success('Logged out');
+            }}>
+              <LogOut className="h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
+    </Sidebar>
+  );
+};
+nuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
               setRecentChats([]);
               setMessages([]);
               setProfileName('Jane Doe');
