@@ -35,11 +35,33 @@ async fn send_message(prompt: String) -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+async fn stream_message(prompt: String, channel: tauri::ipc::Channel<String>) -> Result<(), String> {
+    println!("Rust received stream request: {}", prompt);
+
+    let api_key = env::var("ANTHROPIC_API_KEY").map_err(|_| "ANTHROPIC_API_KEY not set".to_string())?;
+    let client = AnthropicClient::new(api_key);
+
+    let request = AnthropicRequest {
+        model: "claude-3-5-sonnet-20240620".to_string(),
+        messages: vec![Message {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+        max_tokens: 1024,
+        stream: true,
+    };
+
+    client.stream_anthropic(request, channel).await?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, send_message])
+        .invoke_handler(tauri::generate_handler![greet, send_message, stream_message])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
