@@ -11,7 +11,7 @@ export default function App() {
   return (
     <>
       <Dashboard />
-      <Toaster position="top-right" visibleToasts={3} />
+      <Toaster position="top-right" visibleToasts={3} offset={72} />
     </>
   );
 }

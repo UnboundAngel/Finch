@@ -1,3 +1,7 @@
+[data-sonner-toaster] {
+  --width: 40vw !important;
+}
+
 [data-sonner-toast] {
   background: white !important;
   color: #111 !important;
