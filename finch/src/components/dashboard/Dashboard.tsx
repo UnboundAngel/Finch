@@ -426,6 +426,7 @@ export function Dashboard() {
         setEnterToSend={setEnterToSend}
         setMessages={setMessages}
         setRecentChats={setRecentChats}
+        setActiveSessionId={setActiveSessionId}
       />
 
     </TooltipProvider>

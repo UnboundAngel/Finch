@@ -20,6 +20,7 @@ interface SettingsDialogProps {
   setEnterToSend: (enter: boolean) => void;
   setMessages: (messages: Message[]) => void;
   setRecentChats: (chats: ChatSession[]) => void;
+  setActiveSessionId: (id: string | null) => void;
 }
 
 export const SettingsDialog = ({
@@ -31,6 +32,7 @@ export const SettingsDialog = ({
   setEnterToSend,
   setMessages,
   setRecentChats,
+  setActiveSessionId,
 }: SettingsDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -69,16 +71,24 @@ export const SettingsDialog = ({
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
               />
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/10">
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-destructive uppercase tracking-wider">Danger Zone</h4>
+            <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-xl bg-destructive/5">
               <div className="flex flex-col gap-1">
-                <span className="font-medium">Clear Chat History</span>
-                <span className="text-xs text-muted-foreground">Permanently delete all your chats</span>
+                <span className="font-medium text-destructive">Clear All Conversations</span>
+                <span className="text-xs text-muted-foreground">Permanently delete all your chat history. This action cannot be undone.</span>
               </div>
               <Button variant="destructive" size="sm" className="rounded-lg" onClick={() => {
-                setMessages([]);
-                setRecentChats([]);
-                toast.error('Chat history cleared');
-              }}>Clear</Button>
+                if (window.confirm("Are you sure you want to delete all your chat history? This action cannot be undone.")) {
+                  setMessages([]);
+                  setRecentChats([]);
+                  setActiveSessionId(null);
+                  toast.error('All chat history cleared');
+                  onOpenChange(false);
+                }
+              }}>Clear All</Button>
             </div>
           </div>
         </div>
