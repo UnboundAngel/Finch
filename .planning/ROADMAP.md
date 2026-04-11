@@ -2,7 +2,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Modular Architecture & Rich Rendering** - Refactor component monolith and implement high-quality Markdown rendering.
+- [x] **Phase 1: Modular Architecture & Rich Rendering** - Refactor component monolith and implement high-quality Markdown rendering.
 - [ ] **Phase 2: Foundation & Shell** - Establish Tauri v2 shell and secure Rust-to-React bridge.
 - [ ] **Phase 3: Secure AI Streaming** - Implement real-time Anthropic streaming via secure Rust IPC.
 - [ ] **Phase 4: Session Persistence & Polish** - Enable persistent chat history and manage session lifecycle.
@@ -19,13 +19,14 @@
   3. Code blocks within chat messages display theme-aware syntax highlighting.
   4. The sidebar is fully functional for navigating between recent and pinned chat items.
 **Plans**: 6 plans
+**Status**: COMPLETED
 **UI hint**: yes
 
 Plans:
-- [ ] 01-01-PLAN.md — Foundation & Shared Utilities (Types, Helpers, small UI)
+- [x] 01-01-PLAN.md — Foundation & Shared Utilities (Types, Helpers, small UI)
 - [x] 01-02-PLAN.md — Persistence & Dialogs (Hooks, Profile/Settings modals)
 - [x] 01-03-PLAN.md — Message Rendering Components (CodeBlock, MessageBubble, ChatArea)
-- [ ] 01-04-PLAN.md — Chat Input & Sidebar (Composer and Navigation)
+- [x] 01-04-PLAN.md — Chat Input & Sidebar (Composer and Navigation)
 - [x] 01-05-PLAN.md — Final Dashboard Orchestrator (Monolith replacement and wiring)
 - [x] 01-06-PLAN.md — Rich Rendering Upgrade (Shiki and GFM)
 
@@ -36,7 +37,13 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. The application launches as a native desktop window using Tauri v2.
   2. The React renderer is strictly isolated; all external LLM API calls are routed through Rust IPC commands.
-**Plans**: TBD
+**Plans**: 3 plans
+**Status**: [To be started]
+
+Plans:
+- [x] 02-01-PLAN.md — Tauri v2 Core Migration (Dependencies and scripts)
+- [ ] 02-02-PLAN.md — Capabilities & Secure Bridge (IPC and permissions)
+- [ ] 02-03-PLAN.md — Native Shell & Window UI (Controls and drag-regions)
 
 ### Phase 3: Secure AI Streaming
 **Goal**: Real-time AI chat capability with secure backend mediation.
@@ -63,7 +70,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Modular Architecture | 4/6 | In Progress|  |
-| 2. Foundation & Shell | 0/1 | Not started | - |
+| 1. Modular Architecture | 6/6 | Completed | 2026-04-10 |
+| 2. Foundation & Shell | 1/3 | In Progress|  |
 | 3. Secure AI Streaming | 0/1 | Not started | - |
 | 4. Session Persistence | 0/1 | Not started | - |
