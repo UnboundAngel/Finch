@@ -56,13 +56,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import Switch from '@/components/ui/sky-toggle';
 import ReactMarkdown from 'react-markdown';
@@ -74,6 +67,8 @@ import { getChatIcon } from '../src/lib/chatHelpers';
 import { ThinkingBox } from '../src/components/chat/ThinkingBox';
 import { MetadataRow } from '../src/components/chat/MetadataRow';
 import { useChatPersistence } from '../src/hooks/useChatPersistence';
+import { ProfileDialog } from '../src/components/dashboard/ProfileDialog';
+import { SettingsDialog } from '../src/components/dashboard/SettingsDialog';
 
 const SidebarToggleButton = () => {
 
@@ -757,112 +752,25 @@ export function Dashboard() {
         </div>
       </SidebarProvider>
 
-      {/* Profile Dialog */}
-      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold">Profile</DialogTitle>
-            <DialogDescription>
-              Manage your public profile and personal details.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-6 py-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 rounded-full border-2 border-muted">
-                <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop&crop=faces" alt="User" />
-                <AvatarFallback className="text-2xl">JD</AvatarFallback>
-              </Avatar>
-              <Button variant="outline" size="sm" className="rounded-lg">Change Picture</Button>
-            </div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Full Name</label>
-                <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} className="rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email Address</label>
-                <Input value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} type="email" className="rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Current Plan</label>
-                <div className="flex items-center justify-between p-3 border rounded-xl bg-muted/20">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-primary">Pro Plan</span>
-                    <span className="text-xs text-muted-foreground">Billed monthly</span>
-                  </div>
-                  <Button variant="secondary" size="sm" className="rounded-lg">Manage</Button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <Button variant="ghost" onClick={() => setIsProfileOpen(false)} className="rounded-xl">Cancel</Button>
-            <Button onClick={() => { 
-              localStorage.setItem('finch_profile', JSON.stringify({ name: profileName, email: profileEmail }));
-              setIsProfileOpen(false); 
-              toast.success('Profile updated successfully'); 
-            }} className="rounded-xl">Save Changes</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProfileDialog 
+        isOpen={isProfileOpen} 
+        onOpenChange={setIsProfileOpen}
+        profileName={profileName}
+        setProfileName={setProfileName}
+        profileEmail={profileEmail}
+        setProfileEmail={setProfileEmail}
+      />
 
-      {/* Settings Dialog */}
-      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-semibold">Settings</DialogTitle>
-            <DialogDescription>
-              Customize your app experience and preferences.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-6 py-4">
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Appearance</h4>
-              <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/10">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Theme</span>
-                  <span className="text-xs text-muted-foreground">Toggle between light and dark mode</span>
-                </div>
-                <Switch checked={isDark} onChange={handleThemeChange} />
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Chat</h4>
-              <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/10">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Enter to Send</span>
-                  <span className="text-xs text-muted-foreground">Send messages by pressing Enter</span>
-                </div>
-                <input 
-                  type="checkbox" 
-                  checked={enterToSend} 
-                  onChange={(e) => {
-                    setEnterToSend(e.target.checked);
-                    localStorage.setItem('finch_enter_to_send', String(e.target.checked));
-                  }} 
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" 
-                />
-              </div>
-              <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/10">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium">Clear Chat History</span>
-                  <span className="text-xs text-muted-foreground">Permanently delete all your chats</span>
-                </div>
-                <Button variant="destructive" size="sm" className="rounded-lg" onClick={() => {
-                  setMessages([]);
-                  setRecentChats([]);
-                  localStorage.removeItem('finch_chats');
-                  toast.error('Chat history cleared');
-                }}>Clear</Button>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end mt-4">
-            <Button onClick={() => setIsSettingsOpen(false)} className="rounded-xl">Done</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SettingsDialog 
+        isOpen={isSettingsOpen} 
+        onOpenChange={setIsSettingsOpen}
+        isDark={isDark}
+        onThemeChange={handleThemeChange}
+        enterToSend={enterToSend}
+        setEnterToSend={setEnterToSend}
+        setMessages={setMessages}
+        setRecentChats={setRecentChats}
+      />
 
     </TooltipProvider>
   );
