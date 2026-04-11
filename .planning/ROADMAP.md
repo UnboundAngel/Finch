@@ -42,8 +42,8 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Tauri v2 Core Migration (Dependencies and scripts)
-- [ ] 02-02-PLAN.md — Capabilities & Secure Bridge (IPC and permissions)
-- [ ] 02-03-PLAN.md — Native Shell & Window UI (Controls and drag-regions)
+- [x] 02-02-PLAN.md — Capabilities & Secure Bridge (IPC and permissions)
+- [x] 02-03-PLAN.md — Native Shell & Window UI (Controls and drag-regions)
 
 ### Phase 3: Secure AI Streaming
 **Goal**: Real-time AI chat capability with secure backend mediation.

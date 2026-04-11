@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-last_updated: "2026-04-11T02:26:23.591Z"
+last_updated: "2026-04-11T02:34:16.540Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
   completed_plans: 7
-  percent: 77
+  percent: 78
 ---
 
 # Project State: Finch
@@ -22,14 +22,14 @@ progress:
 ## Current Position
 
 - **Phase**: 2 - Foundation & Shell
-- **Plan**: 01 - Tauri v2 Core Migration
-- **Status**: COMPLETED
-- **Progress**: [##########] 100%
+- **Plan**: 03 - Native Shell & Window UI
+- **Status**: IN_PROGRESS
+- **Progress**: [########--] 88%
 
 ## Performance Metrics
 
 - **Phases**: 1/4 complete
-- **Plans**: 7/9 complete
+- **Plans**: 8/9 complete
 - **Success Rate**: 100%
 
 ## Accumulated Context
@@ -48,6 +48,8 @@ progress:
 - [Phase 01-modular-architecture-rich-rendering]: Implemented an async singleton pattern for Shiki's createHighlighter to avoid re-initialization and ensure smooth rendering.
 - [Phase 01-modular-architecture-rich-rendering]: Added remark-gfm to ReactMarkdown to support GitHub Flavored Markdown features like tables and task lists.
 - [Phase 02-foundation-shell]: Migrated Tauri backend from prototype and modernized environment for Tauri v2 standards.
+- [Phase 02-foundation-shell]: Established secure IPC bridge and capability-based permissions for Tauri v2.
+- [Phase 02-foundation-shell]: Icon style (Lucide vs Sketch) is toggled automatically based on Incognito mode.
 
 ### Todos & Blockers
 
@@ -58,6 +60,8 @@ progress:
 - [x] Complete Plan 01-05 (Final Orchestrator).
 - [x] Complete Plan 01-06 (Rich Rendering Upgrade).
 - [x] Complete Plan 02-01 (Tauri v2 Core Migration).
+- [x] Complete Plan 02-02 (Capabilities & Secure Bridge).
+- [ ] Complete Plan 02-03 (Native Shell & Window UI).
 
 ## Session Continuity
 
