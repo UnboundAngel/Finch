@@ -79,7 +79,7 @@ export const MessageBubble = ({ msg, selectedModel, isDark, isLatest, isIncognit
             </ReactMarkdown>
           </div>
         </div>
-        {msg.role === 'ai' && msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest} />}
+        {msg.role === 'ai' && msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} />}
       </div>
     </div>
   );
