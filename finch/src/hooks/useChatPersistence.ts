@@ -75,6 +75,7 @@ export const useChatPersistence = ({
                 // Ensure chat has required fields for the new format
                 const migratedChat: ChatSession = {
                   ...chat,
+                  created_at: chat.created_at || Date.now(),
                   pinned: chat.pinned ?? false,
                   incognito: chat.incognito ?? false,
                   systemPrompt: chat.systemPrompt ?? '',
