@@ -39,7 +39,7 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
       />
       
       <div className="flex-1 min-h-0 overflow-y-auto w-full relative z-10 scroll-smooth">
-        <div className="max-w-3xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-8 pb-12">
+        <div className="max-w-3xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-8 pb-10">
           
           {/* Empty State / Welcome */}
           {messages.length === 0 && (
@@ -62,9 +62,18 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center text-center mt-20 mb-10 space-y-6">
-                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-2 shadow-sm border border-primary/20">
-                  <MessageSquare className="h-8 w-8 text-primary" />
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="h-32 w-32 rounded-[2.5rem] bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-xl flex items-center justify-center mb-4 shadow-2xl border border-zinc-200/50 dark:border-zinc-800/50"
+                >
+                  <img 
+                    src="/assets/finch.svg" 
+                    className="h-24 w-24 object-contain select-none" 
+                    alt="Finch Logo" 
+                  />
+                </motion.div>
                 <h1 className="text-3xl font-semibold tracking-tight">How can I help you today?</h1>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8 items-stretch">
@@ -133,6 +142,8 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
           <div ref={messagesEndRef} />
         </div>
       </div>
+      {/* Bottom Fade Overlay */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pointer-events-none" />
     </div>
   );
 };

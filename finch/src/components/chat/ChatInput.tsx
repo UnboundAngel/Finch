@@ -60,7 +60,7 @@ export const ChatInput = ({
   };
 
   return (
-    <div className={`flex-shrink-0 w-full p-4 md:p-6 z-20 transition-all ${
+    <div className={`flex-shrink-0 w-full pt-3 px-4 pb-1.5 md:pt-4 md:px-6 md:pb-2 z-20 transition-all ${
       isIncognito ? 'bg-transparent' : 'bg-background/80 backdrop-blur-md'
     }`}>
       <div className="max-w-3xl mx-auto relative">
@@ -93,7 +93,7 @@ export const ChatInput = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Finch..."
+              placeholder="Message..."
               className="w-full max-h-[40vh] min-h-[56px] resize-none bg-transparent px-4 py-4 text-sm focus:outline-none placeholder:text-muted-foreground/70"
               rows={1}
             />
@@ -140,8 +140,8 @@ export const ChatInput = ({
             </div>
           </div>
         </div>
-        <div className="text-center mt-2">
-          <span className="text-[10px] text-muted-foreground/70">Finch can make mistakes. Please verify important information.</span>
+        <div className="text-center mt-1">
+          <span className="text-[10px] text-muted-foreground/70">AI can make mistakes. Please verify important information.</span>
         </div>
       </div>
     </div>
