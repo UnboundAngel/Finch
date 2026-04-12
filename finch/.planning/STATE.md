@@ -4,22 +4,22 @@ milestone: v1.0
 milestone_name: milestone
 status: in_progress
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 10
-  total_plans: 14
+  total_plans: 15
   completed_plans: 14
-  percent: 100
+  percent: 93
 ---
 
 # STATE — Finch
 
-## Current Phase: Phase 10
+## Current Phase: Phase 09.6
 
 ## Status: Planning
 
 ## Current Plan: None
 
-## Progress: 100% [##########]
+## Progress: 93% [######### ]
 
 ## Completed Phases
 
@@ -40,7 +40,7 @@ progress:
 
 ## Active Phase
 
-- Phase 10: Voice & Search (Planned)
+- Phase 09.6: Dark Mode SVG Fixes (Planning)
 
 
 ## Decisions
@@ -48,7 +48,7 @@ progress:
 - [Phase 09.2]: Used `LogOut` icon as a substitute for "Eject/Unload" for local models.
 - [Phase 09.3]: Root layout set to `flex flex-col` to support vertical tiering of bars and zone.
 - [Phase 09.3]: Lifted `isLeftSidebarOpen` state to `Dashboard` level to allow control from the Top Bar (outside SidebarProvider).
-- [Phase 09.3]: Modified `Sidebar` component to support `absolute` positioning within a constrained Zone.
+- [Phase 09.3]: Modified `Sidebar` component to support `absolute` positioning within a constrained Zone. 
 - [Phase 09.3-layout-polish]: Decoupled header from SidebarProvider to prevent header shifts on sidebar toggle
 - [Phase 09.3-layout-polish]: Controlled left sidebar state at the Dashboard level for better layout management
 - [Phase 09.3-layout-polish]: Restricted data-tauri-drag-region exclusively to the top 14px bar

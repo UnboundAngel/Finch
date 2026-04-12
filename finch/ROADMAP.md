@@ -77,4 +77,11 @@
 **Plans:** 1 plans
 - [x] 09.5-01-PLAN.md — Fix Sidebar Icon & Chat Migration (Completed)
 
+## Phase 09.6: Dark Mode SVG Fixes
+**Requirements:** [R-09.6-01]
+- [ ] R-09.6-01: Ensure all SVG icons in Dashboard are visible in dark mode via `dark:invert` class.
+
+**Plans:** 1 plan
+- [ ] 09.6-01-PLAN.md — Add dark:invert to Dashboard icons.
+
 ## Phase 10: Voice & Search (Planned)
