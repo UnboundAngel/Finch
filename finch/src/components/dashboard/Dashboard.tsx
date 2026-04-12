@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Ghost,
+  Eject,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -436,15 +437,8 @@ export function Dashboard() {
                 <div className="flex items-center gap-2 no-drag">
                   <SidebarToggleButton />
                   {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
-                  <ModelSelector 
-                    selectedProvider={selectedProvider}
-                    setSelectedProvider={setSelectedProvider}
-                    selectedModel={selectedModel}
-                    setSelectedModel={setSelectedModel}
-                  />
                 </div>
                 <div className="flex items-center gap-4 no-drag">
-                  {/* Group 1: Chat Controls */}
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="ghost" 
@@ -454,6 +448,43 @@ export function Dashboard() {
                     >
                       <Ghost className="h-5 w-5" />
                     </Button>
+                  </div>
+
+                  <Separator orientation="vertical" className="h-4" />
+
+                  <div className="flex items-center gap-4">
+                    <Switch checked={isDark} onChange={handleThemeChange} />
+                    <WindowControls isIncognito={isIncognito} />
+                  </div>
+                </div>
+              </header>
+
+              {/* Model & View Controls Bar */}
+              {!isIncognito && (
+                <div className="h-12 flex items-center justify-between px-4 border-b border-muted-foreground/10 bg-background/50 backdrop-blur-md z-10 sticky top-14 no-drag">
+                  <div className="flex-1" />
+                  <div className="flex-1 flex justify-center">
+                    <ModelSelector 
+                      selectedProvider={selectedProvider}
+                      setSelectedProvider={setSelectedProvider}
+                      selectedModel={selectedModel}
+                      setSelectedModel={setSelectedModel}
+                    />
+                  </div>
+                  <div className="flex-1 flex items-center justify-end gap-2">
+                    {selectedProvider.startsWith('local_') && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => {
+                          setSelectedModel('');
+                          setSelectedProvider('');
+                        }}
+                      >
+                        <Eject className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -467,16 +498,8 @@ export function Dashboard() {
                       />
                     </Button>
                   </div>
-
-                  <Separator orientation="vertical" className="h-4" />
-
-                  {/* Group 2: System Controls */}
-                  <div className="flex items-center gap-4">
-                    <Switch checked={isDark} onChange={handleThemeChange} />
-                    <WindowControls isIncognito={isIncognito} />
-                  </div>
                 </div>
-              </header>
+              )}
 
               {/* Chat Area */}
               <ChatArea 
