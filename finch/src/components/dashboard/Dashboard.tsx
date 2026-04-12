@@ -9,7 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Ghost,
-  Eject,
+  LogOut,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -482,7 +482,7 @@ export function Dashboard() {
                           setSelectedProvider('');
                         }}
                       >
-                        <Eject className="h-4 w-4" />
+                        <LogOut className="h-4 w-4" />
                       </Button>
                     )}
                     <Button
