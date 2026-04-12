@@ -20,6 +20,10 @@
     "allow-send-message",
     "allow-stream-message",
     "allow-abort-generation",
+    "allow-list-chats",
+    "allow-load-chat",
+    "allow-save-chat",
+    "allow-delete-chat",
     "store:default"
   ]
 }

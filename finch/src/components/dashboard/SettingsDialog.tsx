@@ -294,7 +294,7 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
         }
       });
 
-      await invoke('save_provider_config', { config: updatedConfig });
+      await invoke('save_provider_config', { config: cleanConfig });
       toast.success(`${title} settings updated`);
     } catch (e) {
       toast.error(`Failed to save ${title} settings`);

@@ -10,7 +10,7 @@
 - [x] R-05: Sidebar active chats must use violet accent and clear distinction.
 - [x] R-06: Web search toggle must use blue stroke and border glow.
 - [x] R-07: Dark mode toasts must be frosted semi-transparent.
-- R-08: Message stats must show real-time speed/cost with auto-fade.
+- [x] R-08: Message stats must show real-time performance metrics (stop_reason, total_tokens, tokens/s) with hover-reveal.
 
 ## Phase 07: Chat System Fixes
 - R-09: Incognito chats must not persist after session ends.

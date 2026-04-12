@@ -11,4 +11,10 @@
   background: #1e1e1e !important;
   color: white !important;
   border: none !important;
+  background-image: url('/assets/dark-grain.png') !important;
+}
+[data-sonner-toast] {
+  background-image: url('/assets/light-grain.png') !important;
+  background-repeat: repeat !important;
+  background-size: 256px 256px !important;
 }

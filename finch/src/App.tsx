@@ -22,7 +22,10 @@ export default function App() {
         toastOptions={{
           style: {
             maxWidth: '40vw',
-            width: 'auto'
+            width: 'auto',
+            backgroundImage: "url('/assets/light-grain.png')",
+            backgroundRepeat: 'repeat',
+            backgroundSize: '256px 256px',
           }
         }}
       />

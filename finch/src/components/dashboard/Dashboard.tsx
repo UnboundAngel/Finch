@@ -90,6 +90,10 @@ export function Dashboard() {
     setProfileEmail,
     enterToSend,
     setEnterToSend,
+    selectedModel,
+    setSelectedModel,
+    selectedProvider,
+    setSelectedProvider,
   });
 
   const hasInitialized = React.useRef(false);
@@ -109,31 +113,6 @@ export function Dashboard() {
       console.error('Failed to initialize most recent session:', e);
     }
   }, [recentChats, activeSessionId, isIncognito, messages.length]);
-
-  // Load provider config and check for models
-  React.useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const config: any = await invoke('get_provider_config');
-        if (config) {
-          // If we have an anthropic key, default to anthropic
-          if (config.anthropic_api_key) {
-            setSelectedProvider('anthropic');
-            setSelectedModel('claude-3-5-sonnet-20240620');
-          } else if (config.openai_api_key) {
-            setSelectedProvider('openai');
-            setSelectedModel('gpt-4o');
-          } else if (config.gemini_api_key) {
-            setSelectedProvider('gemini');
-            setSelectedModel('gemini-1.5-pro');
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load provider config:', e);
-      }
-    };
-    loadConfig();
-  }, []);
 
   const handleSwitchSession = (id: string) => {
     const session = recentChats.find(c => c.id === id);
@@ -174,42 +153,71 @@ export function Dashboard() {
     }
   };
 
-  const handleDeleteChat = (id: string, e: React.MouseEvent) => {
+  const handleDeleteChat = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const chatToDelete = recentChats.find(c => c.id === id);
     if (!chatToDelete) return;
     
-    const updatedChats = recentChats.filter(c => c.id !== id);
-    setRecentChats(updatedChats);
-    
-    if (activeSessionId === id) {
-      handleNewChat();
-    }
-    
-    toast('Chat deleted', {
-      action: {
-        label: 'Undo',
-        onClick: () => {
-          setRecentChats(prev => {
-            const restoredChats = [...prev, chatToDelete].sort((a, b) => b.timestamp - a.timestamp);
-            return restoredChats;
-          });
-        }
-      },
-      duration: 4000
-    });
-  };
-
-  const handlePinChat = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updatedChats = recentChats.map(c => c.id === id ? { ...c, pinned: !c.pinned } : c);
-    setRecentChats(updatedChats);
-  };
-
-  const handleRenameCommit = (id: string) => {
-    if (editingTitle.trim()) {
-      const updatedChats = recentChats.map(c => c.id === id ? { ...c, title: editingTitle.trim() } : c);
+    try {
+      await invoke('delete_chat', { id });
+      const updatedChats = recentChats.filter(c => c.id !== id);
       setRecentChats(updatedChats);
+      
+      if (activeSessionId === id) {
+        handleNewChat();
+      }
+      
+      toast('Chat deleted', {
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            try {
+              const restoredId = await invoke<string>('save_chat', { chat: chatToDelete });
+              setRecentChats(prev => {
+                const restoredChats = [...prev, { ...chatToDelete, id: restoredId }].sort((a, b) => b.timestamp - a.timestamp);
+                return restoredChats;
+              });
+            } catch (err) {
+              console.error('Failed to undo delete:', err);
+            }
+          }
+        },
+        duration: 4000
+      });
+    } catch (err) {
+      console.error('Failed to delete chat:', err);
+      toast.error('Failed to delete chat');
+    }
+  };
+
+  const handlePinChat = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const chat = recentChats.find(c => c.id === id);
+    if (!chat) return;
+
+    const updatedChat = { ...chat, pinned: !chat.pinned };
+    try {
+      await invoke('save_chat', { chat: updatedChat });
+      const updatedChats = recentChats.map(c => c.id === id ? updatedChat : c);
+      setRecentChats(updatedChats);
+    } catch (err) {
+      console.error('Failed to pin chat:', err);
+    }
+  };
+
+  const handleRenameCommit = async (id: string) => {
+    if (editingTitle.trim()) {
+      const chat = recentChats.find(c => c.id === id);
+      if (chat) {
+        const updatedChat = { ...chat, title: editingTitle.trim() };
+        try {
+          await invoke('save_chat', { chat: updatedChat });
+          const updatedChats = recentChats.map(c => c.id === id ? updatedChat : c);
+          setRecentChats(updatedChats);
+        } catch (err) {
+          console.error('Failed to rename chat:', err);
+        }
+      }
     }
     setEditingSessionId(null);
   };
@@ -232,57 +240,66 @@ export function Dashboard() {
     }
   };
 
-  const updateActiveSessionInList = (updatedMessages: Message[]) => {
+  const updateActiveSessionInList = async (updatedMessages: Message[]) => {
     if (isIncognito) return;
 
+    // Use a local copy of the ID to avoid race conditions with state updates
     let currentSessionId = activeSessionId;
-    if (!currentSessionId) {
-      currentSessionId = Date.now().toString();
-      setActiveSessionId(currentSessionId);
-    }
+    let existing = recentChats.find(c => c.id === currentSessionId);
 
-    setRecentChats(prev => {
-      const existing = prev.find(c => c.id === currentSessionId);
-      if (existing) {
-        // Move to top if updated
-        const updated = prev.map(c => 
-          c.id === currentSessionId 
-            ? { ...c, messages: updatedMessages, timestamp: Date.now() } 
-            : c
-        );
-        return updated.sort((a, b) => {
+    const title = existing?.title || updatedMessages[0].content.substring(0, 40);
+    const sessionToSave: ChatSession = {
+      id: currentSessionId || '',
+      title,
+      messages: updatedMessages,
+      timestamp: Date.now(),
+      model: selectedModel,
+      provider: selectedProvider,
+      pinned: existing?.pinned || false,
+      incognito: false,
+      systemPrompt: existing?.systemPrompt || '',
+      generationParams: existing?.generationParams || { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
+      stats: { totalTokens: 0, totalMessages: updatedMessages.length, averageSpeed: 0 }
+    };
+
+    try {
+      // Await the save and get the (possibly new) ID
+      const savedId = await invoke<string>('save_chat', { chat: sessionToSave });
+      
+      // Update state only if it was a new chat
+      if (!currentSessionId) {
+        setActiveSessionId(savedId);
+        sessionToSave.id = savedId;
+      }
+
+      setRecentChats(prev => {
+        // Filter out any older versions of the same chat (prevents duplicates)
+        const otherChats = prev.filter(c => c.id !== savedId);
+        const updatedList = [sessionToSave, ...otherChats];
+        
+        // Re-sort with pinning logic
+        return updatedList.sort((a, b) => {
           if (a.pinned && !b.pinned) return -1;
           if (!a.pinned && b.pinned) return 1;
           return b.timestamp - a.timestamp;
         });
-      } else if (updatedMessages.length > 0) {
-        const title = updatedMessages[0].content.substring(0, 40);
-        const newSession: ChatSession = {
-          id: currentSessionId!,
-          title,
-          messages: updatedMessages,
-          timestamp: Date.now(),
-          type: 'active',
-          pinned: false,
-          incognito: false,
-          systemPrompt: '',
-          generationParams: { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
-          stats: { totalTokens: 0, totalMessages: updatedMessages.length, averageSpeed: 0 }
-        };
-        return [newSession, ...prev];
-      }
-      return prev;
-    });
+      });
+    } catch (err) {
+      console.error('Failed to save chat session:', err);
+    }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim() || isThinking || isStreaming) return;
     
     const userMessage = input.trim();
     setInput('');
     const updatedMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
     setMessages(updatedMessages);
-    updateActiveSessionInList(updatedMessages);
+    
+    // Await initial save to ensure activeSessionId is set before stream ends
+    await updateActiveSessionInList(updatedMessages);
+    
     setIsThinking(true);
 
     let isFirstToken = true;
@@ -339,10 +356,8 @@ export function Dashboard() {
                 }
               }
             ];
-            // Escape React render phase to perform side-effects based on computed new state
-            setTimeout(() => {
-              updateActiveSessionInList(finalMessages);
-            }, 0);
+            // Perform final save
+            updateActiveSessionInList(finalMessages);
             return finalMessages;
           }
           return prev;

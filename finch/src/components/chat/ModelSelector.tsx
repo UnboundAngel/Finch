@@ -96,6 +96,11 @@ export const ModelSelector = ({
         local_ollama: ollama || [],
         local_lmstudio: lmstudio || [],
       });
+
+      // Load bookmarks from config
+      if (config.bookmarked_models) {
+        setBookmarkedModels(config.bookmarked_models);
+      }
     } catch (err) {
       console.error('Failed to fetch models:', err);
     }
@@ -103,19 +108,18 @@ export const ModelSelector = ({
 
   useEffect(() => {
     fetchModels();
-    // Load bookmarks
-    const saved = localStorage.getItem('finch_bookmarked_models');
-    if (saved) {
-      try {
-        setBookmarkedModels(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse bookmarks", e);
-      }
-    }
   }, []);
 
-  const saveBookmarks = (bookmarks: BookmarkedModel[]) => {
-    localStorage.setItem('finch_bookmarked_models', JSON.stringify(bookmarks));
+  const saveBookmarks = async (bookmarks: BookmarkedModel[]) => {
+    try {
+      await invoke('save_provider_config', {
+        config: {
+          bookmarked_models: bookmarks
+        }
+      });
+    } catch (e) {
+      console.error('Failed to save bookmarks:', e);
+    }
   };
 
   const toggleBookmark = (e: React.MouseEvent, providerId: string, modelId: string) => {

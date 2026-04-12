@@ -4,8 +4,11 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, State, Wry};
+use tauri::{AppHandle, State, Manager, Wry};
 use tauri_plugin_store::StoreExt;
+use std::fs;
+use uuid::Uuid;
+use chrono::Utc;
 
 pub struct AppState {
     pub abort_flag: Arc<AtomicBool>,
@@ -27,6 +30,23 @@ pub struct ProviderConfig {
     pub gemini_api_key: Option<String>,
     pub lmstudio_endpoint: Option<String>,
     pub ollama_endpoint: Option<String>,
+    pub profile_name: Option<String>,
+    pub profile_email: Option<String>,
+    pub enter_to_send: Option<bool>,
+    pub selected_model: Option<String>,
+    pub selected_provider: Option<String>,
+    pub bookmarked_models: Option<Vec<serde_json::Value>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ChatSession {
+    pub id: String,
+    pub title: String,
+    pub messages: Vec<serde_json::Value>,
+    pub model: Option<String>,
+    pub provider: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -37,15 +57,23 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderConfig>, String> {
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config = store.get("provider_config");
     
     if let Some(val) = config {
         let mut provider_config: ProviderConfig = serde_json::from_value(val).map_err(|e| e.to_string())?;
-        // Remove API keys from response to prevent any leakage to frontend
-        provider_config.anthropic_api_key = None;
-        provider_config.openai_api_key = None;
-        provider_config.gemini_api_key = None;
+        
+        // Mask API keys to indicate presence without leaking value
+        if provider_config.anthropic_api_key.is_some() {
+            provider_config.anthropic_api_key = Some("••••••••".to_string());
+        }
+        if provider_config.openai_api_key.is_some() {
+            provider_config.openai_api_key = Some("••••••••".to_string());
+        }
+        if provider_config.gemini_api_key.is_some() {
+            provider_config.gemini_api_key = Some("••••••••".to_string());
+        }
+        
         Ok(Some(provider_config))
     } else {
         Ok(None)
@@ -54,8 +82,24 @@ async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderConfig>
 
 #[tauri::command]
 async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> Result<(), String> {
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
-    store.set("provider_config", serde_json::to_value(config).map_err(|e| e.to_string())?);
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    
+    let mut current_config_val = store.get("provider_config").unwrap_or(serde_json::json!({}));
+    let new_config_val = serde_json::to_value(config).map_err(|e| e.to_string())?;
+
+    if let (Some(current_obj), Some(new_obj)) = (current_config_val.as_object_mut(), new_config_val.as_object()) {
+        for (k, v) in new_obj {
+            // Only update if the new value is not null
+            // This allows partial updates and prevents overwriting with None
+            if !v.is_null() {
+                current_obj.insert(k.clone(), v.clone());
+            }
+        }
+    } else {
+        current_config_val = new_config_val;
+    }
+
+    store.set("provider_config", current_config_val);
     store.save().map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -99,7 +143,7 @@ async fn list_local_models(endpoint: String, provider: String) -> Result<Vec<Str
 
 #[tauri::command]
 async fn list_anthropic_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
@@ -137,7 +181,7 @@ async fn list_anthropic_models(handle: AppHandle) -> Result<Vec<String>, String>
 
 #[tauri::command]
 async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
@@ -174,7 +218,7 @@ async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 async fn list_gemini_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
@@ -226,7 +270,7 @@ async fn send_message(
 ) -> Result<String, String> {
     println!("Rust received (provider: {}, model: {}): {}", provider, model, prompt);
 
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
@@ -335,7 +379,7 @@ async fn stream_message(
 
     state.abort_flag.store(false, Ordering::SeqCst);
 
-    let store = handle.get_store("settings.json").ok_or("Store not found")?;
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
@@ -539,6 +583,82 @@ async fn abort_generation(state: State<'_, AppState>) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn list_chats(handle: AppHandle) -> Result<Vec<ChatSession>, String> {
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let chats_dir = app_dir.join("chats");
+    
+    if !chats_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut chats = Vec::new();
+    for entry in fs::read_dir(chats_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) == Some("json") {
+            let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+            if let Ok(chat) = serde_json::from_str::<ChatSession>(&content) {
+                chats.push(chat);
+            }
+        }
+    }
+
+    chats.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+    Ok(chats)
+}
+
+#[tauri::command]
+async fn load_chat(handle: AppHandle, id: String) -> Result<ChatSession, String> {
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let chat_path = app_dir.join("chats").join(format!("{}.json", id));
+    
+    if !chat_path.exists() {
+        return Err("Chat not found".to_string());
+    }
+
+    let content = fs::read_to_string(chat_path).map_err(|e| e.to_string())?;
+    let chat = serde_json::from_str::<ChatSession>(&content).map_err(|e| e.to_string())?;
+    Ok(chat)
+}
+
+#[tauri::command]
+async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<String, String> {
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let chats_dir = app_dir.join("chats");
+    
+    if !chats_dir.exists() {
+        fs::create_dir_all(&chats_dir).map_err(|e| e.to_string())?;
+    }
+
+    if chat.id.is_empty() {
+        chat.id = Uuid::new_v4().to_string();
+        chat.created_at = Utc::now().timestamp_millis();
+    }
+    chat.updated_at = Utc::now().timestamp_millis();
+
+    let id = chat.id.clone();
+    let chat_path = chats_dir.join(format!("{}.json", id));
+    let tmp_path = chats_dir.join(format!("{}.json.tmp", id));
+
+    let json = serde_json::to_string_pretty(&chat).map_err(|e| e.to_string())?;
+    fs::write(&tmp_path, json).map_err(|e| e.to_string())?;
+    fs::rename(tmp_path, chat_path).map_err(|e| e.to_string())?;
+
+    Ok(id)
+}
+
+#[tauri::command]
+async fn delete_chat(handle: AppHandle, id: String) -> Result<(), String> {
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let chat_path = app_dir.join("chats").join(format!("{}.json", id));
+    
+    if chat_path.exists() {
+        fs::remove_file(chat_path).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -546,8 +666,15 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Initialize and load the store to ensure it's available for commands
-            let store = app.store("settings.json")?;
+            // Ensure chats directory exists
+            let app_dir = app.path().app_data_dir()?;
+            let chats_dir = app_dir.join("chats");
+            if !chats_dir.exists() {
+                fs::create_dir_all(&chats_dir)?;
+            }
+
+            // Initialize and load the store
+            let store = app.store("finch_config.json")?;
             let _ = store.reload();
             Ok(())
         })
@@ -561,7 +688,11 @@ pub fn run() {
             list_local_models,
             list_anthropic_models,
             list_openai_models,
-            list_gemini_models
+            list_gemini_models,
+            list_chats,
+            load_chat,
+            save_chat,
+            delete_chat
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
