@@ -13,16 +13,18 @@
 - [x] R-08: Message stats must show real-time performance metrics (stop_reason, total_tokens, tokens/s) with hover-reveal.
 
 ## Phase 07: Chat System Fixes
-- R-09: Incognito chats must not persist after session ends.
-- R-10: Messages must append to existing chats without duplication.
-- R-11: Last used model must persist between sessions.
-- R-12: Chats must be stored in individual JSON files via Rust commands.
+- [x] R-09: Incognito chats must not persist after session ends.
+- [x] R-10: Messages must append to existing chats without duplication.
+- [x] R-11: Last used model must persist between sessions.
+- [x] R-12: Chats must be stored in individual JSON files via Rust commands.
 
 ## Phase 08: Model Selector Polish
-**Requirements:** [R-13, R-14, R-15]
-- [ ] R-13: Bookmarked models must only appear in the "Bookmarked" section.
-- [ ] R-14: Models must return to their provider section when unbookmarked.
-- [ ] R-15: Refreshing models must maintain exclusive bookmark visibility.
+**Requirements:** [R-13, R-14, R-15, R-16]
+- [x] R-13: Bookmarked models must only appear in the "Bookmarked" section.
+- [x] R-14: Models must return to their provider section when unbookmarked.
+- [x] R-15: Refreshing models must maintain exclusive bookmark visibility.
+- [ ] R-16: Model selection must use Ghost Pill highlight and Typography Pop indicators.
 
-**Plans:** 1 plans
-- [ ] 08-01-PLAN.md — Exclusive Bookmark Visibility
+**Plans:** 2 plans
+- [x] 08-01-PLAN.md — Exclusive Bookmark Visibility (Completed as Quick Task)
+- [ ] 002-model-selection-ui-refinement.md — Ghost Pill & Typography Pop
