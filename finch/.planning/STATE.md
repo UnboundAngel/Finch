@@ -3,23 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
+last_updated: "2026-04-12T20:38:48.009Z"
 progress:
   total_phases: 11
   completed_phases: 10
-  total_plans: 15
+  total_plans: 14
   completed_plans: 14
-  percent: 93
+  percent: 100
 ---
 
 # STATE — Finch
 
 ## Current Phase: Phase 09.6
 
-## Status: Planning
+## Status: Completed
 
-## Current Plan: None
+## Current Plan: 09.6-01
 
-## Progress: 93% [######### ]
+## Progress: 100% [##########]
 
 ## Completed Phases
 
@@ -37,11 +38,11 @@ progress:
 - Phase 09.3: Layout Polish (Completed)
 - Phase 09.4: Header Consolidation (Completed)
 - Phase 09.5: Layout Hotfixes & Migration Stability (Completed)
+- Phase 09.6: Dark Mode SVG Fixes (Completed)
 
 ## Active Phase
 
-- Phase 09.6: Dark Mode SVG Fixes (Planning)
-
+- Phase 09.6: Dark Mode SVG Fixes (Completed)
 
 ## Decisions
 
@@ -54,6 +55,7 @@ progress:
 - [Phase 09.3-layout-polish]: Restricted data-tauri-drag-region exclusively to the top 14px bar
 - [Phase 09.4]: Consolidating header into a single strip (h-14) to maximize vertical space and simplify layout.
 - [Phase 09.5]: Use Date.now() as a fallback for missing created_at in legacy chats.
+- [Phase 09.6]: Added dark:invert to key SVG icons that were invisible in dark mode
 
 ## Upcoming Phases
 
