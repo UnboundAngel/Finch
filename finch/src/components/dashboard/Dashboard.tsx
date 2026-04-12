@@ -9,7 +9,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Ghost,
-  Bell,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -379,11 +378,11 @@ export function Dashboard() {
           }`}
         >
           {/* Left Side: Sidebar Toggles & Branding */}
-          <div className="flex-1 flex items-center justify-start gap-2">
+          <div className="flex-1 flex items-center justify-start gap-2 pointer-events-none">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 hover:bg-muted/50 rounded-lg transition-colors no-drag"
+              className="h-9 w-9 hover:bg-muted/50 rounded-lg transition-colors no-drag pointer-events-auto"
               onClick={() => setIsLeftSidebarOpen(prev => !prev)}
             >
               <img 
@@ -396,8 +395,8 @@ export function Dashboard() {
           </div>
 
           {/* Center: Model Selection */}
-          <div className="flex-1 flex items-center justify-center gap-2">
-            <div className="flex items-center gap-2 no-drag">
+          <div className="flex-1 flex items-center justify-center gap-2 pointer-events-none">
+            <div className="flex items-center gap-2 no-drag pointer-events-auto">
               <ModelSelector 
                 selectedProvider={selectedProvider}
                 setSelectedProvider={setSelectedProvider}
@@ -421,8 +420,8 @@ export function Dashboard() {
           </div>
 
           {/* Right Side: System Controls */}
-          <div className="flex-1 flex items-center justify-end gap-2">
-            <div className="flex items-center gap-2 no-drag">
+          <div className="flex-1 flex items-center justify-end gap-2 pointer-events-none">
+            <div className="flex items-center gap-2 no-drag pointer-events-auto">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -431,14 +430,11 @@ export function Dashboard() {
               >
                 <Ghost className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <Bell className="h-5 w-5" />
-              </Button>
             </div>
 
             <Separator orientation="vertical" className="h-4" />
 
-            <div className="flex items-center gap-4 no-drag">
+            <div className="flex items-center gap-4 no-drag pointer-events-auto">
               <Switch checked={isDark} onChange={handleThemeChange} />
               <Button
                 variant="ghost"
