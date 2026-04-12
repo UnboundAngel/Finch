@@ -61,6 +61,7 @@ interface ChatSidebarProps {
   setProfileName: (name: string) => void;
   setProfileEmail: (email: string) => void;
   handleSwitchSession: (id: string) => void;
+  className?: string;
 }
 
 export const ChatSidebar = ({
@@ -89,6 +90,7 @@ export const ChatSidebar = ({
   handleSwitchSession,
   isIncognito,
   setIsIncognito,
+  className,
 }: ChatSidebarProps) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -98,8 +100,8 @@ export const ChatSidebar = ({
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader data-tauri-drag-region className="p-4 select-none">
+    <Sidebar className={className}>
+      <SidebarHeader className="p-4 select-none">
         <div className="no-drag">
           <Button 
             variant="outline" 
