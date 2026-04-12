@@ -216,17 +216,22 @@ export const ModelSelector = ({
                   </div>
                 )}
 
-                {providers.map((provider) => (
-                  <div key={provider.id}>
-                    {provider.models.length > 0 && (
+                {providers.map((provider) => {
+                  const visibleModels = provider.models.filter(modelId => 
+                    !bookmarkedModels.some(bm => bm.providerId === provider.id && bm.modelId === modelId)
+                  );
+
+                  if (visibleModels.length === 0) return null;
+
+                  return (
+                    <div key={provider.id}>
                       <div className="mb-2 last:mb-0">
                         <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 flex items-center gap-2 select-none">
                           <provider.icon className="h-3 w-3" />
                           {provider.name}
                         </div>
                         <div className="space-y-0.5">
-                          {provider.models.map((modelId) => {
-                            const isBookmarked = bookmarkedModels.some(b => b.providerId === provider.id && b.modelId === modelId);
+                          {visibleModels.map((modelId) => {
                             return (
                               <DropdownMenuItem
                                 key={`${provider.id}-${modelId}`}
@@ -241,7 +246,7 @@ export const ModelSelector = ({
                                 </span>
                                 <div className="flex items-center gap-1">
                                   <BookmarkIconButton 
-                                    isBookmarked={isBookmarked} 
+                                    isBookmarked={false} 
                                     onToggle={(e) => toggleBookmark(e, provider.id, modelId)} 
                                   />
                                   {selectedModel === modelId && (
@@ -257,9 +262,9 @@ export const ModelSelector = ({
                         </div>
                         <DropdownMenuSeparator className="my-1.5 opacity-40" />
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
                 
                 <DropdownMenuItem 
                   className="mt-1 px-3 py-2 cursor-pointer rounded-xl focus:bg-primary/10 text-center justify-center font-bold text-[11px] uppercase tracking-tighter text-primary/80 hover:text-primary transition-all active:scale-95"

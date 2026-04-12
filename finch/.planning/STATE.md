@@ -66,6 +66,7 @@ progress:
 | Refine Toast UI & Position | Repositioned to top-right (72px offset), enabled adaptive light/dark grain styling using PNG assets. | `src/App.tsx`, `src/styles/toasts.css`, `public/assets/*` | 2026-04-11 |    
 | Fix Sonner CSS overrides | Replaced .finch-toast approach with direct [data-sonner] attribute selectors to properly override inline styles. | `src/styles/toasts.css` | 2026-04-11 |
 | Revert App.tsx | Reverted App.tsx to pre-toast-edit state (commit 941c85f) via git to resolve configuration churn. | `src/App.tsx` | 2026-04-11 |
+| Implement exclusive bookmarks | Modified ModelSelector to hide bookmarked models from provider sections. | `src/components/chat/ModelSelector.tsx` | 2026-04-12 |
 
 ## Performance Metrics
 
