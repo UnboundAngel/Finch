@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2024-05-23T00:00:00.000Z"
+last_updated: "2026-04-12T18:49:13.308Z"
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 6
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
   percent: 100
 ---
 
@@ -38,7 +38,6 @@ progress:
 
 - None
 
-
 ## Decisions
 
 - Used grid-rows-[1fr_1fr] for prompt cards to ensure identical height.
@@ -58,6 +57,8 @@ progress:
 - [Phase 08]: Refined active model indicator with "Ghost Pill" highlight and "Typography Pop" styling.
 - [Phase 09]: Used framer-motion for smooth width and opacity animation of the right sidebar.
 - [Phase 09]: Placed RightSidebar as a sibling to main inside SidebarIncognitoController to ensure it sits side-by-side with the chat area.
+- [Phase 09.1-header-refinement]: Reorganized the header into three logical groups: Left, Chat Controls, and System Controls.
+- [Phase 09.1-header-refinement]: Used functional state update for the right sidebar toggle to prevent race conditions.
 
 ## Quick Tasks Completed
 
@@ -87,6 +88,7 @@ progress:
 | 07    | 07-02| 40m      | 3     | 3     |
 | 08    | 08-01| 15m      | 2     | 1     |
 | 09    | 09-01| 20m      | 2     | 2     |
+| Phase 09.1-header-refinement P01 | 5m | 2 tasks | 1 files |
 
 ## Session Info
 
