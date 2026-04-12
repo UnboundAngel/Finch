@@ -58,6 +58,13 @@ progress:
 - [Phase 09.5]: Use Date.now() as a fallback for missing created_at in legacy chats.
 - [Phase 09.6]: Added dark:invert to key SVG icons that were invisible in dark mode
 - [Phase 09.7]: Enabled eject_model command in Tauri permissions and wired it to the Dashboard eject button.
+- [Hotfix]: Added updated_at fallback to chat migration and created_at/updated_at to Dashboard save_chat calls.
+- [Hotfix]: Corrected eject_model argument from modelId to model_id to match Rust backend.
+
+## Session Info
+
+- Last session: 2026-04-12T21:00:00Z
+- Stopped at: Fixed chat migration and eject model arg casing.
 
 ## Upcoming Phases
 
