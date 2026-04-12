@@ -17,3 +17,12 @@
 - R-10: Messages must append to existing chats without duplication.
 - R-11: Last used model must persist between sessions.
 - R-12: Chats must be stored in individual JSON files via Rust commands.
+
+## Phase 08: Model Selector Polish
+**Requirements:** [R-13, R-14, R-15]
+- [ ] R-13: Bookmarked models must only appear in the "Bookmarked" section.
+- [ ] R-14: Models must return to their provider section when unbookmarked.
+- [ ] R-15: Refreshing models must maintain exclusive bookmark visibility.
+
+**Plans:** 1 plans
+- [ ] 08-01-PLAN.md — Exclusive Bookmark Visibility
