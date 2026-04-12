@@ -24,6 +24,7 @@
     "allow-load-chat",
     "allow-save-chat",
     "allow-delete-chat",
+    "allow-eject-model",
     "store:default"
   ]
 }

@@ -62,3 +62,8 @@ commands.allow = ["save_chat"]
 identifier = "allow-delete-chat"
 description = "Allows the delete_chat command"
 commands.allow = ["delete_chat"]
+
+[[permission]]
+identifier = "allow-eject-model"
+description = "Allows the eject_model command"
+commands.allow = ["eject_model"]

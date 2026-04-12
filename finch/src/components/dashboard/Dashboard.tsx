@@ -408,9 +408,19 @@ export function Dashboard() {
                   variant="ghost"
                   size="icon"
                   className="h-9 w-9 opacity-50 hover:opacity-100 transition-opacity no-drag"
-                  onClick={() => {
-                    setSelectedModel('');
-                    setSelectedProvider('');
+                  onClick={async () => {
+                    try {
+                      await invoke('eject_model', { 
+                        provider: selectedProvider, 
+                        model_id: selectedModel 
+                      });
+                    } catch (err) {
+                      console.error('Failed to eject model:', err);
+                      toast.error('Failed to eject model');
+                    } finally {
+                      setSelectedModel('');
+                      setSelectedProvider('');
+                    }
                   }}
                 >
                   <img src="/assets/eject.svg" className="h-5 w-5 dark:invert" alt="Eject" />
@@ -432,7 +442,7 @@ export function Dashboard() {
               </Button>
             </div>
 
-            <Separator orientation="vertical" className="h-4" />
+
 
             <div className="flex items-center gap-4 no-drag pointer-events-auto">
               <Switch checked={isDark} onChange={handleThemeChange} />
