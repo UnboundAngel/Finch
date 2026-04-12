@@ -9,7 +9,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Ghost,
-  LogOut,
   Bell,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -372,18 +371,19 @@ export function Dashboard() {
           ? (isDark ? "bg-black" : "bg-neutral-100") 
           : "bg-background text-foreground"
       }`}>
-        {/* TOP BAR */}
+        {/* CONSOLIDATED HEADER */}
         <header 
           data-tauri-drag-region
           className={`h-14 flex items-center justify-between px-4 sticky top-0 z-20 backdrop-blur-md transition-all shrink-0 ${
             isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-b border-muted-foreground/10'
           }`}
         >
-          <div className="flex items-center gap-2 no-drag">
+          {/* Left Side: Sidebar Toggles & Branding */}
+          <div className="flex-1 flex items-center justify-start gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 hover:bg-muted/50 rounded-lg transition-colors"
+              className="h-9 w-9 hover:bg-muted/50 rounded-lg transition-colors no-drag"
               onClick={() => setIsLeftSidebarOpen(prev => !prev)}
             >
               <img 
@@ -392,10 +392,37 @@ export function Dashboard() {
                 alt="Toggle Left Sidebar"
               />
             </Button>
-            {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
+            {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2 pointer-events-none">Incognito</span>}
           </div>
-          <div className="flex items-center gap-4 no-drag">
-            <div className="flex items-center gap-2">
+
+          {/* Center: Model Selection */}
+          <div className="flex-1 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-2 no-drag">
+              <ModelSelector 
+                selectedProvider={selectedProvider}
+                setSelectedProvider={setSelectedProvider}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+              />
+              {!isIncognito && selectedProvider.startsWith('local_') && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 opacity-50 hover:opacity-100 transition-opacity no-drag"
+                  onClick={() => {
+                    setSelectedModel('');
+                    setSelectedProvider('');
+                  }}
+                >
+                  <img src="/assets/eject.svg" className="h-5 w-5" alt="Eject" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Right Side: System Controls */}
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <div className="flex items-center gap-2 no-drag">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -411,52 +438,24 @@ export function Dashboard() {
 
             <Separator orientation="vertical" className="h-4" />
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 no-drag">
               <Switch checked={isDark} onChange={handleThemeChange} />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsRightSidebarOpen(prev => !prev)}
+                className="text-muted-foreground"
+              >
+                <img
+                  src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
+                  className="h-5 w-5"
+                  alt="Toggle Right Sidebar"
+                />
+              </Button>
               <WindowControls isIncognito={isIncognito} />
             </div>
           </div>
         </header>
-
-        {/* SECOND BAR */}
-        <div className={`h-12 flex items-center justify-between px-4 border-b border-muted-foreground/10 bg-background/50 backdrop-blur-md z-10 no-drag shrink-0`}>
-          <div className="flex-1" />
-          <div className="flex-1 flex justify-center items-center gap-2">
-            <ModelSelector 
-              selectedProvider={selectedProvider}
-              setSelectedProvider={setSelectedProvider}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-            />
-            {!isIncognito && selectedProvider.startsWith('local_') && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive transition-colors"
-                onClick={() => {
-                  setSelectedModel('');
-                  setSelectedProvider('');
-                }}
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-          <div className="flex-1 flex items-center justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsRightSidebarOpen(prev => !prev)}
-              className="text-muted-foreground"
-            >
-              <img
-                src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
-                className="h-5 w-5"
-                alt="Toggle Right Sidebar"
-              />
-            </Button>
-          </div>
-        </div>
 
         {/* ZONE */}
         <div className="flex flex-1 overflow-hidden relative">
