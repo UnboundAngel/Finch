@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-04-12T19:05:55.201Z"
+status: done
+last_updated: "2026-04-12T19:40:00.000Z"
 progress:
-  total_phases: 7
-  completed_phases: 4
-  total_plans: 9
-  completed_plans: 8
-  percent: 89
+  total_phases: 9
+  completed_phases: 9
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
 ---
 
 # STATE — Finch
 
-## Current Phase: Phase 09
+## Current Phase: Phase 09.3
 
-## Status: Completed
+## Status: Done
 
-## Current Plan: 09-01-PLAN.md
+## Current Plan: None
 
-## Progress: 100% [==========]
+## Progress: 100% [##########]
 
 ## Completed Phases
 
@@ -33,6 +33,9 @@ progress:
 - Phase 07: Chat Infrastructure & Settings Migration (Completed)
 - Phase 08: Model Selector Polish (Completed)
 - Phase 09: Right Sidebar Shell + Toggle (Completed)
+- Phase 09.1: Header Grouping Fix (Completed)
+- Phase 09.2: Model Bar Refinement (Completed)
+- Phase 09.3: Layout Polish (Completed)
 
 ## Active Phase
 
@@ -40,61 +43,13 @@ progress:
 
 ## Decisions
 
-- Used grid-rows-[1fr_1fr] for prompt cards to ensure identical height.
-- Implemented custom height/opacity animation for ModelSelector using AnimatePresence.
-- [Phase 05]: Used AnimatePresence (mode='wait') on controlled Tabs for sequential exit/entry.
-- [Phase 05]: Implemented staggered children with motion variants (0.06s stagger).
-- [Phase 06]: Use oklch(0.488 0.243 264.376) for violet accent at 15% opacity for active highlights.
-- [Phase 06]: Implement AI name distinction using a heuristic ('Claude', 'GPT', etc.) with italic and muted styles.
-- [Phase 06]: Indicator for web search uses blue-500 ring and border glow to differentiate from normal active state.
-- [Phase 06]: Sentinel approach for stats delivery.
-- [Phase 06]: Manual token counting for providers lacking usage data in stream.
-- [Phase 07]: Atomic file operations for chat storage via `.tmp` write and rename.
-- [Phase 07]: Partial settings updates with backend-side merging to preserve API keys.
-- [Phase 07]: API Key masking with `••••••••` to indicate configuration state safely.
-- [Phase 07]: Migration bridge in `useChatPersistence.ts` converts legacy `localStorage` chats and profiles to Rust-native formats automatically on the first run of the updated version.
-- [Phase 08]: Implemented exclusive bookmark visibility in ModelSelector to prevent list redundancy.
-- [Phase 08]: Refined active model indicator with "Ghost Pill" highlight and "Typography Pop" styling.
-- [Phase 09]: Used framer-motion for smooth width and opacity animation of the right sidebar.
-- [Phase 09]: Placed RightSidebar as a sibling to main inside SidebarIncognitoController to ensure it sits side-by-side with the chat area.
-- [Phase 09.1-header-refinement]: Reorganized the header into three logical groups: Left, Chat Controls, and System Controls.
-- [Phase 09.1-header-refinement]: Used functional state update for the right sidebar toggle to prevent race conditions.
-
-## Quick Tasks Completed
-
-| Task | Description | Files | Date |
-|------|-------------|-------|------|
-| Fix prompt card wrapping | Fixed horizontal overflow and ensured row stretching for prompt cards. | `src/components/chat/ChatArea.tsx` | 2026-04-11 |
-| Fix SettingsDialog visuals | Fixed Save button hover visibility and active tab pill clipping/alignment. | `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
-| Fix active tab alignment | Ensured active tab indicator perfectly matches the container bounds. | `components/ui/tabs.tsx`, `src/components/dashboard/SettingsDialog.tsx` | 2026-04-11 |
-| Fix sidebar active highlight | Improved visibility (30% opacity) and aligned pill width/radius with header. | `src/components/sidebar/ChatSidebar.tsx` | 2026-04-11 |
-| Fix web search layout shift | Applied `border-[1.5px]` consistently to prevent layout reflow when toggling web search. | `src/components/chat/ChatInput.tsx` | 2026-04-11 |
-| Implement grainy frosted toasts | Created noise.svg and toasts.css for frosted look with grain texture. | `src/assets/noise.svg`, `src/styles/toasts.css`, `src/App.tsx` | 2026-04-11 |
-| Refine Toast UI & Position | Repositioned to top-right (72px offset), enabled adaptive light/dark grain styling using PNG assets. | `src/App.tsx`, `src/styles/toasts.css`, `public/assets/*` | 2026-04-11 |
-| Fix Sonner CSS overrides | Replaced .finch-toast approach with direct [data-sonner] attribute selectors to properly override inline styles. | `src/styles/toasts.css` | 2026-04-11 |
-| Revert App.tsx | Reverted App.tsx to pre-toast-edit state (commit 941c85f) via git to resolve configuration churn. | `src/App.tsx` | 2026-04-11 |
-| Implement exclusive bookmarks | Modified ModelSelector to hide bookmarked models from provider sections. | `src/components/chat/ModelSelector.tsx` | 2026-04-12 |
-| Refine ModelSelector UI | Combined Ghost Pill background and Typography Pop for active model indicator. | `src/components/chat/ModelSelector.tsx` | 2026-04-12 |
-
-## Performance Metrics
-
-| Phase | Plan | Duration | Tasks | Files |
-|-------|------|----------|-------|-------|
-| 05    | 05-01| 30m      | 2     | 2     |
-| 05    | 05-02| 15m      | 2     | 1     |
-| 06    | 06-01| 10m      | 3     | 4     |
-| 06    | 06-02| 45m      | 4     | 6     |
-| 07    | 07-01| 50m      | 4     | 5     |
-| 07    | 07-02| 40m      | 3     | 3     |
-| 08    | 08-01| 15m      | 2     | 1     |
-| 09    | 09-01| 20m      | 2     | 2     |
-| Phase 09.1-header-refinement P01 | 5m | 2 tasks | 1 files |
-| Phase 09.2 P01 | 15m | 2 tasks | 1 files |
-
-## Session Info
-
-- Last session: 2026-04-12T01:30:00Z
-- Stopped at: Completed 09-01-SUMMARY.md
+- [Phase 09.2]: Used `LogOut` icon as a substitute for "Eject/Unload" for local models.
+- [Phase 09.3]: Root layout set to `flex flex-col` to support vertical tiering of bars and zone.
+- [Phase 09.3]: Lifted `isLeftSidebarOpen` state to `Dashboard` level to allow control from the Top Bar (outside SidebarProvider).
+- [Phase 09.3]: Modified `Sidebar` component to support `absolute` positioning within a constrained Zone.
+- [Phase 09.3-layout-polish]: Decoupled header from SidebarProvider to prevent header shifts on sidebar toggle
+- [Phase 09.3-layout-polish]: Controlled left sidebar state at the Dashboard level for better layout management
+- [Phase 09.3-layout-polish]: Restricted data-tauri-drag-region exclusively to the top 14px bar
 
 ## Upcoming Phases
 

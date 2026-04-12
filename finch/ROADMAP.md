@@ -47,10 +47,19 @@
 
 ## Phase 09.2: Header Refinement & Model Bar (09-01 fixes)
 **Requirements:** [R-09.2-01, R-09.2-02]
-- [ ] R-09.2-01: Move model selector and right sidebar toggle to a dedicated second bar.
-- [ ] R-09.2-02: Add an unload (Eject) button for local models to clear current selection.
+- [x] R-09.2-01: Move model selector and right sidebar toggle to a dedicated second bar.
+- [x] R-09.2-02: Add an unload (Eject) button for local models to clear current selection.
 
 **Plans:** 1 plans
-- [ ] 09.2-01-PLAN.md — Refactor dashboard header and add model bar.
+- [x] 09.2-01-PLAN.md — Refactor dashboard header and add model bar.
+
+## Phase 09.3: Layout Polish — Three-Tier Header & Sidebar Refinement
+**Requirements:** [R-09.3-01, R-09.3-02, R-09.3-03]
+- [x] R-09.3-01: Restructure Dashboard into Top Bar, Second Bar, and constrained Sidebar Zone.
+- [x] R-09.3-02: Polish RightSidebar background and width animation.
+- [x] R-09.3-03: Restrict drag regions to Top Bar and ensure component alignment.
+
+**Plans:** 1 plans
+- [x] 09.3-01-PLAN.md — Dashboard Layout Restructuring & Sidebar Polish
 
 ## Phase 10: Voice & Search (Planned)
