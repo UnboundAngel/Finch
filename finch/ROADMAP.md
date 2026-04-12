@@ -28,3 +28,11 @@
 **Plans:** 2 plans
 - [x] 08-01-PLAN.md — Exclusive Bookmark Visibility (Completed as Quick Task)
 - [x] 002-model-selection-ui-refinement.md — Ghost Pill & Typography Pop
+
+## Phase 09: Right Sidebar Shell + Toggle
+**Requirements:** [R-17, R-18]
+- [x] R-17: Add a collapsible right sidebar shell to the app layout (shell only, no content).
+- [x] R-18: Sidebar toggle button in chat header using predefined SVG assets.
+
+**Plans:** 1 plans
+- [x] 09-01-PLAN.md — Right Sidebar Shell + Toggle

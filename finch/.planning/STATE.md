@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-12T01:30:00.000Z"
+last_updated: "2024-05-23T00:00:00.000Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 9
+  completed_phases: 9
+  total_plans: 9
+  completed_plans: 9
   percent: 100
 ---
 
 # STATE — Finch
 
-## Current Phase: Phase 07
+## Current Phase: Phase 09
 
 ## Status: Completed
 
-## Current Plan: None
+## Current Plan: 09-01-PLAN.md
 
 ## Progress: 100% [==========]
 
@@ -31,10 +31,13 @@ progress:
 - Phase 05: Dashboard & Settings Polish (Completed)
 - Phase 06: Chat Sidebar & Input Refinement (Completed)
 - Phase 07: Chat Infrastructure & Settings Migration (Completed)
+- Phase 08: Model Selector Polish (Completed)
+- Phase 09: Right Sidebar Shell + Toggle (Completed)
 
 ## Active Phase
 
 - None
+
 
 ## Decisions
 
@@ -51,8 +54,10 @@ progress:
 - [Phase 07]: Partial settings updates with backend-side merging to preserve API keys.
 - [Phase 07]: API Key masking with `••••••••` to indicate configuration state safely.
 - [Phase 07]: Migration bridge in `useChatPersistence.ts` converts legacy `localStorage` chats and profiles to Rust-native formats automatically on the first run of the updated version.
-- [Quick Task]: Implemented exclusive bookmark visibility in ModelSelector.
-- [Quick Task]: Refined active model indicator with "Ghost Pill" highlight and "Typography Pop" styling.
+- [Phase 08]: Implemented exclusive bookmark visibility in ModelSelector to prevent list redundancy.
+- [Phase 08]: Refined active model indicator with "Ghost Pill" highlight and "Typography Pop" styling.
+- [Phase 09]: Used framer-motion for smooth width and opacity animation of the right sidebar.
+- [Phase 09]: Placed RightSidebar as a sibling to main inside SidebarIncognitoController to ensure it sits side-by-side with the chat area.
 
 ## Quick Tasks Completed
 
@@ -80,12 +85,14 @@ progress:
 | 06    | 06-02| 45m      | 4     | 6     |
 | 07    | 07-01| 50m      | 4     | 5     |
 | 07    | 07-02| 40m      | 3     | 3     |
+| 08    | 08-01| 15m      | 2     | 1     |
+| Phase 09 P01 | 15 | 2 tasks | 2 files |
 
 ## Session Info
 
-- Last session: 2026-04-11T16:20:00Z
-- Stopped at: Completed 07-02-PLAN.md
+- Last session: 2026-04-12T01:30:00Z
+- Stopped at: Completed 08-01-SUMMARY.md
 
 ## Upcoming Phases
 
-- Phase 08: Voice & Search (Planned)
+- Phase 09: Voice & Search (Planned)
