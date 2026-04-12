@@ -177,12 +177,12 @@ export const ChatSidebar = ({
                             )}
                             {!isIncognito && (
                               <div className="hidden group-hover:flex items-center gap-1 ml-auto">
-                                <button className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={(e) => handlePinChat(chat.id, e)}>
+                                <div role="button" className="h-6 w-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors" onClick={(e) => handlePinChat(chat.id, e)}>
                                   <Pin className="h-3.5 w-3.5 fill-current" />
-                                </button>
-                                <button className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => handleDeleteChat(chat.id, e)}>
+                                </div>
+                                <div role="button" className="h-6 w-6 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors" onClick={(e) => handleDeleteChat(chat.id, e)}>
                                   <Trash2 className="h-3.5 w-3.5" />
-                                </button>
+                                </div>
                               </div>
                             )}
                           </SidebarMenuButton>
@@ -231,12 +231,12 @@ export const ChatSidebar = ({
                             )}
                             {!isIncognito && (
                               <div className="hidden group-hover:flex items-center gap-1 ml-auto">
-                                <button className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={(e) => handlePinChat(chat.id, e)}>
+                                <div role="button" className="h-6 w-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors" onClick={(e) => handlePinChat(chat.id, e)}>
                                   <Pin className="h-3.5 w-3.5" />
-                                </button>
-                                <button className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={(e) => handleDeleteChat(chat.id, e)}>
+                                </div>
+                                <div role="button" className="h-6 w-6 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors" onClick={(e) => handleDeleteChat(chat.id, e)}>
                                   <Trash2 className="h-3.5 w-3.5" />
-                                </button>
+                                </div>
                               </div>
                             )}
                           </SidebarMenuButton>
