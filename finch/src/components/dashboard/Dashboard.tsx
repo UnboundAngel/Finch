@@ -10,6 +10,7 @@ import {
   PanelLeftOpen,
   Ghost,
   LogOut,
+  Bell,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -34,20 +35,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/ui/sidebar';
 import { WindowControls } from '@/src/components/dashboard/WindowControls';
 import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
-
-const SidebarToggleButton = () => {
-  const { state, toggleSidebar } = useSidebar();
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9 hover:bg-muted/50 rounded-lg transition-colors"
-      onClick={toggleSidebar}
-    >
-      {state === "expanded" ? <PanelLeftClose className="h-5 w-5 text-muted-foreground" /> : <PanelLeftOpen className="h-5 w-5 text-muted-foreground" />}
-    </Button>
-  );
-};
 
 const SidebarIncognitoController = ({ isIncognito, children }: { isIncognito: boolean, children: React.ReactNode }) => {
   const { setOpen } = useSidebar();
@@ -75,6 +62,7 @@ export function Dashboard() {
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
   const [isIncognito, setIsIncognito] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [enterToSend, setEnterToSend] = useState(true);
   const [profileName, setProfileName] = useState('Jane Doe');
@@ -379,158 +367,173 @@ export function Dashboard() {
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <div className={`flex h-screen w-full overflow-hidden font-sans transition-colors duration-500 ${
-          isIncognito 
-            ? (isDark ? "bg-black" : "bg-neutral-100") 
-            : "bg-background text-foreground"
-        }`}>
-          {/* Sidebar */}
-          <ChatSidebar 
-            recentChats={recentChats}
-            activeSessionId={activeSessionId || ''}
-            handleSwitchSession={handleSwitchSession}
-            setActiveSessionId={setActiveSessionId as any}
-            setMessages={setMessages}
-            setRecentChats={setRecentChats}
-            handleNewChat={() => {
-              setActiveSessionId(null);
-              setMessages([]);
-            }}
-            profileName={profileName}
-            setProfileName={setProfileName}
-            profileEmail={profileEmail}
-            setProfileEmail={setProfileEmail}
-            isIncognito={isIncognito}
-            setIsIncognito={setIsIncognito}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            editingSessionId={editingSessionId}
-            setEditingSessionId={setEditingSessionId}
-            editingTitle={editingTitle}
-            setEditingTitle={setEditingTitle}
-            handleRenameKeyDown={handleRenameKeyDown}
-            handleRenameCommit={handleRenameCommit}
-            handlePinChat={handlePinChat}
-            handleDeleteChat={handleDeleteChat}
-            setIsProfileOpen={setIsProfileOpen}
-            setIsSettingsOpen={setIsSettingsOpen}
-          />
-
-
-          {/* Main Content */}
-          <SidebarIncognitoController isIncognito={isIncognito}>
-            <main className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-500 ease-in-out overflow-hidden ${
-              isIncognito 
-                ? (isDark 
-                    ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]" 
-                    : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
-                : "bg-background text-foreground"
-            }`}>
-              {/* Header */}
-              <header 
-                data-tauri-drag-region
-                className={`h-14 flex items-center justify-between px-4 sticky top-0 z-10 backdrop-blur-md transition-all ${
-                  isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-b border-muted-foreground/10'
-                }`}
+      <div className={`flex flex-col h-screen w-full overflow-hidden font-sans transition-colors duration-500 ${
+        isIncognito 
+          ? (isDark ? "bg-black" : "bg-neutral-100") 
+          : "bg-background text-foreground"
+      }`}>
+        {/* TOP BAR */}
+        <header 
+          data-tauri-drag-region
+          className={`h-14 flex items-center justify-between px-4 sticky top-0 z-20 backdrop-blur-md transition-all shrink-0 ${
+            isIncognito ? 'border-transparent bg-transparent' : 'bg-background/80 border-b border-muted-foreground/10'
+          }`}
+        >
+          <div className="flex items-center gap-2 no-drag">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 hover:bg-muted/50 rounded-lg transition-colors"
+              onClick={() => setIsLeftSidebarOpen(prev => !prev)}
+            >
+              <img 
+                src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"} 
+                className="h-5 w-5" 
+                alt="Toggle Left Sidebar"
+              />
+            </Button>
+            {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
+          </div>
+          <div className="flex items-center gap-4 no-drag">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={toggleIncognito} 
+                className={isIncognito ? (isDark ? "text-white" : "text-black") : "text-muted-foreground"}
               >
-                <div className="flex items-center gap-2 no-drag">
-                  <SidebarToggleButton />
-                  {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2">Incognito</span>}
-                </div>
-                <div className="flex items-center gap-4 no-drag">
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={toggleIncognito} 
-                      className={isIncognito ? (isDark ? "text-white" : "text-black") : "text-muted-foreground"}
-                    >
-                      <Ghost className="h-5 w-5" />
-                    </Button>
-                  </div>
+                <Ghost className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <Bell className="h-5 w-5" />
+              </Button>
+            </div>
 
-                  <Separator orientation="vertical" className="h-4" />
+            <Separator orientation="vertical" className="h-4" />
 
-                  <div className="flex items-center gap-4">
-                    <Switch checked={isDark} onChange={handleThemeChange} />
-                    <WindowControls isIncognito={isIncognito} />
-                  </div>
-                </div>
-              </header>
+            <div className="flex items-center gap-4">
+              <Switch checked={isDark} onChange={handleThemeChange} />
+              <WindowControls isIncognito={isIncognito} />
+            </div>
+          </div>
+        </header>
 
-              {/* Model & View Controls Bar */}
-              {!isIncognito && (
-                <div className="h-12 flex items-center justify-between px-4 border-b border-muted-foreground/10 bg-background/50 backdrop-blur-md z-10 sticky top-14 no-drag">
-                  <div className="flex-1" />
-                  <div className="flex-1 flex justify-center">
-                    <ModelSelector 
-                      selectedProvider={selectedProvider}
-                      setSelectedProvider={setSelectedProvider}
-                      selectedModel={selectedModel}
-                      setSelectedModel={setSelectedModel}
-                    />
-                  </div>
-                  <div className="flex-1 flex items-center justify-end gap-2">
-                    {selectedProvider.startsWith('local_') && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                        onClick={() => {
-                          setSelectedModel('');
-                          setSelectedProvider('');
-                        }}
-                      >
-                        <LogOut className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsRightSidebarOpen(prev => !prev)}
-                      className="text-muted-foreground"
-                    >
-                      <img
-                        src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
-                        className="h-5 w-5"
-                        alt="Toggle Right Sidebar"
-                      />
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Chat Area */}
-              <ChatArea 
-                messages={messages} 
-                isThinking={isThinking} 
-                selectedModel={selectedModel} 
-                isDark={isDark} 
-                setInput={setInput}
-                isIncognito={isIncognito}
+        {/* SECOND BAR */}
+        <div className={`h-12 flex items-center justify-between px-4 border-b border-muted-foreground/10 bg-background/50 backdrop-blur-md z-10 no-drag shrink-0`}>
+          <div className="flex-1" />
+          <div className="flex-1 flex justify-center items-center gap-2">
+            <ModelSelector 
+              selectedProvider={selectedProvider}
+              setSelectedProvider={setSelectedProvider}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+            />
+            {!isIncognito && selectedProvider.startsWith('local_') && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                onClick={() => {
+                  setSelectedModel('');
+                  setSelectedProvider('');
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="flex-1 flex items-center justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsRightSidebarOpen(prev => !prev)}
+              className="text-muted-foreground"
+            >
+              <img
+                src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
+                className="h-5 w-5"
+                alt="Toggle Right Sidebar"
               />
-
-              {/* Input Area */}
-              <ChatInput 
-                input={input}
-                setInput={setInput}
-                handleSend={handleSend}
-                onStop={abort}
-                isThinking={isThinking || isStreaming}
-                attachedFile={attachedFile}
-                setAttachedFile={setAttachedFile}
-                isWebSearchActive={isWebSearchActive}
-                setIsWebSearchActive={setIsWebSearchActive}
-                enterToSend={enterToSend}
-                isIncognito={isIncognito}
-                isDark={isDark}
-              />
-            </main>
-            <RightSidebar isOpen={isRightSidebarOpen} />
-          </SidebarIncognitoController>
+            </Button>
+          </div>
         </div>
-      </SidebarProvider>
+
+        {/* ZONE */}
+        <div className="flex flex-1 overflow-hidden relative">
+          <SidebarProvider open={isLeftSidebarOpen} onOpenChange={setIsLeftSidebarOpen} className="min-h-0">
+            <ChatSidebar 
+              recentChats={recentChats}
+              activeSessionId={activeSessionId || ''}
+              handleSwitchSession={handleSwitchSession}
+              setActiveSessionId={setActiveSessionId as any}
+              setMessages={setMessages}
+              setRecentChats={setRecentChats}
+              handleNewChat={() => {
+                setActiveSessionId(null);
+                setMessages([]);
+              }}
+              profileName={profileName}
+              setProfileName={setProfileName}
+              profileEmail={profileEmail}
+              setProfileEmail={setProfileEmail}
+              isIncognito={isIncognito}
+              setIsIncognito={setIsIncognito}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              editingSessionId={editingSessionId}
+              setEditingSessionId={setEditingSessionId}
+              editingTitle={editingTitle}
+              setEditingTitle={setEditingTitle}
+              handleRenameKeyDown={handleRenameKeyDown}
+              handleRenameCommit={handleRenameCommit}
+              handlePinChat={handlePinChat}
+              handleDeleteChat={handleDeleteChat}
+              setIsProfileOpen={setIsProfileOpen}
+              setIsSettingsOpen={setIsSettingsOpen}
+              className="absolute inset-y-0 h-full"
+            />
+
+
+            {/* Main Content */}
+            <SidebarIncognitoController isIncognito={isIncognito}>
+              <main className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-500 ease-in-out overflow-hidden ${
+                isIncognito 
+                  ? (isDark 
+                      ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]" 
+                      : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
+                  : "bg-background text-foreground"
+              }`}>
+                {/* Chat Area */}
+                <ChatArea 
+                  messages={messages} 
+                  isThinking={isThinking} 
+                  selectedModel={selectedModel} 
+                  isDark={isDark} 
+                  setInput={setInput}
+                  isIncognito={isIncognito}
+                />
+
+                {/* Input Area */}
+                <ChatInput 
+                  input={input}
+                  setInput={setInput}
+                  handleSend={handleSend}
+                  onStop={abort}
+                  isThinking={isThinking || isStreaming}
+                  attachedFile={attachedFile}
+                  setAttachedFile={setAttachedFile}
+                  isWebSearchActive={isWebSearchActive}
+                  setIsWebSearchActive={setIsWebSearchActive}
+                  enterToSend={enterToSend}
+                  isIncognito={isIncognito}
+                  isDark={isDark}
+                />
+              </main>
+            </SidebarIncognitoController>
+          </SidebarProvider>
+          <RightSidebar isOpen={isRightSidebarOpen} />
+        </div>
+      </div>
 
       <ProfileDialog 
         isOpen={isProfileOpen} 
