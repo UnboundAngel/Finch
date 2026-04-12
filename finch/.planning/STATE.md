@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-04-12T20:48:42.416Z"
+last_updated: "2026-04-12T21:15:00.000Z"
 progress:
-  total_phases: 12
-  completed_phases: 11
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 13
+  completed_phases: 12
+  total_plans: 17
+  completed_plans: 16
+  percent: 94
 ---
 
 # STATE — Finch
 
 ## Current Phase: Phase 10
 
-## Status: Planning Complete
+## Status: Planning Pending
 
 ## Current Plan: 10-01
 
-## Progress: 100% [##########]
+## Progress: 0% [----------]
 
 ## Completed Phases
 
@@ -40,6 +40,7 @@ progress:
 - Phase 09.5: Layout Hotfixes & Migration Stability (Completed)
 - Phase 09.6: Dark Mode SVG Fixes (Completed)
 - Phase 09.7: Eject Model Implementation (Completed)
+- Phase 09.8: Window Controls Fix (Completed)
 
 ## Active Phase
 
@@ -60,11 +61,12 @@ progress:
 - [Phase 09.7]: Enabled eject_model command in Tauri permissions and wired it to the Dashboard eject button.
 - [Hotfix]: Added updated_at fallback to chat migration and created_at/updated_at to Dashboard save_chat calls.
 - [Hotfix]: Corrected eject_model argument from modelId to model_id to match Rust backend.
+- [Phase 09.8]: Update WindowControls.tsx for Tauri v2 and fix tooltip nested button errors.
 
 ## Session Info
 
-- Last session: 2026-04-12T21:00:00Z
-- Stopped at: Fixed chat migration and eject model arg casing.
+- Last session: 2026-04-12T21:05:00Z
+- Stopped at: Planned Phase 09.8.
 
 ## Upcoming Phases
 
