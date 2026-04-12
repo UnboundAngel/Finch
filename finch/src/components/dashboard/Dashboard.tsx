@@ -415,7 +415,7 @@ export function Dashboard() {
                     try {
                       await invoke('eject_model', { 
                         provider: selectedProvider, 
-                        model_id: selectedModel 
+                        modelId: selectedModel 
                       });
                       setSelectedModel('');
                       setSelectedProvider('');
