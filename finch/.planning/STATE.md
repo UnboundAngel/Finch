@@ -3,12 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-04-12T20:15:00.000Z"
 progress:
   total_phases: 10
   completed_phases: 10
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 14
+  completed_plans: 14
   percent: 100
 ---
 
@@ -37,6 +36,7 @@ progress:
 - Phase 09.2: Model Bar Refinement (Completed)
 - Phase 09.3: Layout Polish (Completed)
 - Phase 09.4: Header Consolidation (Completed)
+- Phase 09.5: Layout Hotfixes & Migration Stability (Completed)
 
 ## Active Phase
 
@@ -53,6 +53,7 @@ progress:
 - [Phase 09.3-layout-polish]: Controlled left sidebar state at the Dashboard level for better layout management
 - [Phase 09.3-layout-polish]: Restricted data-tauri-drag-region exclusively to the top 14px bar
 - [Phase 09.4]: Consolidating header into a single strip (h-14) to maximize vertical space and simplify layout.
+- [Phase 09.5]: Use Date.now() as a fallback for missing created_at in legacy chats.
 
 ## Upcoming Phases
 
