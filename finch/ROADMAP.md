@@ -23,8 +23,8 @@
 - [x] R-13: Bookmarked models must only appear in the "Bookmarked" section.
 - [x] R-14: Models must return to their provider section when unbookmarked.
 - [x] R-15: Refreshing models must maintain exclusive bookmark visibility.
-- [ ] R-16: Model selection must use Ghost Pill highlight and Typography Pop indicators.
+- [x] R-16: Model selection must use Ghost Pill highlight and Typography Pop indicators.
 
 **Plans:** 2 plans
 - [x] 08-01-PLAN.md — Exclusive Bookmark Visibility (Completed as Quick Task)
-- [ ] 002-model-selection-ui-refinement.md — Ghost Pill & Typography Pop
+- [x] 002-model-selection-ui-refinement.md — Ghost Pill & Typography Pop
