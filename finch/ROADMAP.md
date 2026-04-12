@@ -36,3 +36,11 @@
 
 **Plans:** 1 plans
 - [x] 09-01-PLAN.md — Right Sidebar Shell + Toggle
+
+## Phase 09.1: Header & Sidebar Refinement (Bug Fixes)
+**Requirements:** [R-09.1-01, R-09.1-02]
+- [ ] R-09.1-01: Header must separate chat controls from system controls with a vertical separator.
+- [ ] R-09.1-02: Right sidebar toggle must use functional state updates and correctly trigger layout shift.
+
+**Plans:** 1 plans
+- [ ] 09.1-01-PLAN.md — Header Grouping & Toggle Behavior Fix
