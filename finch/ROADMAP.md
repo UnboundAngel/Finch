@@ -64,9 +64,9 @@
 
 ## Phase 09.4: Header Consolidation
 **Requirements:** [R-09.4-01]
-- [ ] R-09.4-01: Header must be a single unified strip (h-14) containing all chat and system controls.
+- [x] R-09.4-01: Header must be a single unified strip (h-14) containing all chat and system controls.
 
 **Plans:** 1 plans
-- [ ] 09.4-01-PLAN.md — Consolidate header bars into single strip.
+- [x] 09.4-01-PLAN.md — Consolidate header bars into single strip.
 
 ## Phase 10: Voice & Search (Planned)
