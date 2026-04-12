@@ -181,9 +181,16 @@ export const ModelSelector = ({
                       {bookmarkedModels.map((bm) => (
                         <DropdownMenuItem
                           key={`bookmark-${bm.providerId}-${bm.modelId}`}
-                          className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                          className="relative z-0 flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
                           onClick={() => handleSelect(bm.providerId, bm.modelId)}
                         >
+                          {selectedModel === bm.modelId && (
+                            <motion.div
+                              layoutId="active-model-pill"
+                              className="absolute inset-0 bg-primary/10 rounded-xl -z-10"
+                              transition={{ duration: 0.2, ease: "easeOut" }}
+                            />
+                          )}
                           <div className="flex items-center gap-2 overflow-hidden">
                             {(() => {
                               const provider = providers.find(p => p.id === bm.providerId);
@@ -191,8 +198,8 @@ export const ModelSelector = ({
                               return Icon ? <Icon className="h-3 w-3 text-muted-foreground/60" /> : null;
                             })()}
                             <span className={cn(
-                              "text-sm truncate transition-colors",
-                              selectedModel === bm.modelId ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+                              "text-sm truncate transition-all duration-200",
+                              selectedModel === bm.modelId ? "font-bold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
                             )}>
                               {bm.modelId}
                             </span>
@@ -202,12 +209,6 @@ export const ModelSelector = ({
                               isBookmarked={true} 
                               onToggle={(e) => toggleBookmark(e, bm.providerId, bm.modelId)} 
                             />
-                            {selectedModel === bm.modelId && (
-                              <motion.div 
-                                layoutId="active-model-indicator-bm"
-                                className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
-                              />
-                            )}
                           </div>
                         </DropdownMenuItem>
                       ))}
@@ -235,12 +236,19 @@ export const ModelSelector = ({
                             return (
                               <DropdownMenuItem
                                 key={`${provider.id}-${modelId}`}
-                                className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                                className="relative z-0 flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
                                 onClick={() => handleSelect(provider.id, modelId)}
                               >
+                                {selectedModel === modelId && (
+                                  <motion.div
+                                    layoutId="active-model-pill"
+                                    className="absolute inset-0 bg-primary/10 rounded-xl -z-10"
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                  />
+                                )}
                                 <span className={cn(
-                                  "text-sm transition-colors",
-                                  selectedModel === modelId ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
+                                  "text-sm transition-all duration-200",
+                                  selectedModel === modelId ? "font-bold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
                                 )}>
                                   {modelId}
                                 </span>
@@ -249,12 +257,6 @@ export const ModelSelector = ({
                                     isBookmarked={false} 
                                     onToggle={(e) => toggleBookmark(e, provider.id, modelId)} 
                                   />
-                                  {selectedModel === modelId && (
-                                    <motion.div 
-                                      layoutId="active-model-indicator"
-                                      className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
-                                    />
-                                  )}
                                 </div>
                               </DropdownMenuItem>
                             );
