@@ -243,6 +243,8 @@ export function Dashboard() {
       title,
       messages: updatedMessages,
       timestamp: Date.now(),
+      created_at: existing?.created_at || Date.now(),
+      updated_at: Date.now(),
       model: selectedModel,
       provider: selectedProvider,
       pinned: existing?.pinned || false,

@@ -76,6 +76,7 @@ export const useChatPersistence = ({
                 const migratedChat: ChatSession = {
                   ...chat,
                   created_at: chat.created_at || Date.now(),
+                  updated_at: chat.updated_at || Date.now(),
                   pinned: chat.pinned ?? false,
                   incognito: chat.incognito ?? false,
                   systemPrompt: chat.systemPrompt ?? '',

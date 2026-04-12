@@ -84,4 +84,12 @@
 **Plans:** 1 plan
 - [x] 09.6-01-PLAN.md — Add dark:invert to Dashboard icons (Completed).
 
+## Phase 09.7: Eject Model Implementation
+**Requirements:** [R-09.7-01, R-09.7-02]
+- [x] R-09.7-01: Implement Tauri permissions for the `eject_model` command.
+- [x] R-09.7-02: Wire the `eject_model` command to the Dashboard eject button with error handling.
+
+**Plans:** 1 plan
+- [x] 09.7-01-PLAN.md — Implement permissions and wire eject button.
+
 ## Phase 10: Voice & Search (Planned)
