@@ -387,7 +387,7 @@ export function Dashboard() {
             >
               <img 
                 src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"} 
-                className="h-5 w-5" 
+                className="h-5 w-5 dark:invert" 
                 alt="Toggle Left Sidebar"
               />
             </Button>
@@ -413,7 +413,7 @@ export function Dashboard() {
                     setSelectedProvider('');
                   }}
                 >
-                  <img src="/assets/eject.svg" className="h-5 w-5" alt="Eject" />
+                  <img src="/assets/eject.svg" className="h-5 w-5 dark:invert" alt="Eject" />
                 </Button>
               )}
             </div>
@@ -444,7 +444,7 @@ export function Dashboard() {
               >
                 <img
                   src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
-                  className="h-5 w-5"
+                  className="h-5 w-5 dark:invert"
                   alt="Toggle Right Sidebar"
                 />
               </Button>
