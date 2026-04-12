@@ -624,11 +624,12 @@ async fn load_chat(handle: AppHandle, id: String) -> Result<ChatSession, String>
 
 #[tauri::command]
 async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<String, String> {
-    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let app_dir = handle.path().app_data_dir().map_err(|e| format!("Could not resolve app data dir: {}", e))?;
     let chats_dir = app_dir.join("chats");
     
+    // Ensure the entire path exists
     if !chats_dir.exists() {
-        fs::create_dir_all(&chats_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&chats_dir).map_err(|e| format!("Failed to create chats directory at {:?}: {}", chats_dir, e))?;
     }
 
     if chat.id.is_empty() {
@@ -639,11 +640,10 @@ async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<String, S
 
     let id = chat.id.clone();
     let chat_path = chats_dir.join(format!("{}.json", id));
-    let tmp_path = chats_dir.join(format!("{}.json.tmp", id));
-
+    
+    // Use a simpler approach for now to avoid rename issues on some systems
     let json = serde_json::to_string_pretty(&chat).map_err(|e| e.to_string())?;
-    fs::write(&tmp_path, json).map_err(|e| e.to_string())?;
-    fs::rename(tmp_path, chat_path).map_err(|e| e.to_string())?;
+    fs::write(&chat_path, json).map_err(|e| format!("Failed to write chat file to {:?}: {}", chat_path, e))?;
 
     Ok(id)
 }
@@ -657,6 +657,42 @@ async fn delete_chat(handle: AppHandle, id: String) -> Result<(), String> {
         fs::remove_file(chat_path).map_err(|e| e.to_string())?;
     }
     Ok(())
+}
+
+// eject_model v2
+#[tauri::command]
+async fn eject_model(handle: AppHandle, provider: String, model_id: String) -> Result<(), String> {
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let config_val = store.get("provider_config");
+    let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
+
+    let client = reqwest::Client::new();
+
+    match provider.as_str() {
+        "local_lmstudio" => {
+            let endpoint = config.and_then(|c| c.lmstudio_endpoint).ok_or("LM Studio endpoint not configured")?;
+            let url = format!("{}/api/v1/models/unload", endpoint.trim_end_matches('/'));
+            client.post(url)
+                .header("Content-Type", "application/json")
+                .json(&serde_json::json!({ "instance_id": model_id }))
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(())
+        },
+        "local_ollama" => {
+            let endpoint = config.and_then(|c| c.ollama_endpoint).ok_or("Ollama endpoint not configured")?;
+            let url = format!("{}/api/generate", endpoint.trim_end_matches('/'));
+            client.post(url)
+                .header("Content-Type", "application/json")
+                .json(&serde_json::json!({ "model": model_id, "keep_alive": 0 }))
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(())
+        },
+        _ => Err(format!("Eject not supported for provider: {}", provider))
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -692,7 +728,8 @@ pub fn run() {
             list_chats,
             load_chat,
             save_chat,
-            delete_chat
+            delete_chat,
+            eject_model
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
