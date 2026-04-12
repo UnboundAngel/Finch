@@ -39,8 +39,18 @@
 
 ## Phase 09.1: Header & Sidebar Refinement (Bug Fixes)
 **Requirements:** [R-09.1-01, R-09.1-02]
-- [ ] R-09.1-01: Header must separate chat controls from system controls with a vertical separator.
-- [ ] R-09.1-02: Right sidebar toggle must use functional state updates and correctly trigger layout shift.
+- [x] R-09.1-01: Header must separate chat controls from system controls with a vertical separator.
+- [x] R-09.1-02: Right sidebar toggle must use functional state updates and correctly trigger layout shift.
 
 **Plans:** 1 plans
-- [ ] 09.1-01-PLAN.md — Header Grouping & Toggle Behavior Fix
+- [x] 09.1-01-PLAN.md — Header Grouping & Toggle Behavior Fix
+
+## Phase 09.2: Header Refinement & Model Bar (09-01 fixes)
+**Requirements:** [R-09.2-01, R-09.2-02]
+- [ ] R-09.2-01: Move model selector and right sidebar toggle to a dedicated second bar.
+- [ ] R-09.2-02: Add an unload (Eject) button for local models to clear current selection.
+
+**Plans:** 1 plans
+- [ ] 09.2-01-PLAN.md — Refactor dashboard header and add model bar.
+
+## Phase 10: Voice & Search (Planned)
