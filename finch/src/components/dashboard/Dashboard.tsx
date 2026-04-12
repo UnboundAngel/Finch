@@ -31,6 +31,7 @@ import { ModelSelector } from '@/src/components/chat/ModelSelector';
 import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/ui/sidebar';
 import { WindowControls } from '@/src/components/dashboard/WindowControls';
+import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
 
 const SidebarToggleButton = () => {
   const { state, toggleSidebar } = useSidebar();
@@ -71,6 +72,7 @@ export function Dashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
   const [isIncognito, setIsIncognito] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [enterToSend, setEnterToSend] = useState(true);
   const [profileName, setProfileName] = useState('Jane Doe');
@@ -450,6 +452,18 @@ export function Dashboard() {
                     <Ghost className="h-5 w-5" />
                   </Button>
                   <Switch checked={isDark} onChange={handleThemeChange} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                    className="text-muted-foreground"
+                  >
+                    <img
+                      src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
+                      className="h-5 w-5"
+                      alt="Toggle Right Sidebar"
+                    />
+                  </Button>
                   <WindowControls isIncognito={isIncognito} />
                 </div>
               </header>
@@ -480,6 +494,7 @@ export function Dashboard() {
                 isDark={isDark}
               />
             </main>
+            <RightSidebar isOpen={isRightSidebarOpen} />
           </SidebarIncognitoController>
         </div>
       </SidebarProvider>
