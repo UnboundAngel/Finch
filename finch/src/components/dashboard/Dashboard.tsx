@@ -79,7 +79,7 @@ export function Dashboard() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
-  const { streamMessage, abort, isStreaming } = useAIStreaming();
+  const { streamMessage, abort, isStreaming, stats } = useAIStreaming();
 
   useChatPersistence({
     recentChats,
@@ -309,21 +309,35 @@ export function Dashboard() {
             if (lastMessage && lastMessage.role === 'ai') {
               return [
                 ...prev.slice(0, -1),
-                { ...lastMessage, content: lastMessage.content + token }
+                { 
+                  ...lastMessage, 
+                  content: lastMessage.content + token,
+                  metadata: {
+                    ...lastMessage.metadata,
+                    ...(stats || {})
+                  }
+                }
               ];
             }
             return prev;
           });
         }
       },
-      () => {
+      (finalStats) => {
         // onComplete
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1];
           if (lastMessage && lastMessage.role === 'ai') {
             const finalMessages: Message[] = [
               ...prev.slice(0, -1),
-              { ...lastMessage, streaming: false }
+              { 
+                ...lastMessage, 
+                streaming: false,
+                metadata: {
+                  ...lastMessage.metadata,
+                  ...(finalStats || {})
+                }
+              }
             ];
             // Escape React render phase to perform side-effects based on computed new state
             setTimeout(() => {
