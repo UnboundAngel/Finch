@@ -10,6 +10,7 @@ import {
   PanelLeftOpen,
   Ghost,
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -442,29 +443,38 @@ export function Dashboard() {
                     setSelectedModel={setSelectedModel}
                   />
                 </div>
-                <div className="flex items-center gap-2 mr-4 no-drag">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={toggleIncognito} 
-                    className={isIncognito ? (isDark ? "text-white" : "text-black") : "text-muted-foreground"}
-                  >
-                    <Ghost className="h-5 w-5" />
-                  </Button>
-                  <Switch checked={isDark} onChange={handleThemeChange} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-                    className="text-muted-foreground"
-                  >
-                    <img
-                      src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
-                      className="h-5 w-5"
-                      alt="Toggle Right Sidebar"
-                    />
-                  </Button>
-                  <WindowControls isIncognito={isIncognito} />
+                <div className="flex items-center gap-4 no-drag">
+                  {/* Group 1: Chat Controls */}
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={toggleIncognito} 
+                      className={isIncognito ? (isDark ? "text-white" : "text-black") : "text-muted-foreground"}
+                    >
+                      <Ghost className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsRightSidebarOpen(prev => !prev)}
+                      className="text-muted-foreground"
+                    >
+                      <img
+                        src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
+                        className="h-5 w-5"
+                        alt="Toggle Right Sidebar"
+                      />
+                    </Button>
+                  </div>
+
+                  <Separator orientation="vertical" className="h-4" />
+
+                  {/* Group 2: System Controls */}
+                  <div className="flex items-center gap-4">
+                    <Switch checked={isDark} onChange={handleThemeChange} />
+                    <WindowControls isIncognito={isIncognito} />
+                  </div>
                 </div>
               </header>
 
