@@ -370,12 +370,20 @@ async fn stream_message(
             };
 
             let client = reqwest::Client::new();
-            let mut req = client.post(url)
-                .json(&serde_json::json!({
-                    "model": model,
-                    "messages": [{ "role": "user", "content": prompt }],
-                    "stream": true
-                }));
+            let mut req_body = serde_json::json!({
+                "model": model,
+                "messages": [{ "role": "user", "content": prompt }],
+                "stream": true
+            });
+
+            // Add stream_options for OpenAI to get usage
+            if provider == "openai" {
+                if let Some(obj) = req_body.as_object_mut() {
+                    obj.insert("stream_options".to_string(), serde_json::json!({"include_usage": true}));
+                }
+            }
+
+            let mut req = client.post(url).json(&req_body);
             
             if let Some(key) = api_key {
                 req = req.header("Authorization", format!("Bearer {}", key));
@@ -386,9 +394,15 @@ async fn stream_message(
             use futures_util::StreamExt;
             let mut stream = resp.bytes_stream();
             let mut buffer = String::new();
+            let mut total_tokens = 0;
+            let mut stop_reason = "end_turn".to_string();
+            let mut manual_token_count = 0;
 
             while let Some(item) = stream.next().await {
-                if state.abort_flag.load(Ordering::SeqCst) { break; }
+                if state.abort_flag.load(Ordering::SeqCst) {
+                    stop_reason = "abort".to_string();
+                    break;
+                }
 
                 let chunk = item.map_err(|e| e.to_string())?;
                 buffer.push_str(&String::from_utf8_lossy(&chunk));
@@ -401,13 +415,43 @@ async fn stream_message(
                         let data = &line[6..];
                         if data == "[DONE]" { break; }
                         if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
-                            if let Some(content) = json["choices"][0]["delta"]["content"].as_str() {
-                                channel.send(content.to_string()).map_err(|e| e.to_string())?;
+                            if let Some(choices) = json.get("choices").and_then(|c| c.as_array()) {
+                                if !choices.is_empty() {
+                                    if let Some(content) = choices[0]["delta"]["content"].as_str() {
+                                        manual_token_count += 1;
+                                        channel.send(content.to_string()).map_err(|e| e.to_string())?;
+                                    }
+                                    if let Some(reason) = choices[0]["finish_reason"].as_str() {
+                                        stop_reason = match reason {
+                                            "stop" => "end_turn".to_string(),
+                                            "length" => "max_tokens".to_string(),
+                                            _ => reason.to_string(),
+                                        };
+                                    }
+                                }
+                            }
+                            
+                            if let Some(usage) = json.get("usage") {
+                                if let Some(completion_tokens) = usage["completion_tokens"].as_u64() {
+                                    total_tokens = completion_tokens;
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // Fallback to manual count if usage wasn't provided
+            if total_tokens == 0 {
+                total_tokens = manual_token_count;
+            }
+
+            let stats = serde_json::json!({
+                "stop_reason": stop_reason,
+                "total_tokens": total_tokens
+            });
+            channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
+
             Ok(())
         },
         "gemini" => {
@@ -426,9 +470,15 @@ async fn stream_message(
             use futures_util::StreamExt;
             let mut stream = resp.bytes_stream();
             let mut buffer = String::new();
+            let mut total_tokens = 0;
+            let mut stop_reason = "end_turn".to_string();
+            let mut manual_token_count = 0;
 
             while let Some(item) = stream.next().await {
-                if state.abort_flag.load(Ordering::SeqCst) { break; }
+                if state.abort_flag.load(Ordering::SeqCst) {
+                    stop_reason = "abort".to_string();
+                    break;
+                }
 
                 let chunk = item.map_err(|e| e.to_string())?;
                 buffer.push_str(&String::from_utf8_lossy(&chunk));
@@ -440,13 +490,42 @@ async fn stream_message(
                     if line.starts_with("data: ") {
                         let data = &line[6..];
                         if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
-                            if let Some(content) = json["candidates"][0]["content"]["parts"][0]["text"].as_str() {
-                                channel.send(content.to_string()).map_err(|e| e.to_string())?;
+                            if let Some(candidates) = json.get("candidates").and_then(|c| c.as_array()) {
+                                if !candidates.is_empty() {
+                                    if let Some(content) = candidates[0]["content"]["parts"][0]["text"].as_str() {
+                                        manual_token_count += 1;
+                                        channel.send(content.to_string()).map_err(|e| e.to_string())?;
+                                    }
+                                    if let Some(reason) = candidates[0]["finishReason"].as_str() {
+                                        stop_reason = match reason {
+                                            "STOP" => "end_turn".to_string(),
+                                            "MAX_TOKENS" => "max_tokens".to_string(),
+                                            _ => reason.to_lowercase(),
+                                        };
+                                    }
+                                }
+                            }
+
+                            if let Some(usage) = json.get("usageMetadata") {
+                                if let Some(count) = usage["candidatesTokenCount"].as_u64() {
+                                    total_tokens = count;
+                                }
                             }
                         }
                     }
                 }
             }
+
+            if total_tokens == 0 {
+                total_tokens = manual_token_count;
+            }
+
+            let stats = serde_json::json!({
+                "stop_reason": stop_reason,
+                "total_tokens": total_tokens
+            });
+            channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
+
             Ok(())
         },
         _ => Err(format!("Unsupported provider: {}", provider))
