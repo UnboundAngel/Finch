@@ -69,4 +69,12 @@
 **Plans:** 1 plans
 - [x] 09.4-01-PLAN.md — Consolidate header bars into single strip.
 
+## Phase 09.5: Layout Hotfixes & Migration Stability
+**Requirements:** [R-09.5-01, R-09.5-02]
+- [ ] R-09.5-01: Ensure left sidebar toggle icons use correct assets with leading slashes.
+- [ ] R-09.5-02: Ensure chat migration includes `created_at` timestamp.
+
+**Plans:** 1 plans
+- [ ] 09.5-01-PLAN.md — Fix Sidebar Icon & Chat Migration
+
 ## Phase 10: Voice & Search (Planned)
