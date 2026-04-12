@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { BackgroundPlus } from '@/components/ui/background-plus';
 import {
   ChevronDown,
   PanelLeftClose,
@@ -416,12 +417,12 @@ export function Dashboard() {
                         provider: selectedProvider, 
                         model_id: selectedModel 
                       });
+                      setSelectedModel('');
+                      setSelectedProvider('');
+                      toast.success('Model ejected successfully');
                     } catch (err) {
                       console.error('Failed to eject model:', err);
                       toast.error('Failed to eject model');
-                    } finally {
-                      setSelectedModel('');
-                      setSelectedProvider('');
                     }
                   }}
                 >
@@ -510,7 +511,15 @@ export function Dashboard() {
                       : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
                   : "bg-background text-foreground"
               }`}>
-                {/* Chat Area */}
+                {/* Unified Background Pattern - Absolute and full-height */}
+                <BackgroundPlus 
+                  plusColor="#888888" 
+                  className="absolute inset-0 opacity-[0.05] dark:opacity-[0.1] z-0" 
+                  fade={true}
+                  plusSize={40}
+                />
+
+                {/* Chat Area - Flex-1 to fill remaining space */}
                 <ChatArea 
                   messages={messages} 
                   isThinking={isThinking} 
@@ -520,7 +529,7 @@ export function Dashboard() {
                   isIncognito={isIncognito}
                 />
 
-                {/* Input Area */}
+                {/* Input Area - Flex-shrink-0 to sit at bottom */}
                 <ChatInput 
                   input={input}
                   setInput={setInput}
