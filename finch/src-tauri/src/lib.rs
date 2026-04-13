@@ -829,7 +829,7 @@ async fn get_model_loaded_status(
     model_id: String
 ) -> Result<bool, String> {
     println!("[DEBUG] Rust: get_model_loaded_status called for {} / {}", provider, model_id);
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
