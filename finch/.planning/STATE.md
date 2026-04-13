@@ -81,6 +81,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Find actual source of red border in ChatInput | Completed | 2026-04-12 |
 | Trace isModelLoaded false source | Completed | 2026-04-12 |
 | Fix model loaded status always showing red border | Completed | 2026-04-12 |
 | Exclusive bookmarks for providers | Completed | 2026-04-11 |
