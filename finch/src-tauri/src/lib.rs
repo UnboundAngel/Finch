@@ -316,7 +316,12 @@ async fn send_message(
     handle: AppHandle,
     prompt: String, 
     model: String,
-    provider: String
+    provider: String,
+    system_prompt: Option<String>,
+    temperature: Option<f32>,
+    top_p: Option<f32>,
+    max_tokens: Option<u32>,
+    stop_strings: Option<Vec<String>>
 ) -> Result<String, String> {
     println!("Rust received (provider: {}, model: {}): {}", provider, model, prompt);
 
@@ -337,8 +342,12 @@ async fn send_message(
                     role: "user".to_string(),
                     content: prompt,
                 }],
-                max_tokens: 1024,
+                max_tokens: max_tokens.unwrap_or(2048),
                 stream: false,
+                system: system_prompt,
+                temperature,
+                top_p,
+                stop_sequences: stop_strings,
             };
 
             let response = client.call_anthropic(request).await?;
@@ -348,33 +357,79 @@ async fn send_message(
                 Err("No content returned from Anthropic".to_string())
             }
         },
-        "openai" => {
-            let api_key = config.and_then(|c| c.openai_api_key).ok_or("OpenAI API key not set")?;
-            let client = reqwest::Client::new();
-            let resp = client.post("https://api.openai.com/v1/chat/completions")
-                .header("Authorization", format!("Bearer {}", api_key))
-                .json(&serde_json::json!({
-                    "model": model,
-                    "messages": [{ "role": "user", "content": prompt }],
-                    "stream": false
-                }))
-                .send()
-                .await
-                .map_err(|e| e.to_string())?;
+        "openai" | "local_ollama" | "local_lmstudio" => {
+            let (url, api_key) = if provider == "openai" {
+                let key = config.and_then(|c| c.openai_api_key).ok_or("OpenAI API key not set")?;
+                ("https://api.openai.com/v1/chat/completions".to_string(), Some(key))
+            } else {
+                let endpoint = if provider == "local_ollama" {
+                    config.and_then(|c| c.ollama_endpoint)
+                } else {
+                    config.and_then(|c| c.lmstudio_endpoint)
+                }.ok_or("Local endpoint not configured")?;
+                (format!("{}/v1/chat/completions", endpoint.trim_end_matches('/')), None)
+            };
 
+            let mut messages = Vec::new();
+            if let Some(sys) = system_prompt {
+                if !sys.is_empty() {
+                    messages.push(serde_json::json!({ "role": "system", "content": sys }));
+                }
+            }
+            messages.push(serde_json::json!({ "role": "user", "content": prompt }));
+
+            let mut body = serde_json::json!({
+                "model": model,
+                "messages": messages,
+                "stream": false
+            });
+
+            if let Some(obj) = body.as_object_mut() {
+                if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
+                if let Some(p) = top_p { obj.insert("top_p".to_string(), serde_json::json!(p)); }
+                if let Some(m) = max_tokens { obj.insert("max_tokens".to_string(), serde_json::json!(m)); }
+                if let Some(s) = stop_strings { obj.insert("stop".to_string(), serde_json::json!(s)); }
+            }
+
+            let client = reqwest::Client::new();
+            let mut req = client.post(url).json(&body);
+            if let Some(key) = api_key {
+                req = req.header("Authorization", format!("Bearer {}", key));
+            }
+
+            let resp = req.send().await.map_err(|e| e.to_string())?;
             let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
             json["choices"][0]["message"]["content"]
                 .as_str()
                 .map(|s| s.to_string())
-                .ok_or("Failed to parse OpenAI response".to_string())
+                .ok_or("Failed to parse response".to_string())
         },
         "gemini" => {
             let api_key = config.and_then(|c| c.gemini_api_key).ok_or("Gemini API key not set")?;
             let client = reqwest::Client::new();
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}", model, api_key);
+            
+            let mut contents = Vec::new();
+            if let Some(sys) = system_prompt {
+                if !sys.is_empty() {
+                    contents.push(serde_json::json!({ "role": "user", "parts": [{ "text": format!("System instructions: {}", sys) }] }));
+                    contents.push(serde_json::json!({ "role": "model", "parts": [{ "text": "Understood. I will follow those instructions." }] }));
+                }
+            }
+            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
+
+            let mut generation_config = serde_json::json!({});
+            if let Some(obj) = generation_config.as_object_mut() {
+                if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
+                if let Some(p) = top_p { obj.insert("topP".to_string(), serde_json::json!(p)); }
+                if let Some(m) = max_tokens { obj.insert("maxOutputTokens".to_string(), serde_json::json!(m)); }
+                if let Some(s) = stop_strings { obj.insert("stopSequences".to_string(), serde_json::json!(s)); }
+            }
+
             let resp = client.post(url)
                 .json(&serde_json::json!({
-                    "contents": [{ "parts": [{ "text": prompt }] }]
+                    "contents": contents,
+                    "generationConfig": generation_config
                 }))
                 .send()
                 .await
@@ -386,32 +441,6 @@ async fn send_message(
                 .map(|s| s.to_string())
                 .ok_or("Failed to parse Gemini response".to_string())
         },
-        _ if provider.starts_with("local_") => {
-            let endpoint = if provider == "local_ollama" {
-                config.and_then(|c| c.ollama_endpoint)
-            } else {
-                config.and_then(|c| c.lmstudio_endpoint)
-            }.ok_or("Local endpoint not configured")?;
-            
-            let client = reqwest::Client::new();
-            let url = format!("{}/v1/chat/completions", endpoint.trim_end_matches('/'));
-            
-            let resp = client.post(url)
-                .json(&serde_json::json!({
-                    "model": model,
-                    "messages": [{ "role": "user", "content": prompt }],
-                    "stream": false
-                }))
-                .send()
-                .await
-                .map_err(|e| e.to_string())?;
-
-            let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
-            json["choices"][0]["message"]["content"]
-                .as_str()
-                .map(|s| s.to_string())
-                .ok_or("Failed to parse local response".to_string())
-        },
         _ => Err(format!("Unsupported provider: {}", provider))
     }
 }
@@ -422,6 +451,11 @@ async fn stream_message(
     prompt: String, 
     model: String, 
     provider: String,
+    system_prompt: Option<String>,
+    temperature: Option<f32>,
+    top_p: Option<f32>,
+    max_tokens: Option<u32>,
+    stop_strings: Option<Vec<String>>,
     channel: tauri::ipc::Channel<String>,
     state: State<'_, AppState>
 ) -> Result<(), String> {
@@ -443,8 +477,12 @@ async fn stream_message(
             let request = AnthropicRequest {
                 model: map_model(&model),
                 messages: vec![Message { role: "user".to_string(), content: prompt }],
-                max_tokens: 1024,
+                max_tokens: max_tokens.unwrap_or(2048),
                 stream: true,
+                system: system_prompt,
+                temperature,
+                top_p,
+                stop_sequences: stop_strings,
             };
 
             client.stream_anthropic(request, channel, state.abort_flag.clone()).await?;
@@ -463,20 +501,33 @@ async fn stream_message(
                 (format!("{}/v1/chat/completions", endpoint.trim_end_matches('/')), None)
             };
 
-            let client = reqwest::Client::new();
+            let mut messages = Vec::new();
+            if let Some(sys) = system_prompt {
+                if !sys.is_empty() {
+                    messages.push(serde_json::json!({ "role": "system", "content": sys }));
+                }
+            }
+            messages.push(serde_json::json!({ "role": "user", "content": prompt }));
+
             let mut req_body = serde_json::json!({
                 "model": model,
-                "messages": [{ "role": "user", "content": prompt }],
+                "messages": messages,
                 "stream": true
             });
 
-            // Add stream_options for OpenAI/LM Studio to get usage
-            if provider == "openai" || provider == "local_lmstudio" {
-                if let Some(obj) = req_body.as_object_mut() {
+            if let Some(obj) = req_body.as_object_mut() {
+                if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
+                if let Some(p) = top_p { obj.insert("top_p".to_string(), serde_json::json!(p)); }
+                if let Some(m) = max_tokens { obj.insert("max_tokens".to_string(), serde_json::json!(m)); }
+                if let Some(s) = stop_strings { obj.insert("stop".to_string(), serde_json::json!(s)); }
+                
+                // Add stream_options for OpenAI/LM Studio to get usage
+                if provider == "openai" || provider == "local_lmstudio" {
                     obj.insert("stream_options".to_string(), serde_json::json!({"include_usage": true}));
                 }
             }
 
+            let client = reqwest::Client::new();
             let mut req = client.post(url).json(&req_body);
             
             if let Some(key) = api_key {
@@ -535,47 +586,19 @@ async fn stream_message(
 
                             // Extract LM Studio specific stats if present
                             if let Some(stats) = json.get("stats") {
-                                // Log final chunk stats for debugging field names
-                                if json.get("choices").and_then(|c| c.as_array()).map_or(true, |a| a.is_empty()) {
-                                    println!("DEBUG: LM Studio Stats Chunk: {}", data);
-                                }
-
                                 if let Some(tps) = stats["tokens_per_second"].as_f64() {
                                     lm_stats["tokens_per_second"] = serde_json::json!(tps);
                                 }
                                 if let Some(ttft) = stats["time_to_first_token"].as_f64() {
                                     lm_stats["time_to_first_token"] = serde_json::json!(ttft);
                                 }
-                                
-                                // Variants for predicted tokens
                                 if let Some(np) = stats["num_predicted"].as_u64() {
                                     total_tokens = np;
                                 } else if let Some(ptc) = stats["predicted_tokens_count"].as_u64() {
                                     total_tokens = ptc;
                                 }
-
-                                // Variants for duration
-                                if let Some(timings) = stats.get("timings") {
-                                    if let Some(pms) = timings["predicted_ms"].as_f64() {
-                                        lm_stats["total_duration"] = serde_json::json!(pms);
-                                    } else if let Some(tms) = timings["total_ms"].as_f64() {
-                                        lm_stats["total_duration"] = serde_json::json!(tms);
-                                    }
-                                } else if let Some(total_duration) = stats["total_duration"].as_f64() {
+                                if let Some(total_duration) = stats["total_duration"].as_f64() {
                                     lm_stats["total_duration"] = serde_json::json!(total_duration);
-                                }
-                            }
-
-                            // Also check for root-level 'timings' (standard llama.cpp / newer LM Studio)
-                            if let Some(timings) = json.get("timings") {
-                                if let Some(pn) = timings["predicted_n"].as_u64() {
-                                    total_tokens = pn;
-                                }
-                                if let Some(pms) = timings["predicted_ms"].as_f64() {
-                                    lm_stats["total_duration"] = serde_json::json!(pms);
-                                }
-                                if let Some(pps) = timings["predicted_per_second"].as_f64() {
-                                    lm_stats["tokens_per_second"] = serde_json::json!(pps);
                                 }
                             }
                         }
@@ -583,27 +606,14 @@ async fn stream_message(
                 }
             }
 
-            // Fallback to manual count if usage wasn't provided
-            if total_tokens == 0 {
-                total_tokens = manual_token_count;
-            }
-
-            let mut final_stats = serde_json::json!({
-                "stop_reason": stop_reason,
-                "total_tokens": total_tokens
-            });
-
-            // Merge LM Studio stats if they were found
+            if total_tokens == 0 { total_tokens = manual_token_count; }
+            let mut final_stats = serde_json::json!({ "stop_reason": stop_reason, "total_tokens": total_tokens });
             if let Some(obj) = final_stats.as_object_mut() {
                 if let Some(lm_obj) = lm_stats.as_object() {
-                    for (k, v) in lm_obj {
-                        obj.insert(k.clone(), v.clone());
-                    }
+                    for (k, v) in lm_obj { obj.insert(k.clone(), v.clone()); }
                 }
             }
-
             channel.send(format!("__STATS__:{}", final_stats)).map_err(|e| e.to_string())?;
-
             Ok(())
         },
         "gemini" => {
@@ -611,10 +621,25 @@ async fn stream_message(
             let client = reqwest::Client::new();
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse&key={}", model, api_key);
             
+            let mut contents = Vec::new();
+            if let Some(sys) = system_prompt {
+                if !sys.is_empty() {
+                    contents.push(serde_json::json!({ "role": "user", "parts": [{ "text": format!("System instructions: {}", sys) }] }));
+                    contents.push(serde_json::json!({ "role": "model", "parts": [{ "text": "Understood. I will follow those instructions." }] }));
+                }
+            }
+            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
+
+            let mut generation_config = serde_json::json!({});
+            if let Some(obj) = generation_config.as_object_mut() {
+                if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
+                if let Some(p) = top_p { obj.insert("topP".to_string(), serde_json::json!(p)); }
+                if let Some(m) = max_tokens { obj.insert("maxOutputTokens".to_string(), serde_json::json!(m)); }
+                if let Some(s) = stop_strings { obj.insert("stopSequences".to_string(), serde_json::json!(s)); }
+            }
+
             let resp = client.post(url)
-                .json(&serde_json::json!({
-                    "contents": [{ "parts": [{ "text": prompt }] }]
-                }))
+                .json(&serde_json::json!({ "contents": contents, "generationConfig": generation_config }))
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
@@ -631,14 +656,11 @@ async fn stream_message(
                     stop_reason = "abort".to_string();
                     break;
                 }
-
                 let chunk = item.map_err(|e| e.to_string())?;
                 buffer.push_str(&String::from_utf8_lossy(&chunk));
-
                 while let Some(line_end) = buffer.find('\n') {
                     let line = buffer[..line_end].trim().to_string();
                     buffer.drain(..=line_end);
-
                     if line.starts_with("data: ") {
                         let data = &line[6..];
                         if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
@@ -657,7 +679,6 @@ async fn stream_message(
                                     }
                                 }
                             }
-
                             if let Some(usage) = json.get("usageMetadata") {
                                 if let Some(count) = usage["candidatesTokenCount"].as_u64() {
                                     total_tokens = count;
@@ -667,17 +688,9 @@ async fn stream_message(
                     }
                 }
             }
-
-            if total_tokens == 0 {
-                total_tokens = manual_token_count;
-            }
-
-            let stats = serde_json::json!({
-                "stop_reason": stop_reason,
-                "total_tokens": total_tokens
-            });
+            if total_tokens == 0 { total_tokens = manual_token_count; }
+            let stats = serde_json::json!({ "stop_reason": stop_reason, "total_tokens": total_tokens });
             channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
-
             Ok(())
         },
         _ => Err(format!("Unsupported provider: {}", provider))

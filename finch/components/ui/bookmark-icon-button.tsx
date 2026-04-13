@@ -14,7 +14,7 @@ const animations = {
   burst: {
     initial: { scale: 0, opacity: 0 },
     animate: { scale: [0, 1.4, 1], opacity: [0, 0.4, 0] },
-    transition: { duration: 0.7, ease: "easeOut" },
+    transition: { duration: 0.7 },
   },
   particles: (index: number) => {
     const angle = (index / 5) * (2 * Math.PI);
@@ -30,7 +30,7 @@ const animations = {
         x: [0, Math.cos(angle) * radius],
         y: [0, Math.sin(angle) * radius * 0.75],
       },
-      transition: { duration, delay: index * 0.04, ease: "easeOut" },
+      transition: { duration, delay: index * 0.04 },
     };
   },
 };

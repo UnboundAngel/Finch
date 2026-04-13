@@ -100,6 +100,64 @@ export const SettingsDialog = ({
                     </div>
                     <Switch checked={isDark} onChange={onThemeChange} />
                   </div>
+                  
+                  <div className="flex flex-col gap-3 p-4 border rounded-2xl bg-muted/5">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">Chat Background</span>
+                      <span className="text-xs text-muted-foreground">Select a custom GIF or image for the chat area</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl flex-1 h-9 gap-2"
+                        onClick={async () => {
+                          try {
+                            const path = await invoke('set_background_image', { mode: 'light' });
+                            toast.success('Light mode background updated');
+                          } catch (e) {
+                            if (e !== "No file selected") toast.error(`Error: ${e}`);
+                          }
+                        }}
+                      >
+                        <Sparkles className="h-4 w-4 text-amber-500" />
+                        Set Light BG
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-xl flex-1 h-9 gap-2"
+                        onClick={async () => {
+                          try {
+                            const path = await invoke('set_background_image', { mode: 'dark' });
+                            toast.success('Dark mode background updated');
+                          } catch (e) {
+                            if (e !== "No file selected") toast.error(`Error: ${e}`);
+                          }
+                        }}
+                      >
+                        <Zap className="h-4 w-4 text-primary" />
+                        Set Dark BG
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="rounded-xl h-9 px-3 text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={async () => {
+                          try {
+                            const config: any = await invoke('get_provider_config');
+                            const cleanConfig = { ...config, custom_bg_light: null, custom_bg_dark: null };
+                            await invoke('save_provider_config', { config: cleanConfig });
+                            toast.success('Backgrounds cleared');
+                          } catch (e) {
+                            toast.error(`Error: ${e}`);
+                          }
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -252,7 +310,7 @@ const ProviderSection = ({ title, icon: Icon, description, storeKey, type, place
 
   const itemVariants = {
     hidden: { opacity: 0, y: 12 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
   };
 
   React.useEffect(() => {

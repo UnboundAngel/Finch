@@ -35,6 +35,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/ui/sidebar';
 import { WindowControls } from '@/src/components/dashboard/WindowControls';
 import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
+import { useParamsStore } from '@/src/store/useParamsStore';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import {
   ContextMenu,
@@ -459,6 +460,8 @@ export function Dashboard() {
     resetTimer();
     setIsThinking(true);
 
+    const { system_prompt, temperature, top_p, max_tokens, stop_strings } = useParamsStore.getState();
+
     let isFirstToken = true;
     streamMessage(
       userMessage,
@@ -522,6 +525,13 @@ export function Dashboard() {
       (error) => {
         setIsThinking(false);
         toast.error(`Error: ${error}`);
+      },
+      {
+        system_prompt,
+        temperature,
+        top_p,
+        max_tokens,
+        stop_strings
       }
     );
   };

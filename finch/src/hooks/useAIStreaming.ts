@@ -9,6 +9,14 @@ export interface AIStats {
   totalDuration?: number;
 }
 
+export interface GenerationParams {
+  system_prompt?: string;
+  temperature?: number;
+  top_p?: number;
+  max_tokens?: number;
+  stop_strings?: string[];
+}
+
 export function useAIStreaming() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +43,8 @@ export function useAIStreaming() {
     provider: string,
     onToken: (token: string) => void,
     onComplete?: (finalStats?: AIStats) => void,
-    onError?: (error: string) => void
+    onError?: (error: string) => void,
+    params?: GenerationParams
   ) => {
     setIsStreaming(true);
     setError(null);
@@ -106,7 +115,13 @@ export function useAIStreaming() {
         }
       };
 
-      await invoke("stream_message", { prompt, model, provider, channel });
+      await invoke("stream_message", { 
+        prompt, 
+        model, 
+        provider, 
+        channel,
+        ...params
+      });
       
       // Ensure we have final duration if it hasn't been set by stats sentinel yet
       if (!finalStats) {
