@@ -539,6 +539,9 @@ async fn stream_message(
                                 if let Some(ttft) = stats["time_to_first_token"].as_f64() {
                                     lm_stats["time_to_first_token"] = serde_json::json!(ttft);
                                 }
+                                if let Some(total_duration) = stats["total_duration"].as_f64() {
+                                    lm_stats["total_duration"] = serde_json::json!(total_duration);
+                                }
                             }
                         }
                     }
@@ -747,13 +750,10 @@ async fn eject_model(handle: AppHandle, provider: String, model_id: String) -> R
                 .json(&serde_json::json!({ "instance_id": model_id }))
                 .send()
                 .await
+                .map_err(|e| e.to_string())?
+                .error_for_status()
                 .map_err(|e| e.to_string())?;
             
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let error_text = resp.text().await.unwrap_or_else(|_| "Could not read error body".to_string());
-                return Err(format!("LM Studio eject error ({}): {}", status, error_text));
-            }
             Ok(())
         },
         "local_ollama" => {
@@ -764,13 +764,10 @@ async fn eject_model(handle: AppHandle, provider: String, model_id: String) -> R
                 .json(&serde_json::json!({ "model": model_id, "keep_alive": 0 }))
                 .send()
                 .await
+                .map_err(|e| e.to_string())?
+                .error_for_status()
                 .map_err(|e| e.to_string())?;
 
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let error_text = resp.text().await.unwrap_or_else(|_| "Could not read error body".to_string());
-                return Err(format!("Ollama eject error ({}): {}", status, error_text));
-            }
             Ok(())
         },
         _ => Err(format!("Eject not supported for provider: {}", provider))
