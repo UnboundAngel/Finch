@@ -543,6 +543,9 @@ async fn stream_message(
             let mut stop_reason = "end_turn".to_string();
             let mut manual_token_count = 0;
             let mut lm_stats = serde_json::json!({});
+            
+            let mut first_token_time: Option<std::time::Instant> = None;
+            let mut last_token_time: Option<std::time::Instant> = None;
 
             while let Some(item) = stream.next().await {
                 if state.abort_flag.load(Ordering::SeqCst) {
@@ -564,6 +567,10 @@ async fn stream_message(
                             if let Some(choices) = json.get("choices").and_then(|c| c.as_array()) {
                                 if !choices.is_empty() {
                                     if let Some(content) = choices[0]["delta"]["content"].as_str() {
+                                        if first_token_time.is_none() {
+                                            first_token_time = Some(std::time::Instant::now());
+                                        }
+                                        last_token_time = Some(std::time::Instant::now());
                                         manual_token_count += 1;
                                         channel.send(content.to_string()).map_err(|e| e.to_string())?;
                                     }
@@ -579,26 +586,43 @@ async fn stream_message(
                             
                             // Extract stats/usage
                             if let Some(usage) = json.get("usage") {
-                                if let Some(completion_tokens) = usage["completion_tokens"].as_u64() {
-                                    total_tokens = completion_tokens;
+                                let prompt_tokens = usage.get("prompt_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+                                let completion_tokens = usage.get("completion_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+                                
+                                if prompt_tokens > 0 || completion_tokens > 0 {
+                                    total_tokens = prompt_tokens + completion_tokens;
+                                    
+                                    if let (Some(first), Some(last)) = (first_token_time, last_token_time) {
+                                        let duration_ms = last.duration_since(first).as_millis() as f64;
+                                        if duration_ms > 0.0 {
+                                            lm_stats["total_duration"] = serde_json::json!(duration_ms);
+                                            lm_stats["tokens_per_second"] = serde_json::json!(completion_tokens as f64 / (duration_ms / 1000.0));
+                                        }
+                                    }
                                 }
                             }
 
-                            // Extract LM Studio specific stats if present
+                            // Extract LM Studio specific stats if present (fallback)
                             if let Some(stats) = json.get("stats") {
                                 if let Some(tps) = stats["tokens_per_second"].as_f64() {
-                                    lm_stats["tokens_per_second"] = serde_json::json!(tps);
+                                    if lm_stats.get("tokens_per_second").is_none() {
+                                        lm_stats["tokens_per_second"] = serde_json::json!(tps);
+                                    }
                                 }
                                 if let Some(ttft) = stats["time_to_first_token"].as_f64() {
                                     lm_stats["time_to_first_token"] = serde_json::json!(ttft);
                                 }
-                                if let Some(np) = stats["num_predicted"].as_u64() {
-                                    total_tokens = np;
-                                } else if let Some(ptc) = stats["predicted_tokens_count"].as_u64() {
-                                    total_tokens = ptc;
+                                if total_tokens == 0 {
+                                    if let Some(np) = stats["num_predicted"].as_u64() {
+                                        total_tokens = np;
+                                    } else if let Some(ptc) = stats["predicted_tokens_count"].as_u64() {
+                                        total_tokens = ptc;
+                                    }
                                 }
                                 if let Some(total_duration) = stats["total_duration"].as_f64() {
-                                    lm_stats["total_duration"] = serde_json::json!(total_duration);
+                                    if lm_stats.get("total_duration").is_none() {
+                                        lm_stats["total_duration"] = serde_json::json!(total_duration);
+                                    }
                                 }
                             }
                         }

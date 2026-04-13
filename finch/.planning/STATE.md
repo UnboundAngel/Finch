@@ -83,6 +83,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Fix token stats regression in stream_message for local_lmstudio | Completed | 2026-04-12 |
 | Optimize model status polling — focus-aware with slow interval | Completed | 2026-04-12 |
 | Fix model_id param formatting and log catch block in Dashboard.tsx | Completed | 2026-04-12 |
 | Add debug log to polling useEffect in Dashboard.tsx | Completed | 2026-04-12 |
