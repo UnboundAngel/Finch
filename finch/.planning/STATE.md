@@ -84,6 +84,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Hardware-Aware Parameter Slider | Completed | 2026-04-12 |
 | Implement dynamic contrast for RightSidebar | Completed | 2026-04-12 |
 | Add percentage display to sliders in RightSidebar | Completed | 2026-04-12 |
 | Fix token stats regression in stream_message for local_lmstudio | Completed | 2026-04-12 |

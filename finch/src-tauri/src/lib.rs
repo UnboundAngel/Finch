@@ -311,6 +311,29 @@ fn map_model(model_name: &str) -> String {
     }
 }
 
+use sysinfo::{System, Disks, Networks, Components};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct HardwareInfo {
+    pub total_memory_gb: f64,
+    pub available_memory_gb: f64,
+    pub cpu_count: usize,
+    pub os_name: String,
+}
+
+#[tauri::command]
+async fn get_hardware_info() -> Result<HardwareInfo, String> {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    Ok(HardwareInfo {
+        total_memory_gb: sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0,
+        available_memory_gb: sys.available_memory() as f64 / 1024.0 / 1024.0 / 1024.0,
+        cpu_count: sys.cpus().len(),
+        os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
+    })
+}
+
 #[tauri::command]
 async fn send_message(
     handle: AppHandle,
@@ -410,27 +433,38 @@ async fn send_message(
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}", model, api_key);
             
             let mut contents = Vec::new();
+            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
+
+            let mut body = serde_json::json!({
+                "contents": contents,
+            });
+
             if let Some(sys) = system_prompt {
                 if !sys.is_empty() {
-                    contents.push(serde_json::json!({ "role": "user", "parts": [{ "text": format!("System instructions: {}", sys) }] }));
-                    contents.push(serde_json::json!({ "role": "model", "parts": [{ "text": "Understood. I will follow those instructions." }] }));
+                    body["systemInstruction"] = serde_json::json!({ "parts": [{ "text": sys }] });
                 }
             }
-            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
 
             let mut generation_config = serde_json::json!({});
             if let Some(obj) = generation_config.as_object_mut() {
                 if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
                 if let Some(p) = top_p { obj.insert("topP".to_string(), serde_json::json!(p)); }
                 if let Some(m) = max_tokens { obj.insert("maxOutputTokens".to_string(), serde_json::json!(m)); }
-                if let Some(s) = stop_strings { obj.insert("stopSequences".to_string(), serde_json::json!(s)); }
+                if let Some(s) = stop_strings { 
+                    if !s.is_empty() {
+                        obj.insert("stopSequences".to_string(), serde_json::json!(s)); 
+                    }
+                }
+            }
+
+            if let Some(obj) = generation_config.as_object() {
+                if !obj.is_empty() {
+                    body["generationConfig"] = generation_config;
+                }
             }
 
             let resp = client.post(url)
-                .json(&serde_json::json!({
-                    "contents": contents,
-                    "generationConfig": generation_config
-                }))
+                .json(&body)
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
@@ -646,24 +680,38 @@ async fn stream_message(
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse&key={}", model, api_key);
             
             let mut contents = Vec::new();
+            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
+
+            let mut body = serde_json::json!({
+                "contents": contents,
+            });
+
             if let Some(sys) = system_prompt {
                 if !sys.is_empty() {
-                    contents.push(serde_json::json!({ "role": "user", "parts": [{ "text": format!("System instructions: {}", sys) }] }));
-                    contents.push(serde_json::json!({ "role": "model", "parts": [{ "text": "Understood. I will follow those instructions." }] }));
+                    body["systemInstruction"] = serde_json::json!({ "parts": [{ "text": sys }] });
                 }
             }
-            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
 
             let mut generation_config = serde_json::json!({});
             if let Some(obj) = generation_config.as_object_mut() {
                 if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
                 if let Some(p) = top_p { obj.insert("topP".to_string(), serde_json::json!(p)); }
                 if let Some(m) = max_tokens { obj.insert("maxOutputTokens".to_string(), serde_json::json!(m)); }
-                if let Some(s) = stop_strings { obj.insert("stopSequences".to_string(), serde_json::json!(s)); }
+                if let Some(s) = stop_strings { 
+                    if !s.is_empty() {
+                        obj.insert("stopSequences".to_string(), serde_json::json!(s)); 
+                    }
+                }
+            }
+
+            if let Some(obj) = generation_config.as_object() {
+                if !obj.is_empty() {
+                    body["generationConfig"] = generation_config;
+                }
             }
 
             let resp = client.post(url)
-                .json(&serde_json::json!({ "contents": contents, "generationConfig": generation_config }))
+                .json(&body)
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
@@ -968,7 +1016,8 @@ pub fn run() {
             delete_chat,
             eject_model,
             set_background_image,
-            get_model_loaded_status
+            get_model_loaded_status,
+            get_hardware_info
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

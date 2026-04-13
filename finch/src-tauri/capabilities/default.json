@@ -34,6 +34,7 @@
     "allow-eject-model",
     "allow-set-background-image",
     "allow-get-model-loaded-status",
+    "allow-get-hardware-info",
     "dialog:default",
     "store:default"
   ]

@@ -77,3 +77,8 @@ commands.allow = ["set_background_image"]
 identifier = "allow-get-model-loaded-status"
 description = "Allows the get_model_loaded_status command"
 commands.allow = ["get_model_loaded_status"]
+
+[[permission]]
+identifier = "allow-get-hardware-info"
+description = "Allows the get_hardware_info command"
+commands.allow = ["get_hardware_info"]

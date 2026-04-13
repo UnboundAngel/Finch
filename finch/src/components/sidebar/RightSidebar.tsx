@@ -7,10 +7,19 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
+import { invoke } from '@tauri-apps/api/core';
+
 interface RightSidebarProps {
   isOpen: boolean;
   isPinkMode?: boolean;
   contrast?: 'light' | 'dark';
+}
+
+interface HardwareInfo {
+  total_memory_gb: number;
+  available_memory_gb: number;
+  cpu_count: number;
+  os_name: string;
 }
 
 export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps) => {
@@ -27,6 +36,20 @@ export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps
     addStopString,
     removeStopString
   } = useModelParams();
+
+  const [hardwareInfo, setHardwareInfo] = React.useState<HardwareInfo | null>(null);
+
+  React.useEffect(() => {
+    const fetchHardware = async () => {
+      try {
+        const info = await invoke<HardwareInfo>('get_hardware_info');
+        setHardwareInfo(info);
+      } catch (e) {
+        console.error('Failed to fetch hardware info:', e);
+      }
+    };
+    fetchHardware();
+  }, []);
 
   const stopInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -64,10 +87,30 @@ export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps
     return 'accent-emerald-500';
   };
 
+  // Hardware-aware Max Tokens logic
+  const getDynamicMaxTokens = () => {
+    if (!hardwareInfo) return 8192;
+    
+    // Heuristic: 
+    // - 1GB available RAM can comfortably support ~2k-4k tokens context for most models
+    // - If total RAM < 16GB, cap at 4096 to prevent system lag
+    // - Budget increases with available RAM
+    const ramCap = hardwareInfo.total_memory_gb < 16 ? 4096 : 8192;
+    const ramBudget = Math.floor(hardwareInfo.available_memory_gb * 1024 * 2); // ~2 tokens per MB of free RAM
+    
+    return Math.max(2048, Math.min(ramCap, ramBudget));
+  };
+
+  const dynamicMax = getDynamicMaxTokens();
+
   const getMaxTokensColor = (val: number) => {
-    if (val <= 256) return 'accent-amber-500';
-    if (val <= 4096) return 'accent-emerald-500';
-    return 'accent-amber-500';
+    // Zones scale with the dynamic max
+    const safeZone = dynamicMax * 0.5;
+    const cautionZone = dynamicMax * 0.8;
+
+    if (val <= safeZone) return 'accent-emerald-500';
+    if (val <= cautionZone) return 'accent-amber-500';
+    return 'accent-red-500';
   };
 
   const textColor = contrast === 'dark' ? 'text-black' : 'text-white';
@@ -234,7 +277,7 @@ export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps
               <input
                 type="range"
                 min="1"
-                max="8192"
+                max={dynamicMax}
                 step="1"
                 value={maxTokens}
                 onChange={(e) => setMaxTokens(parseInt(e.target.value))}
