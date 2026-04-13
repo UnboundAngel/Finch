@@ -10,9 +10,10 @@ import { cn } from '@/lib/utils';
 interface RightSidebarProps {
   isOpen: boolean;
   isPinkMode?: boolean;
+  contrast?: 'light' | 'dark';
 }
 
-export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
+export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps) => {
   const {
     systemPrompt,
     temperature,
@@ -69,6 +70,12 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
     return 'accent-amber-500';
   };
 
+  const textColor = contrast === 'dark' ? 'text-black' : 'text-white';
+  const mutedTextColor = contrast === 'dark' ? 'text-black/60' : 'text-white/60';
+  const inputBg = contrast === 'dark' ? 'bg-black/10' : 'bg-white/10';
+  const borderColor = contrast === 'dark' ? 'border-black/10' : 'border-white/10';
+  const iconColor = contrast === 'dark' ? 'text-black/40 hover:text-black' : 'text-white/40 hover:text-white';
+
   return (
     <motion.aside
       initial={false}
@@ -76,15 +83,18 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
         width: isOpen ? 300 : 0,
         opacity: isOpen ? 1 : 0
       }}
-      className="h-full border-l border-white/10 overflow-hidden flex flex-col"
+      className={cn(
+        "h-full overflow-hidden flex flex-col border-l transition-colors duration-300",
+        borderColor
+      )}
     >
       <TooltipProvider delay={200}>
         <ScrollArea className="flex-1">
           <div className="p-6 space-y-8">
             {/* Header */}
             <div className="space-y-1.5">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/80">Parameters</h2>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <h2 className={cn("text-sm font-bold uppercase tracking-widest transition-colors", textColor)}>Parameters</h2>
+              <p className={cn("text-xs leading-relaxed transition-colors", mutedTextColor)}>
                 Global configuration for all AI interactions.
               </p>
             </div>
@@ -92,11 +102,11 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
             {/* 1. System Prompt */}
             <div className="space-y-3 group">
               <div className="flex items-center gap-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">System Prompt</Label>
+                <Label className={cn("text-[11px] font-bold uppercase tracking-wider transition-colors", mutedTextColor)}>System Prompt</Label>
                 <Tooltip>
                   <TooltipTrigger render={(props) => (
                     <div {...props}>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                      <HelpCircle className={cn("h-3.5 w-3.5 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
                     </div>
                   )} />
                   <TooltipContent side="left" className="max-w-[200px]">
@@ -110,12 +120,15 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder="You are a helpful assistant..."
                 className={cn(
-                  "w-full min-h-[120px] p-3 text-xs bg-black/20 border border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all hover:translate-y-[-1px]",
+                  "w-full min-h-[120px] p-3 text-xs border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all hover:translate-y-[-1px]",
+                  inputBg,
+                  borderColor,
+                  textColor,
                   isPinkMode && "focus:ring-rose-400/40 border-rose-200/30"
                 )}
               />
               <div className="flex justify-end">
-                <span className="text-[10px] font-medium text-muted-foreground/60">{tokenCount} tokens</span>
+                <span className={cn("text-[10px] font-medium transition-colors", mutedTextColor)}>{tokenCount} tokens</span>
               </div>
             </div>
 
@@ -123,11 +136,11 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
             <div className="space-y-3 group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Creativity</Label>
+                  <Label className={cn("text-[11px] font-bold uppercase tracking-wider transition-colors", mutedTextColor)}>Creativity</Label>
                   <Tooltip>
                     <TooltipTrigger render={(props) => (
                       <div {...props}>
-                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                        <HelpCircle className={cn("h-3.5 w-3.5 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
                       </div>
                     )} />
                     <TooltipContent side="left" className="max-w-[200px]">
@@ -136,8 +149,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                   </Tooltip>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-muted-foreground/80">{temperature.toFixed(2)}</span>
-                  <span className="text-[10px] font-mono text-primary/60 font-bold w-8 text-right">{Math.round((temperature / 2) * 100)}%</span>
+                  <span className={cn("text-[10px] font-mono transition-colors", mutedTextColor)}>{temperature.toFixed(2)}</span>
+                  <span className={cn("text-[10px] font-mono font-bold w-8 text-right transition-colors", isPinkMode ? 'text-rose-500/60' : 'text-primary/60')}>
+                    {Math.round((temperature / 2) * 100)}%
+                  </span>
                 </div>
               </div>
               <input
@@ -148,7 +163,8 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                 value={temperature}
                 onChange={(e) => setTemperature(parseFloat(e.target.value))}
                 className={cn(
-                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-black/40 transition-all hover:translate-y-[-1px]",
+                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all hover:translate-y-[-1px]",
+                  contrast === 'dark' ? "bg-black/20" : "bg-white/20",
                   getTemperatureColor(temperature)
                 )}
               />
@@ -158,11 +174,11 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
             <div className="space-y-3 group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Focus</Label>
+                  <Label className={cn("text-[11px] font-bold uppercase tracking-wider transition-colors", mutedTextColor)}>Focus</Label>
                   <Tooltip>
                     <TooltipTrigger render={(props) => (
                       <div {...props}>
-                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                        <HelpCircle className={cn("h-3.5 w-3.5 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
                       </div>
                     )} />
                     <TooltipContent side="left" className="max-w-[200px]">
@@ -171,8 +187,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                   </Tooltip>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-muted-foreground/80">{topP.toFixed(2)}</span>
-                  <span className="text-[10px] font-mono text-primary/60 font-bold w-8 text-right">{Math.round(topP * 100)}%</span>
+                  <span className={cn("text-[10px] font-mono transition-colors", mutedTextColor)}>{topP.toFixed(2)}</span>
+                  <span className={cn("text-[10px] font-mono font-bold w-8 text-right transition-colors", isPinkMode ? 'text-rose-500/60' : 'text-primary/60')}>
+                    {Math.round(topP * 100)}%
+                  </span>
                 </div>
               </div>
               <input
@@ -183,7 +201,8 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                 value={topP}
                 onChange={(e) => setTopP(parseFloat(e.target.value))}
                 className={cn(
-                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-black/40 transition-all hover:translate-y-[-1px]",
+                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all hover:translate-y-[-1px]",
+                  contrast === 'dark' ? "bg-black/20" : "bg-white/20",
                   getTopPColor(topP)
                 )}
               />
@@ -193,11 +212,11 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
             <div className="space-y-3 group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Response Length</Label>
+                  <Label className={cn("text-[11px] font-bold uppercase tracking-wider transition-colors", mutedTextColor)}>Response Length</Label>
                   <Tooltip>
                     <TooltipTrigger render={(props) => (
                       <div {...props}>
-                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                        <HelpCircle className={cn("h-3.5 w-3.5 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
                       </div>
                     )} />
                     <TooltipContent side="left" className="max-w-[200px]">
@@ -206,8 +225,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                   </Tooltip>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-muted-foreground/80">{maxTokens}</span>
-                  <span className="text-[10px] font-mono text-primary/60 font-bold w-8 text-right">{Math.round(((maxTokens - 1) / (8192 - 1)) * 100)}%</span>
+                  <span className={cn("text-[10px] font-mono transition-colors", mutedTextColor)}>{maxTokens}</span>
+                  <span className={cn("text-[10px] font-mono font-bold w-8 text-right transition-colors", isPinkMode ? 'text-rose-500/60' : 'text-primary/60')}>
+                    {Math.round(((maxTokens - 1) / (8192 - 1)) * 100)}%
+                  </span>
                 </div>
               </div>
               <input
@@ -218,7 +239,8 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                 value={maxTokens}
                 onChange={(e) => setMaxTokens(parseInt(e.target.value))}
                 className={cn(
-                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-black/40 transition-all hover:translate-y-[-1px]",
+                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer transition-all hover:translate-y-[-1px]",
+                  contrast === 'dark' ? "bg-black/20" : "bg-white/20",
                   getMaxTokensColor(maxTokens)
                 )}
               />
@@ -228,11 +250,11 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
             <div className="space-y-3 group">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Stop Words</Label>
+                  <Label className={cn("text-[11px] font-bold uppercase tracking-wider transition-colors", mutedTextColor)}>Stop Words</Label>
                   <Tooltip>
                     <TooltipTrigger render={(props) => (
                       <div {...props}>
-                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                        <HelpCircle className={cn("h-3.5 w-3.5 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
                       </div>
                     )} />
                     <TooltipContent side="left" className="max-w-[200px]">
@@ -248,7 +270,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                   onKeyDown={handleAddStop}
                   placeholder="Type and press Enter..."
                   className={cn(
-                    "w-full h-9 px-3 text-xs bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all hover:translate-y-[-1px]",
+                    "w-full h-9 px-3 text-xs border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all hover:translate-y-[-1px]",
+                    inputBg,
+                    borderColor,
+                    textColor,
                     isPinkMode && "focus:ring-rose-400/40 border-rose-200/30"
                   )}
                 />
@@ -259,20 +284,17 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                         key={stop}
                         layout
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
+                        onClick={() => removeStopString(stop)}
                         className={cn(
-                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] group cursor-default transition-all hover:bg-white/10",
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] group cursor-default transition-all active:scale-95 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20",
+                          contrast === 'dark' ? "bg-black/5 text-black/80 border-black/10" : "bg-white/5 text-white/80 border-white/10",
                           isPinkMode && "border-rose-200/20"
                         )}
                       >
                         {stop}
-                        <button
-                          onClick={() => removeStopString(stop)}
-                          className="hover:text-destructive transition-colors focus:outline-none"
-                        >
-                          <X className="h-3 w-3 opacity-40 group-hover:opacity-100" />
-                        </button>
+                        <X className="h-3 w-3 opacity-40 group-hover:opacity-100 transition-opacity cursor-pointer" />
                       </motion.span>
                     ))}
                   </AnimatePresence>

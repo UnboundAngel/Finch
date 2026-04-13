@@ -35,7 +35,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/ui/sidebar';
 import { WindowControls } from '@/src/components/dashboard/WindowControls';
 import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
-import { useParamsStore } from '@/src/store/useParamsStore';
+import { useModelParams } from '@/src/store';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import {
   ContextMenu,
@@ -90,8 +90,13 @@ export function Dashboard() {
   const [customBgLight, setCustomBgLight] = useState('');
   const [customBgDark, setCustomBgDark] = useState('');
   const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
+  const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
+  const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [sidebarContrast, setSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
+  const [rightSidebarContrast, setRightSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [isModelLoaded, setIsModelLoaded] = useState(true);
+
+
 
   // Dev mode flag
   const IS_DEV_PINK_MODE = false; // pink mode for susie.. turn it on if you dare
@@ -267,10 +272,11 @@ export function Dashboard() {
       }
 
       const imageUrl = convertFileSrc(activeBg);
-      const [headerLum, sidebarLum, mainAreaLum] = await Promise.all([
+      const [headerLum, sidebarLum, mainAreaLum, rightSidebarLum] = await Promise.all([
         getImageLuminance(imageUrl, 'top-right'),
         getImageLuminance(imageUrl, 'left-edge'),
-        getImageLuminance(imageUrl, 'center')
+        getImageLuminance(imageUrl, 'center'),
+        getImageLuminance(imageUrl, 'right-edge')
       ]);
 
       // Custom background: Use safe neutral selection based on the center luminance (where text is)
@@ -281,6 +287,7 @@ export function Dashboard() {
       // If background is bright (> 0.5), use dark icons. If dark, use light icons.
       setHeaderContrast(headerLum > 0.5 ? 'dark' : 'light');
       setSidebarContrast(sidebarLum > 0.5 ? 'dark' : 'light');
+      setRightSidebarContrast(rightSidebarLum > 0.5 ? 'dark' : 'light');
     };
 
     analyzeBackground();
@@ -493,7 +500,7 @@ export function Dashboard() {
     resetTimer();
     setIsThinking(true);
 
-    const { system_prompt, temperature, top_p, max_tokens, stop_strings } = useParamsStore.getState();
+    const { systemPrompt, temperature, topP, maxTokens, stopStrings } = useModelParams.getState();
 
     let isFirstToken = true;
     streamMessage(
@@ -560,11 +567,11 @@ export function Dashboard() {
         toast.error(`Error: ${error}`);
       },
       {
-        system_prompt,
+        systemPrompt,
         temperature,
-        top_p,
-        max_tokens,
-        stop_strings
+        topP,
+        maxTokens,
+        stopStrings
       }
     );
   };
@@ -826,7 +833,7 @@ export function Dashboard() {
               ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5"
               : ""
             }`}>
-            <RightSidebar isOpen={isRightSidebarOpen} isPinkMode={showPinkMode} />
+            <RightSidebar isOpen={isRightSidebarOpen} isPinkMode={showPinkMode} contrast={rightSidebarContrast} />
           </div>
         </div>
       </div>

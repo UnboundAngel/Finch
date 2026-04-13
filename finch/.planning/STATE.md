@@ -84,6 +84,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Implement dynamic contrast for RightSidebar | Completed | 2026-04-12 |
 | Add percentage display to sliders in RightSidebar | Completed | 2026-04-12 |
 | Fix token stats regression in stream_message for local_lmstudio | Completed | 2026-04-12 |
 | Optimize model status polling — focus-aware with slow interval | Completed | 2026-04-12 |
