@@ -36,7 +36,7 @@ export const useInactivityEject = ({
       try {
         await invoke('eject_model', { 
           provider, 
-          model_id: modelId 
+          modelId 
         }).catch(() => {
           // Silent catch as per requirements
         });
