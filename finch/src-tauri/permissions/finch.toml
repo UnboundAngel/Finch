@@ -82,3 +82,8 @@ commands.allow = ["get_model_loaded_status"]
 identifier = "allow-get-hardware-info"
 description = "Allows the get_hardware_info command"
 commands.allow = ["get_hardware_info"]
+
+[[permission]]
+identifier = "allow-get-context-intelligence"
+description = "Allows the get_context_intelligence command"
+commands.allow = ["get_context_intelligence"]

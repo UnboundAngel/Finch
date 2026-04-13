@@ -973,6 +973,140 @@ async fn get_model_loaded_status(
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ContextIntelligence {
+    pub hardware_safe_limit: u32,
+    pub model_max: u32,
+    pub server_num_ctx: u32,
+}
+
+#[tauri::command]
+async fn get_context_intelligence(
+    handle: AppHandle,
+    provider: String,
+    model_id: String,
+) -> Result<ContextIntelligence, String> {
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
+    let config_val = store.get("provider_config");
+    let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
+
+    let client = reqwest::Client::new();
+    let mut sys = System::new_all();
+    sys.refresh_all();
+    
+    let total_memory_gb = sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
+
+    // Defaults (Optimistic)
+    let mut hardware_safe_limit = 8192;
+    let mut model_max = 8192;
+    let mut server_num_ctx = 8192;
+
+    match provider.as_str() {
+        "local_ollama" => {
+            let endpoint = config.and_then(|c| c.ollama_endpoint).ok_or("Ollama endpoint not configured")?;
+            let url = format!("{}/api/show", endpoint.trim_end_matches('/'));
+            
+            let resp = client.post(url)
+                .json(&serde_json::json!({ "name": model_id }))
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if resp.status().is_success() {
+                let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+                
+                // Parse Architecture Max
+                if let Some(model_info) = json.get("model_info").and_then(|m| m.as_object()) {
+                    for (key, value) in model_info {
+                        if key.ends_with(".context_length") {
+                            if let Some(val) = value.as_u64() {
+                                model_max = val as u32;
+                            }
+                        }
+                    }
+                }
+
+                // Parse Server num_ctx
+                if let Some(parameters) = json.get("parameters").and_then(|p| p.as_str()) {
+                    for line in parameters.lines() {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if parts.len() >= 2 && parts[0] == "num_ctx" {
+                            if let Ok(val) = parts[1].parse::<u32>() {
+                                server_num_ctx = val;
+                            }
+                        }
+                    }
+                } else {
+                    server_num_ctx = 2048; // Ollama default
+                }
+                
+                // Hardware Safe Limit Heuristic
+                let mut params_billions = 7.0; // Default
+                if let Some(details) = json.get("details").and_then(|d| d.as_object()) {
+                    if let Some(parameter_size) = details.get("parameter_size").and_then(|p| p.as_str()) {
+                        if let Some(p_val) = parameter_size.trim_end_matches('B').parse::<f64>().ok() {
+                            params_billions = p_val;
+                        }
+                    }
+                }
+
+                let quant_factor = 0.7; // Q4_K_M
+                let weight_size_gb = (params_billions * 2.0) * quant_factor;
+                let remaining_ram = total_memory_gb - weight_size_gb - 2.0;
+                
+                if remaining_ram > 0.0 {
+                    let table_rate = 4096.0;
+                    hardware_safe_limit = (remaining_ram * table_rate).floor() as u32;
+                } else {
+                    hardware_safe_limit = 2048;
+                }
+            }
+        },
+        "local_lmstudio" => {
+             let endpoint = config.and_then(|c| c.lmstudio_endpoint).ok_or("LM Studio endpoint not configured")?;
+             let url = format!("{}/api/v0/models/{}", endpoint.trim_end_matches('/'), model_id);
+             
+             let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
+             
+             if resp.status().is_success() {
+                 let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+                 if let Some(max_ctx) = json.get("max_context_length").and_then(|m| m.as_u64()) {
+                     model_max = max_ctx as u32;
+                 }
+                 server_num_ctx = model_max;
+                 
+                 let params_billions = 7.0;
+                 let quant_factor = 0.7;
+                 let weight_size_gb = (params_billions * 2.0) * quant_factor;
+                 let remaining_ram = total_memory_gb - weight_size_gb - 2.0;
+                 
+                 if remaining_ram > 0.0 {
+                     let table_rate = 4096.0;
+                     hardware_safe_limit = (remaining_ram * table_rate).floor() as u32;
+                 } else {
+                     hardware_safe_limit = 2048;
+                 }
+             }
+        },
+        _ => {
+            model_max = 128000;
+            hardware_safe_limit = 128000;
+            server_num_ctx = 128000;
+        }
+    }
+
+    if hardware_safe_limit > model_max {
+        hardware_safe_limit = model_max;
+    }
+    if hardware_safe_limit < 512 { hardware_safe_limit = 512; }
+    
+    Ok(ContextIntelligence {
+        hardware_safe_limit,
+        model_max,
+        server_num_ctx,
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1017,7 +1151,8 @@ pub fn run() {
             eject_model,
             set_background_image,
             get_model_loaded_status,
-            get_hardware_info
+            get_hardware_info,
+            get_context_intelligence
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
