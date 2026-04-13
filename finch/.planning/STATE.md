@@ -2,25 +2,23 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-last_updated: "2026-04-12T21:20:00.000Z"
+status: done
+last_updated: "2026-04-12T22:35:00.000Z"
 progress:
   total_phases: 13
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 18
-  completed_plans: 17
-  percent: 94
+  completed_plans: 18
+  percent: 100
 ---
 
 # STATE — Finch
 
-## Current Phase: Phase 10
+## Current Phase: None
 
-## Status: Planning
+## Status: Completed
 
-## Current Plan: 10-01
-
-## Progress: 0% [----------]
+## Progress: 100% [==========]
 
 ## Completed Phases
 
@@ -41,10 +39,11 @@ progress:
 - Phase 09.6: Dark Mode SVG Fixes (Completed)
 - Phase 09.7: Eject Model Implementation (Completed)
 - Phase 09.8: Window Controls Fix (Completed)
+- Phase 10: Inactivity Eject (Completed)
 
 ## Active Phase
 
-- Phase 10: Inactivity Eject
+- None
 
 ## Decisions
 
@@ -62,12 +61,12 @@ progress:
 - [Hotfix]: Added updated_at fallback to chat migration and created_at/updated_at to Dashboard save_chat calls.
 - [Hotfix]: Corrected eject_model argument from modelId to model_id to match Rust backend.
 - [Phase 09.8]: Updated WindowControls.tsx for Tauri v2 and fixed tooltip nested button errors.
-- [Phase 10]: Using `model_id` in `invoke('eject_model', ...)` per previous hotfix decision.
+- [Phase 10]: Implemented `useInactivityEject` hook with 10-minute timer (10s in DEV mode) to free hardware resources.
 
 ## Session Info
 
-- Last session: 2026-04-12T21:15:00Z
-- Stopped at: Planned Phase 10.
+- Last session: 2026-04-12T22:35:00Z
+- Stopped at: Completed Phase 10.
 
 ## Upcoming Phases
 
