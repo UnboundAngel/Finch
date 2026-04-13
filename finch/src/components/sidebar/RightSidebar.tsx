@@ -135,7 +135,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <span className="text-[10px] font-mono text-muted-foreground/80">{temperature.toFixed(2)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-muted-foreground/80">{temperature.toFixed(2)}</span>
+                  <span className="text-[10px] font-mono text-primary/60 font-bold w-8 text-right">{Math.round((temperature / 2) * 100)}%</span>
+                </div>
               </div>
               <input
                 type="range"
@@ -167,7 +170,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <span className="text-[10px] font-mono text-muted-foreground/80">{topP.toFixed(2)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-muted-foreground/80">{topP.toFixed(2)}</span>
+                  <span className="text-[10px] font-mono text-primary/60 font-bold w-8 text-right">{Math.round(topP * 100)}%</span>
+                </div>
               </div>
               <input
                 type="range"
@@ -199,7 +205,10 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <span className="text-[10px] font-mono text-muted-foreground/80">{maxTokens}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-muted-foreground/80">{maxTokens}</span>
+                  <span className="text-[10px] font-mono text-primary/60 font-bold w-8 text-right">{Math.round(((maxTokens - 1) / (8192 - 1)) * 100)}%</span>
+                </div>
               </div>
               <input
                 type="range"
