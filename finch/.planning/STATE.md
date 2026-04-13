@@ -44,10 +44,12 @@ progress:
 
 ## Active Phase
 
-- Phase 11: Chat Duplication Fix
+- Phase 09: Right Sidebar Global Params (Planning Complete)
 
 ## Decisions
 
+- [Phase 09-02]: Zustand store uses camelCase for params; Rust backend adapts camelCase to snake_case via Tauri.
+- [Phase 09-03]: Added dynamic Tailwind track coloring for sliders based on safe/amber/danger limits.
 - [Phase 09.2]: Used `LogOut` icon as a substitute for "Eject/Unload" for local models.
 - [Phase 09.3]: Root layout set to `flex flex-col` to support vertical tiering of bars and zone.
 - [Phase 09.3]: Lifted `isLeftSidebarOpen` state to `Dashboard` level to allow control from the Top Bar (outside SidebarProvider).
