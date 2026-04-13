@@ -23,7 +23,8 @@ impl Default for AppState {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[serde(default)]
 pub struct ProviderConfig {
     pub anthropic_api_key: Option<String>,
     pub openai_api_key: Option<String>,
@@ -814,6 +815,7 @@ async fn get_model_loaded_status(
     provider: String,
     model_id: String
 ) -> Result<bool, String> {
+    println!("[DEBUG] Rust: get_model_loaded_status called for {} / {}", provider, model_id);
     let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
@@ -827,8 +829,13 @@ async fn get_model_loaded_status(
             let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
             
             // If the endpoint doesn't exist (old Ollama), assume true to avoid breaking UI
+            if resp.status() == reqwest::StatusCode::NOT_FOUND {
+                return Ok(false);
+            }
+            
+            // For other errors (like 500 or connection issues), follow status
             if !resp.status().is_success() {
-                return Ok(true);
+                return Err(format!("Ollama error: {}", resp.status()));
             }
 
             let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
@@ -851,8 +858,12 @@ async fn get_model_loaded_status(
             let url = format!("{}/v1/models", endpoint.trim_end_matches('/'));
             let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
             
+            if resp.status() == reqwest::StatusCode::NOT_FOUND {
+                return Ok(false);
+            }
+
             if !resp.status().is_success() {
-                return Ok(true);
+                return Err(format!("LM Studio error: {}", resp.status()));
             }
 
             let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
