@@ -469,8 +469,8 @@ async fn stream_message(
                 "stream": true
             });
 
-            // Add stream_options for OpenAI to get usage
-            if provider == "openai" {
+            // Add stream_options for OpenAI/LM Studio to get usage
+            if provider == "openai" || provider == "local_lmstudio" {
                 if let Some(obj) = req_body.as_object_mut() {
                     obj.insert("stream_options".to_string(), serde_json::json!({"include_usage": true}));
                 }
@@ -808,6 +808,72 @@ async fn eject_model(handle: AppHandle, provider: String, model_id: String) -> R
     }
 }
 
+#[tauri::command]
+async fn get_model_loaded_status(
+    handle: AppHandle,
+    provider: String,
+    model_id: String
+) -> Result<bool, String> {
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let config_val = store.get("provider_config");
+    let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
+
+    let client = reqwest::Client::new();
+
+    match provider.as_str() {
+        "local_ollama" => {
+            let endpoint = config.and_then(|c| c.ollama_endpoint).ok_or("Ollama endpoint not configured")?;
+            let url = format!("{}/api/ps", endpoint.trim_end_matches('/'));
+            let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
+            
+            // If the endpoint doesn't exist (old Ollama), assume true to avoid breaking UI
+            if !resp.status().is_success() {
+                return Ok(true);
+            }
+
+            let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+            let model_id_base = model_id.split(':').next().unwrap_or(&model_id).to_lowercase();
+            
+            if let Some(models) = json.get("models").and_then(|m| m.as_array()) {
+                for m in models {
+                    if let Some(name) = m.get("name").and_then(|n| n.as_str()) {
+                        let name_base = name.split(':').next().unwrap_or(name).to_lowercase();
+                        if name_base == model_id_base {
+                            return Ok(true);
+                        }
+                    }
+                }
+            }
+            Ok(false)
+        },
+        "local_lmstudio" => {
+            let endpoint = config.and_then(|c| c.lmstudio_endpoint).ok_or("LM Studio endpoint not configured")?;
+            let url = format!("{}/v1/models", endpoint.trim_end_matches('/'));
+            let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
+            
+            if !resp.status().is_success() {
+                return Ok(true);
+            }
+
+            let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+            let model_id_lower = model_id.to_lowercase();
+            
+            if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
+                for m in models {
+                    if let Some(id) = m.get("id").and_then(|i| i.as_str()) {
+                        let id_lower = id.to_lowercase();
+                        if id_lower == model_id_lower || id_lower.contains(&model_id_lower) || model_id_lower.contains(&id_lower) {
+                            return Ok(true);
+                        }
+                    }
+                }
+            }
+            Ok(false)
+        },
+        _ => Ok(true)
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -850,7 +916,8 @@ pub fn run() {
             save_chat,
             delete_chat,
             eject_model,
-            set_background_image
+            set_background_image,
+            get_model_loaded_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
