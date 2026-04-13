@@ -1,23 +1,15 @@
 /**
  * Analyzes the luminance of an image at specific coordinates.
  * Used for dynamic UI contrast adjustment against custom backgrounds.
- export async function getImageLuminance(
-   imageSrc: string,
-   samplePoints: { x: number; y: number }[] | 'top-right' | 'left-edge' | 'right-edge' | 'center'
- ): Promise<number> {
-   // Overload to return a single number if a preset is used, or array if points used
-   // But for now, we'll return a number and handle the cast in the caller if needed.
-   // Actually let's make it flexible.
-
-   const points: { x: number; y: number }[] = typeof samplePoints === 'string' ? (
-     samplePoints === 'top-right' ? [{ x: 0.95, y: 0.05 }] :
-     samplePoints === 'left-edge' ? [{ x: 0.02, y: 0.5 }] :
-     samplePoints === 'right-edge' ? [{ x: 0.98, y: 0.5 }] :
-     [{ x: 0.5, y: 0.5 }]
-   ) : samplePoints;
-
-   ) : samplePoints;
-
+ */
+export async function getImageLuminance(
+  imageSrc: string,
+  samplePoints: { x: number; y: number }[] | 'top-right' | 'left-edge' | 'right-edge' | 'center'
+): Promise<number> {
+  const points: { x: number; y: number }[] = typeof samplePoints === 'string' ? (
+    samplePoints === 'top-right' ? [{ x: 0.95, y: 0.05 }] :
+    samplePoints === 'left-edge' ? [{ x: 0.02, y: 0.5 }] :
+    samplePoints === 'right-edge' ? [{ x: 0.98, y: 0.5 }] :
     [{ x: 0.5, y: 0.5 }]
   ) : samplePoints;
 
