@@ -132,9 +132,11 @@ export function Dashboard() {
       try {
         const status = await invoke<boolean>('get_model_loaded_status', {
           provider: selectedProvider,
-          modelId: selectedModel
+          model_id: selectedModel
         });
         
+        console.log(`[Status Check] ${selectedProvider} | ${selectedModel} | Loaded: ${status}`);
+
         setIsModelLoaded(prev => {
           if (prev !== status) return status;
           return prev;

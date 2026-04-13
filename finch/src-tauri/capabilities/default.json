@@ -32,6 +32,9 @@
     "allow-save-chat",
     "allow-delete-chat",
     "allow-eject-model",
+    "allow-set-background-image",
+    "allow-get-model-loaded-status",
+    "dialog:default",
     "store:default"
   ]
 }

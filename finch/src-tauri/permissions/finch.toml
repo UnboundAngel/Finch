@@ -67,3 +67,13 @@ commands.allow = ["delete_chat"]
 identifier = "allow-eject-model"
 description = "Allows the eject_model command"
 commands.allow = ["eject_model"]
+
+[[permission]]
+identifier = "allow-set-background-image"
+description = "Allows the set_background_image command"
+commands.allow = ["set_background_image"]
+
+[[permission]]
+identifier = "allow-get-model-loaded-status"
+description = "Allows the get_model_loaded_status command"
+commands.allow = ["get_model_loaded_status"]

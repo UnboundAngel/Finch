@@ -76,3 +76,11 @@ progress:
 ## Upcoming Phases
 
 - Phase 13: Voice & Search (Deferred)
+
+## Quick Tasks Completed
+
+| Task | Status | Date |
+| :--- | :--- | :--- |
+| Fix model loaded status always showing red border | Completed | 2026-04-12 |
+| Exclusive bookmarks for providers | Completed | 2026-04-11 |
+| Model selection UI refinement | Completed | 2026-04-10 |
