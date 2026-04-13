@@ -122,6 +122,7 @@ export function Dashboard() {
 
   // Polling for local model status
   useEffect(() => {
+    console.log('[POLL DEBUG]', { selectedModel, selectedProvider, startsWithLocal: selectedProvider?.startsWith('local_') });
     if (!selectedModel || !selectedProvider.startsWith('local_')) {
       setIsModelLoaded(true);
       return;
