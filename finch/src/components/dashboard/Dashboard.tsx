@@ -90,8 +90,6 @@ export function Dashboard() {
   const [customBgLight, setCustomBgLight] = useState('');
   const [customBgDark, setCustomBgDark] = useState('');
   const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
-  const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
-  const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [sidebarContrast, setSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [rightSidebarContrast, setRightSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [isModelLoaded, setIsModelLoaded] = useState(true);
@@ -257,6 +255,7 @@ export function Dashboard() {
       if (showPinkMode) {
         setHeaderContrast('dark');
         setSidebarContrast('dark');
+        setRightSidebarContrast('dark');
         document.documentElement.style.setProperty('--selection-bg', 'oklch(0.6 0.16 165 / 25%)');
         document.documentElement.style.setProperty('--selection-text', 'oklch(0.3 0.12 165)');
         return;
@@ -265,6 +264,7 @@ export function Dashboard() {
       if (!activeBg || isIncognito) {
         setHeaderContrast(isDark ? 'light' : 'dark');
         setSidebarContrast(isDark ? 'light' : 'dark');
+        setRightSidebarContrast(isDark ? 'light' : 'dark');
         // Reset to modern defaults (Violet)
         document.documentElement.style.setProperty('--selection-bg', isDark ? 'oklch(0.7 0.2 300 / 30%)' : 'oklch(0.6 0.2 300 / 20%)');
         document.documentElement.style.setProperty('--selection-text', isDark ? 'oklch(0.9 0.1 300)' : 'oklch(0.4 0.2 300)');
