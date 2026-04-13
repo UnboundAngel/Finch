@@ -525,6 +525,7 @@ async fn stream_message(
                                 }
                             }
                             
+                            // Extract stats/usage
                             if let Some(usage) = json.get("usage") {
                                 if let Some(completion_tokens) = usage["completion_tokens"].as_u64() {
                                     total_tokens = completion_tokens;
@@ -533,13 +534,31 @@ async fn stream_message(
 
                             // Extract LM Studio specific stats if present
                             if let Some(stats) = json.get("stats") {
+                                // Log final chunk stats for debugging field names
+                                if json.get("choices").and_then(|c| c.as_array()).map_or(true, |a| a.is_empty()) {
+                                    println!("DEBUG: LM Studio Stats Chunk: {}", data);
+                                }
+
                                 if let Some(tps) = stats["tokens_per_second"].as_f64() {
                                     lm_stats["tokens_per_second"] = serde_json::json!(tps);
                                 }
                                 if let Some(ttft) = stats["time_to_first_token"].as_f64() {
                                     lm_stats["time_to_first_token"] = serde_json::json!(ttft);
                                 }
-                                if let Some(total_duration) = stats["total_duration"].as_f64() {
+                                
+                                // User says num_predicted might be the correct field for total tokens
+                                if let Some(np) = stats["num_predicted"].as_u64() {
+                                    total_tokens = np;
+                                }
+
+                                // User says timings.predicted_ms or timings.total_ms for duration
+                                if let Some(timings) = stats.get("timings") {
+                                    if let Some(pms) = timings["predicted_ms"].as_f64() {
+                                        lm_stats["total_duration"] = serde_json::json!(pms);
+                                    } else if let Some(tms) = timings["total_ms"].as_f64() {
+                                        lm_stats["total_duration"] = serde_json::json!(tms);
+                                    }
+                                } else if let Some(total_duration) = stats["total_duration"].as_f64() {
                                     lm_stats["total_duration"] = serde_json::json!(total_duration);
                                 }
                             }
