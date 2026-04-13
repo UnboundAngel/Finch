@@ -81,6 +81,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Debug isModelLoaded prop value at ChatInput | Completed | 2026-04-12 |
 | Find actual source of red border in ChatInput | Completed | 2026-04-12 |
 | Trace isModelLoaded false source | Completed | 2026-04-12 |
 | Fix model loaded status always showing red border | Completed | 2026-04-12 |

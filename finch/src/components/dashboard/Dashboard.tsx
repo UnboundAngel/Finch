@@ -747,6 +747,7 @@ export function Dashboard() {
 
                         {/* Input Area */}
                         <div className="relative z-20">
+                           {console.log('[DEBUG] ChatInput props:', { selectedModel, isModelLoaded, computed: selectedModel ? isModelLoaded : true })}
                            <ChatInput
                             input={input}
                             setInput={handleInputChange}
