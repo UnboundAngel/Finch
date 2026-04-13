@@ -81,6 +81,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Debug LM Studio model ID mismatch in get_model_loaded_status | Completed | 2026-04-12 |
 | Debug isModelLoaded prop value at ChatInput | Completed | 2026-04-12 |
 | Find actual source of red border in ChatInput | Completed | 2026-04-12 |
 | Trace isModelLoaded false source | Completed | 2026-04-12 |

@@ -881,12 +881,15 @@ async fn get_model_loaded_status(
 
             let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
             let model_id_lower = model_id.to_lowercase();
+            println!("[DEBUG] LM Studio Frontend model_id: {}", model_id);
             
             if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
                 for m in models {
                     if let Some(id) = m.get("id").and_then(|i| i.as_str()) {
                         let id_lower = id.to_lowercase();
-                        if id_lower == model_id_lower || id_lower.contains(&model_id_lower) || model_id_lower.contains(&id_lower) {
+                        let is_match = id_lower == model_id_lower || id_lower.contains(&model_id_lower) || model_id_lower.contains(&id_lower);
+                        println!("[DEBUG] LM Studio returned id: {} (Match: {})", id, is_match);
+                        if is_match {
                             return Ok(true);
                         }
                     }
