@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   SidebarProvider,
   SidebarInset,
@@ -62,6 +62,13 @@ export function Dashboard() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(activeSessionId);
+
+  // Sync ref with state
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
+
   const [isThinking, setIsThinking] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
   const [selectedProvider, setSelectedProvider] = useState('anthropic');
@@ -306,7 +313,7 @@ export function Dashboard() {
     if (isIncognito) return;
 
     // Use a local copy of the ID to avoid race conditions with state updates
-    let currentSessionId = activeSessionId;
+    let currentSessionId = activeSessionIdRef.current;
     let existing = recentChats.find(c => c.id === currentSessionId);
 
     const title = existing?.title || updatedMessages[0].content.substring(0, 40);
@@ -330,9 +337,10 @@ export function Dashboard() {
       // Await the save and get the (possibly new) ID
       const savedId = await invoke<string>('save_chat', { chat: sessionToSave });
 
-      // Update state only if it was a new chat
+      // Update state and ref only if it was a new chat
       if (!currentSessionId) {
         setActiveSessionId(savedId);
+        activeSessionIdRef.current = savedId;
         sessionToSave.id = savedId;
       }
 
@@ -423,8 +431,10 @@ export function Dashboard() {
                 }
               }
             ];
-            // Perform final save
-            updateActiveSessionInList(finalMessages);
+            
+            // Perform final save OUTSIDE the render cycle to ensure purity and avoid race conditions
+            setTimeout(() => updateActiveSessionInList(finalMessages), 0);
+            
             return finalMessages;
           }
           return prev;
