@@ -76,17 +76,25 @@ export function useAIStreaming() {
         if (token.startsWith("__STATS__:")) {
           try {
             const rawStats = JSON.parse(token.substring(10));
-            const durationMs = performance.now() - startTime.current;
-            const durationSec = durationMs / 1000;
+            const wallClockDurationMs = performance.now() - startTime.current;
             
             // Prefer total_tokens from Rust if available, otherwise use our counter
             const totalTokens = rawStats.total_tokens || tokenCount.current;
             
+            // Use native duration if available (LM Studio provides total_duration in ms)
+            // Otherwise fallback to wall clock
+            const totalDuration = rawStats.total_duration || wallClockDurationMs;
+            
+            // Use native tokens per second if available, otherwise calculate from duration
+            const tokensPerSecond = rawStats.tokens_per_second 
+              ? Math.round(rawStats.tokens_per_second * 10) / 10
+              : Math.round((totalTokens / (totalDuration / 1000)) * 10) / 10;
+            
             finalStats = {
               totalTokens,
-              tokensPerSecond: Math.round((totalTokens / durationSec) * 10) / 10,
+              tokensPerSecond,
               stopReason: rawStats.stop_reason || "end_turn",
-              totalDuration: durationMs
+              totalDuration
             };
             setStats(finalStats);
           } catch (e) {
@@ -109,9 +117,6 @@ export function useAIStreaming() {
           stopReason: "stop",
           totalDuration: durationMs
         };
-      } else {
-         // Finalize duration on completion to be precise
-         finalStats.totalDuration = performance.now() - startTime.current;
       }
       
       setIsStreaming(false);
