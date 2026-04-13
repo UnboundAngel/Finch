@@ -87,26 +87,25 @@ export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps
     return 'accent-emerald-500';
   };
 
-  // Hardware-aware Max Tokens logic
-  const getDynamicMaxTokens = () => {
-    if (!hardwareInfo) return 8192;
+  // Hardware-aware safe thresholds
+  const getHardwareSafeLimit = () => {
+    if (!hardwareInfo) return 4096;
     
     // Heuristic: 
     // - 1GB available RAM can comfortably support ~2k-4k tokens context for most models
-    // - If total RAM < 16GB, cap at 4096 to prevent system lag
-    // - Budget increases with available RAM
-    const ramCap = hardwareInfo.total_memory_gb < 16 ? 4096 : 8192;
-    const ramBudget = Math.floor(hardwareInfo.available_memory_gb * 1024 * 2); // ~2 tokens per MB of free RAM
+    // - If total RAM < 16GB, safe limit is lower to prevent system lag
+    const ramCap = hardwareInfo.total_memory_gb < 16 ? 3072 : 6144;
+    const ramBudget = Math.floor(hardwareInfo.available_memory_gb * 1024 * 1.5); // ~1.5 tokens per MB
     
-    return Math.max(2048, Math.min(ramCap, ramBudget));
+    return Math.max(1024, Math.min(ramCap, ramBudget));
   };
 
-  const dynamicMax = getDynamicMaxTokens();
+  const hardwareSafeLimit = getHardwareSafeLimit();
 
   const getMaxTokensColor = (val: number) => {
-    // Zones scale with the dynamic max
-    const safeZone = dynamicMax * 0.5;
-    const cautionZone = dynamicMax * 0.8;
+    // Zones scale with the hardware safe limit
+    const safeZone = hardwareSafeLimit;
+    const cautionZone = hardwareSafeLimit * 1.5;
 
     if (val <= safeZone) return 'accent-emerald-500';
     if (val <= cautionZone) return 'accent-amber-500';
@@ -277,7 +276,7 @@ export const RightSidebar = ({ isOpen, isPinkMode, contrast }: RightSidebarProps
               <input
                 type="range"
                 min="1"
-                max={dynamicMax}
+                max="8192"
                 step="1"
                 value={maxTokens}
                 onChange={(e) => setMaxTokens(parseInt(e.target.value))}
