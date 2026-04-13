@@ -546,12 +546,14 @@ async fn stream_message(
                                     lm_stats["time_to_first_token"] = serde_json::json!(ttft);
                                 }
                                 
-                                // User says num_predicted might be the correct field for total tokens
+                                // Variants for predicted tokens
                                 if let Some(np) = stats["num_predicted"].as_u64() {
                                     total_tokens = np;
+                                } else if let Some(ptc) = stats["predicted_tokens_count"].as_u64() {
+                                    total_tokens = ptc;
                                 }
 
-                                // User says timings.predicted_ms or timings.total_ms for duration
+                                // Variants for duration
                                 if let Some(timings) = stats.get("timings") {
                                     if let Some(pms) = timings["predicted_ms"].as_f64() {
                                         lm_stats["total_duration"] = serde_json::json!(pms);
@@ -560,6 +562,19 @@ async fn stream_message(
                                     }
                                 } else if let Some(total_duration) = stats["total_duration"].as_f64() {
                                     lm_stats["total_duration"] = serde_json::json!(total_duration);
+                                }
+                            }
+
+                            // Also check for root-level 'timings' (standard llama.cpp / newer LM Studio)
+                            if let Some(timings) = json.get("timings") {
+                                if let Some(pn) = timings["predicted_n"].as_u64() {
+                                    total_tokens = pn;
+                                }
+                                if let Some(pms) = timings["predicted_ms"].as_f64() {
+                                    lm_stats["total_duration"] = serde_json::json!(pms);
+                                }
+                                if let Some(pps) = timings["predicted_per_second"].as_f64() {
+                                    lm_stats["tokens_per_second"] = serde_json::json!(pps);
                                 }
                             }
                         }
