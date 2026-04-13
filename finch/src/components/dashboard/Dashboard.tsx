@@ -134,7 +134,7 @@ export function Dashboard() {
       try {
         const status = await invoke<boolean>('get_model_loaded_status', {
           provider: selectedProvider,
-          model_id: selectedModel
+          modelId: selectedModel
         });
         
         console.log(`[Status Check] ${selectedProvider} | ${selectedModel} | Loaded: ${status}`);
@@ -144,6 +144,7 @@ export function Dashboard() {
           return prev;
         });
       } catch (e) {
+        console.error('[POLL ERROR]', e);
         setIsModelLoaded(prev => {
           if (prev !== false) return false;
           return prev;
