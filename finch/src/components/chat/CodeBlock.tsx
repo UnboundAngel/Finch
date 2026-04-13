@@ -70,15 +70,15 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
   };
 
   return (
-    <div className="relative group my-4 rounded-xl overflow-hidden border border-muted-foreground/10 bg-muted/20">
+    <div className="relative group/code my-4 rounded-xl overflow-hidden border border-muted-foreground/10 bg-muted/20">
       <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
-        <span className="text-[10px] uppercase font-bold text-muted-foreground/50 px-2 py-1 rounded bg-muted/30 border border-muted-foreground/5 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all">
+        <span className="text-[10px] uppercase font-bold text-muted-foreground/50 px-2 py-1 rounded bg-muted/30 border border-muted-foreground/5 backdrop-blur-sm opacity-0 group-hover/code:opacity-100 transition-all">
           {language}
         </span>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 bg-background/50 hover:bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all rounded-lg border border-muted-foreground/10"
+          className="h-8 w-8 bg-background/50 hover:bg-background/80 backdrop-blur-sm opacity-0 group-hover/code:opacity-100 transition-all rounded-lg border border-muted-foreground/10"
           onClick={handleCopy}
         >
           {copied ? (

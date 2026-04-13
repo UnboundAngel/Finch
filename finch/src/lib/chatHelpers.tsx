@@ -4,7 +4,7 @@ import { MessageSquare, Globe, FileText } from 'lucide-react';
 export const getChatIcon = (type?: string) => {
   switch (type) {
     case 'active':
-      return <MessageSquare className="h-4 w-4 fill-foreground text-foreground shrink-0" />;
+      return <MessageSquare className="h-4 w-4 text-foreground shrink-0" />;
     case 'inactive':
       return <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />;
     case 'web':

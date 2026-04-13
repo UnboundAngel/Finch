@@ -2,13 +2,20 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "opener:default",
     "core:window:allow-close",
     "core:window:allow-minimize",
     "core:window:allow-maximize",
+    "core:window:allow-unmaximize",
+    "core:window:allow-set-size",
+    "core:window:allow-set-position",
+    "core:window:allow-is-maximized",
+    "core:window:allow-available-monitors",
     "core:window:allow-set-resizable",
     "core:window:allow-start-dragging",
     "allow-get-provider-config",
@@ -20,6 +27,14 @@
     "allow-send-message",
     "allow-stream-message",
     "allow-abort-generation",
+    "allow-list-chats",
+    "allow-load-chat",
+    "allow-save-chat",
+    "allow-delete-chat",
+    "allow-eject-model",
+    "allow-set-background-image",
+    "allow-get-model-loaded-status",
+    "dialog:default",
     "store:default"
   ]
 }

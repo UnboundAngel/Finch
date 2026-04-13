@@ -42,3 +42,38 @@ commands.allow = ["stream_message"]
 identifier = "allow-abort-generation"
 description = "Allows the abort_generation command"
 commands.allow = ["abort_generation"]
+
+[[permission]]
+identifier = "allow-list-chats"
+description = "Allows the list_chats command"
+commands.allow = ["list_chats"]
+
+[[permission]]
+identifier = "allow-load-chat"
+description = "Allows the load_chat command"
+commands.allow = ["load_chat"]
+
+[[permission]]
+identifier = "allow-save-chat"
+description = "Allows the save_chat command"
+commands.allow = ["save_chat"]
+
+[[permission]]
+identifier = "allow-delete-chat"
+description = "Allows the delete_chat command"
+commands.allow = ["delete_chat"]
+
+[[permission]]
+identifier = "allow-eject-model"
+description = "Allows the eject_model command"
+commands.allow = ["eject_model"]
+
+[[permission]]
+identifier = "allow-set-background-image"
+description = "Allows the set_background_image command"
+commands.allow = ["set_background_image"]
+
+[[permission]]
+identifier = "allow-get-model-loaded-status"
+description = "Allows the get_model_loaded_status command"
+commands.allow = ["get_model_loaded_status"]

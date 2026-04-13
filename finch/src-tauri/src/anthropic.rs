@@ -16,6 +16,14 @@ pub struct AnthropicRequest {
     pub messages: Vec<Message>,
     pub max_tokens: u32,
     pub stream: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub system: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub top_p: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop_sequences: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -146,11 +154,13 @@ impl AnthropicClient {
 
         let mut stream = response.bytes_stream();
         let mut buffer = String::new();
+        let mut total_tokens = 0;
+        let mut stop_reason = "end_turn".to_string();
 
         while let Some(item) = stream.next().await {
             // Check for abort
             if abort_flag.load(Ordering::SeqCst) {
-                println!("Stream aborted by user in Rust loop.");
+                stop_reason = "abort".to_string();
                 break;
             }
 
@@ -171,6 +181,16 @@ impl AnthropicClient {
                                     channel.send(delta.text).map_err(|e| e.to_string())?;
                                 }
                             }
+                            AnthropicEvent::MessageDelta { delta, usage } => {
+                                if let Some(reason) = delta.stop_reason {
+                                    stop_reason = match reason.as_str() {
+                                        "end_turn" => "end_turn".to_string(),
+                                        "max_tokens" => "max_tokens".to_string(),
+                                        _ => reason,
+                                    };
+                                }
+                                total_tokens = usage.output_tokens;
+                            }
                             AnthropicEvent::Error { error } => {
                                 return Err(format!("Anthropic stream error: {}", error.message));
                             }
@@ -180,6 +200,12 @@ impl AnthropicClient {
                 }
             }
         }
+
+        let stats = serde_json::json!({
+            "stop_reason": stop_reason,
+            "total_tokens": total_tokens
+        });
+        channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
 
         Ok(())
     }

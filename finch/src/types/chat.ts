@@ -23,7 +23,11 @@ export type ChatSession = {
   id: string;
   title: string;
   messages: Message[];
+  model?: string;
+  provider?: string;
   timestamp: number;
+  created_at?: number;
+  updated_at?: number;
   type?: string;
   pinned: boolean;
   incognito: boolean;
