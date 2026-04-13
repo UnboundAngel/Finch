@@ -36,6 +36,55 @@ pub struct ProviderConfig {
     pub selected_model: Option<String>,
     pub selected_provider: Option<String>,
     pub bookmarked_models: Option<Vec<serde_json::Value>>,
+    pub custom_bg_light: Option<String>,
+    pub custom_bg_dark: Option<String>,
+}
+
+// ... existing structs ...
+
+#[tauri::command]
+async fn set_background_image(handle: AppHandle, mode: String) -> Result<String, String> {
+    use tauri_plugin_dialog::DialogExt;
+    
+    let file_path_enum = handle.dialog()
+        .file()
+        .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp"])
+        .blocking_pick_file()
+        .ok_or("No file selected")?;
+
+    let file_path = match file_path_enum {
+        tauri_plugin_dialog::FilePath::Path(p) => p,
+        _ => return Err("Selected item is not a local file".into()),
+    };
+
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let bg_dir = app_dir.join("backgrounds");
+    if !bg_dir.exists() {
+        fs::create_dir_all(&bg_dir).map_err(|e| e.to_string())?;
+    }
+
+    let file_name = file_path.file_name().ok_or("Invalid file name")?;
+    let dest_path = bg_dir.join(file_name);
+    
+    // Copy file to app data
+    fs::copy(&file_path, &dest_path).map_err(|e| e.to_string())?;
+
+    let dest_path_str = dest_path.to_string_lossy().to_string();
+
+    // Update config
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let mut config_val = store.get("provider_config").unwrap_or(serde_json::json!({}));
+    
+    if mode == "light" {
+        config_val["custom_bg_light"] = serde_json::json!(dest_path_str);
+    } else {
+        config_val["custom_bg_dark"] = serde_json::json!(dest_path_str);
+    }
+
+    store.set("provider_config", config_val);
+    store.save().map_err(|e| e.to_string())?;
+
+    Ok(dest_path_str)
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -441,6 +490,7 @@ async fn stream_message(
             let mut total_tokens = 0;
             let mut stop_reason = "end_turn".to_string();
             let mut manual_token_count = 0;
+            let mut lm_stats = serde_json::json!({});
 
             while let Some(item) = stream.next().await {
                 if state.abort_flag.load(Ordering::SeqCst) {
@@ -480,6 +530,16 @@ async fn stream_message(
                                     total_tokens = completion_tokens;
                                 }
                             }
+
+                            // Extract LM Studio specific stats if present
+                            if let Some(stats) = json.get("stats") {
+                                if let Some(tps) = stats["tokens_per_second"].as_f64() {
+                                    lm_stats["tokens_per_second"] = serde_json::json!(tps);
+                                }
+                                if let Some(ttft) = stats["time_to_first_token"].as_f64() {
+                                    lm_stats["time_to_first_token"] = serde_json::json!(ttft);
+                                }
+                            }
                         }
                     }
                 }
@@ -490,11 +550,21 @@ async fn stream_message(
                 total_tokens = manual_token_count;
             }
 
-            let stats = serde_json::json!({
+            let mut final_stats = serde_json::json!({
                 "stop_reason": stop_reason,
                 "total_tokens": total_tokens
             });
-            channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
+
+            // Merge LM Studio stats if they were found
+            if let Some(obj) = final_stats.as_object_mut() {
+                if let Some(lm_obj) = lm_stats.as_object() {
+                    for (k, v) in lm_obj {
+                        obj.insert(k.clone(), v.clone());
+                    }
+                }
+            }
+
+            channel.send(format!("__STATS__:{}", final_stats)).map_err(|e| e.to_string())?;
 
             Ok(())
         },
@@ -672,23 +742,35 @@ async fn eject_model(handle: AppHandle, provider: String, model_id: String) -> R
         "local_lmstudio" => {
             let endpoint = config.and_then(|c| c.lmstudio_endpoint).ok_or("LM Studio endpoint not configured")?;
             let url = format!("{}/api/v1/models/unload", endpoint.trim_end_matches('/'));
-            client.post(url)
+            let resp = client.post(url)
                 .header("Content-Type", "application/json")
                 .json(&serde_json::json!({ "instance_id": model_id }))
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
+            
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let error_text = resp.text().await.unwrap_or_else(|_| "Could not read error body".to_string());
+                return Err(format!("LM Studio eject error ({}): {}", status, error_text));
+            }
             Ok(())
         },
         "local_ollama" => {
             let endpoint = config.and_then(|c| c.ollama_endpoint).ok_or("Ollama endpoint not configured")?;
             let url = format!("{}/api/generate", endpoint.trim_end_matches('/'));
-            client.post(url)
+            let resp = client.post(url)
                 .header("Content-Type", "application/json")
                 .json(&serde_json::json!({ "model": model_id, "keep_alive": 0 }))
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let error_text = resp.text().await.unwrap_or_else(|_| "Could not read error body".to_string());
+                return Err(format!("Ollama eject error ({}): {}", status, error_text));
+            }
             Ok(())
         },
         _ => Err(format!("Eject not supported for provider: {}", provider))
@@ -700,6 +782,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(AppState::default())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             // Ensure chats directory exists
@@ -707,6 +790,12 @@ pub fn run() {
             let chats_dir = app_dir.join("chats");
             if !chats_dir.exists() {
                 fs::create_dir_all(&chats_dir)?;
+            }
+
+            // Ensure backgrounds directory exists
+            let bg_dir = app_dir.join("backgrounds");
+            if !bg_dir.exists() {
+                fs::create_dir_all(&bg_dir)?;
             }
 
             // Initialize and load the store
@@ -729,7 +818,8 @@ pub fn run() {
             load_chat,
             save_chat,
             delete_chat,
-            eject_model
+            eject_model,
+            set_background_image
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
