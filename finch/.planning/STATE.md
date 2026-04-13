@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-last_updated: "2026-04-13T03:10:31.172Z"
+last_updated: "2026-04-13T22:00:00.000Z"
 progress:
   total_phases: 16
   completed_phases: 14
-  total_plans: 18
-  completed_plans: 18
+  total_plans: 20
+  completed_plans: 20
   percent: 100
 ---
 
@@ -30,7 +30,7 @@ progress:
 - Phase 06: Chat Sidebar & Input Refinement (Completed)
 - Phase 07: Chat Infrastructure & Settings Migration (Completed)
 - Phase 08: Model Selector Polish (Completed)
-- Phase 09: Right Sidebar Shell + Toggle (Completed)
+- Phase 09: Right Sidebar Shell + Toggle + Global Params (Completed)
 - Phase 09.1: Header Grouping Fix (Completed)
 - Phase 09.2: Model Bar Refinement (Completed)
 - Phase 09.3: Layout Polish (Completed)
@@ -44,12 +44,13 @@ progress:
 
 ## Active Phase
 
-- Phase 09: Right Sidebar Global Params (Planning Complete)
+- Phase 11: Chat Duplication Fix
 
 ## Decisions
 
 - [Phase 09-02]: Zustand store uses camelCase for params; Rust backend adapts camelCase to snake_case via Tauri.
 - [Phase 09-03]: Added dynamic Tailwind track coloring for sliders based on safe/amber/danger limits.
+- [Phase 09-03]: Ignored glassmorphism constraint to match existing sidebar visual style.
 - [Phase 09.2]: Used `LogOut` icon as a substitute for "Eject/Unload" for local models.
 - [Phase 09.3]: Root layout set to `flex flex-col` to support vertical tiering of bars and zone.
 - [Phase 09.3]: Lifted `isLeftSidebarOpen` state to `Dashboard` level to allow control from the Top Bar (outside SidebarProvider).
@@ -73,7 +74,7 @@ progress:
 ## Session Info
 
 - Last session: 2026-04-12T23:10:00Z
-- Stopped at: Planned Phase 11 and Phase 12.
+- Stopped at: Planned Phase 11.
 
 ## Upcoming Phases
 
