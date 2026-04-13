@@ -284,10 +284,17 @@ export function Dashboard() {
       document.documentElement.style.setProperty('--selection-bg', isMainAreaBright ? 'oklch(0.6 0.2 300 / 25%)' : 'oklch(0.8 0.15 300 / 35%)');
       document.documentElement.style.setProperty('--selection-text', isMainAreaBright ? 'oklch(0.3 0.15 300)' : 'oklch(0.95 0.05 300)');
 
-      // If background is bright (> 0.5), use dark icons. If dark, use light icons.
-      setHeaderContrast(headerLum > 0.5 ? 'dark' : 'light');
-      setSidebarContrast(sidebarLum > 0.5 ? 'dark' : 'light');
-      setRightSidebarContrast(rightSidebarLum > 0.5 ? 'dark' : 'light');
+      // If background is bright (>= 0.5), use dark icons. If dark, use light icons.
+      console.log('[Luminance Check]', {
+        header: headerLum.toFixed(3),
+        leftSidebar: sidebarLum.toFixed(3),
+        rightSidebar: rightSidebarLum.toFixed(3),
+        mainArea: mainAreaLum.toFixed(3)
+      });
+
+      setHeaderContrast(headerLum >= 0.5 ? 'dark' : 'light');
+      setSidebarContrast(sidebarLum >= 0.5 ? 'dark' : 'light');
+      setRightSidebarContrast(rightSidebarLum >= 0.5 ? 'dark' : 'light');
     };
 
     analyzeBackground();

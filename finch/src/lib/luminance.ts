@@ -8,8 +8,16 @@ export async function getImageLuminance(
 ): Promise<number> {
   const points: { x: number; y: number }[] = typeof samplePoints === 'string' ? (
     samplePoints === 'top-right' ? [{ x: 0.95, y: 0.05 }] :
-    samplePoints === 'left-edge' ? [{ x: 0.02, y: 0.5 }] :
-    samplePoints === 'right-edge' ? [{ x: 0.98, y: 0.5 }] :
+    samplePoints === 'left-edge' ? [
+      { x: 0.05, y: 0.2 },
+      { x: 0.05, y: 0.5 },
+      { x: 0.05, y: 0.8 }
+    ] :
+    samplePoints === 'right-edge' ? [
+      { x: 0.92, y: 0.2 },
+      { x: 0.92, y: 0.5 },
+      { x: 0.92, y: 0.8 }
+    ] :
     [{ x: 0.5, y: 0.5 }]
   ) : samplePoints;
 
@@ -42,7 +50,9 @@ export async function getImageLuminance(
         }
       });
 
-      resolve(results[0]); // Return the first (or only) sample luminance
+      // Return the average luminance of all sample points
+      const sum = results.reduce((a, b) => a + b, 0);
+      resolve(sum / results.length);
     };
 
     img.onerror = () => {
