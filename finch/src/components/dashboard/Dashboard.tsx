@@ -91,7 +91,18 @@ export function Dashboard() {
   const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [sidebarContrast, setSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
 
+  // Dev mode flag
+  const IS_DEV_PINK_MODE = false; // pink mode for susie.. turn it on if you dare
+  const showPinkMode = IS_DEV_PINK_MODE && !isDark && !customBgLight && !isIncognito;
+
   const { streamMessage, abort, isStreaming, stats } = useAIStreaming();
+
+  useEffect(() => {
+    if (showPinkMode) {
+      setHeaderContrast('dark');
+      setSidebarContrast('dark');
+    }
+  }, [showPinkMode]);
 
   const { resetTimer } = useInactivityEject({
     provider: selectedProvider,
@@ -144,18 +155,35 @@ export function Dashboard() {
   React.useEffect(() => {
     const analyzeBackground = async () => {
       const activeBg = isDark ? customBgDark : customBgLight;
-      
+
+      if (showPinkMode) {
+        setHeaderContrast('dark');
+        setSidebarContrast('dark');
+        document.documentElement.style.setProperty('--selection-bg', 'oklch(0.6 0.16 165 / 25%)');
+        document.documentElement.style.setProperty('--selection-text', 'oklch(0.3 0.12 165)');
+        return;
+      }
+
       if (!activeBg || isIncognito) {
         setHeaderContrast(isDark ? 'light' : 'dark');
         setSidebarContrast(isDark ? 'light' : 'dark');
+        // Reset to modern defaults (Violet)
+        document.documentElement.style.setProperty('--selection-bg', isDark ? 'oklch(0.7 0.2 300 / 30%)' : 'oklch(0.6 0.2 300 / 20%)');
+        document.documentElement.style.setProperty('--selection-text', isDark ? 'oklch(0.9 0.1 300)' : 'oklch(0.4 0.2 300)');
         return;
       }
 
       const imageUrl = convertFileSrc(activeBg);
-      const [headerLum, sidebarLum] = await Promise.all([
+      const [headerLum, sidebarLum, mainAreaLum] = await Promise.all([
         getImageLuminance(imageUrl, 'top-right'),
-        getImageLuminance(imageUrl, 'left-edge')
+        getImageLuminance(imageUrl, 'left-edge'),
+        getImageLuminance(imageUrl, 'center')
       ]);
+
+      // Custom background: Use safe neutral selection based on the center luminance (where text is)
+      const isMainAreaBright = mainAreaLum > 0.5;
+      document.documentElement.style.setProperty('--selection-bg', isMainAreaBright ? 'oklch(0.6 0.2 300 / 25%)' : 'oklch(0.8 0.15 300 / 35%)');
+      document.documentElement.style.setProperty('--selection-text', isMainAreaBright ? 'oklch(0.3 0.15 300)' : 'oklch(0.95 0.05 300)');
 
       // If background is bright (> 0.5), use dark icons. If dark, use light icons.
       setHeaderContrast(headerLum > 0.5 ? 'dark' : 'light');
@@ -163,7 +191,7 @@ export function Dashboard() {
     };
 
     analyzeBackground();
-  }, [isDark, customBgLight, customBgDark, isIncognito]);
+  }, [isDark, customBgLight, customBgDark, isIncognito, showPinkMode]);
 
   const handleSwitchSession = (id: string) => {
     const session = recentChats.find(c => c.id === id);
@@ -172,6 +200,7 @@ export function Dashboard() {
         setIsIncognito(false);
       }
       setActiveSessionId(id);
+      activeSessionIdRef.current = id;
       setMessages(session.messages || []);
       toast(`Opened chat: ${session.title}`);
     }
@@ -179,6 +208,7 @@ export function Dashboard() {
 
   const handleNewChat = () => {
     setActiveSessionId(null);
+    activeSessionIdRef.current = null;
     setMessages([]);
     if (!isIncognito) {
       toast.info('Started a new chat');
@@ -198,9 +228,11 @@ export function Dashboard() {
       setIsIncognito(false);
       setMessages([]);
       setActiveSessionId(null);
+      activeSessionIdRef.current = null;
     } else {
       setIsIncognito(true);
       setActiveSessionId(null);
+      activeSessionIdRef.current = null;
     }
   };
 
@@ -214,7 +246,7 @@ export function Dashboard() {
       const updatedChats = recentChats.filter(c => c.id !== id);
       setRecentChats(updatedChats);
 
-      if (activeSessionId === id) {
+      if (activeSessionIdRef.current === id) {
         handleNewChat();
       }
 
@@ -312,7 +344,6 @@ export function Dashboard() {
   const updateActiveSessionInList = async (updatedMessages: Message[]) => {
     if (isIncognito) return;
 
-    // Use a local copy of the ID to avoid race conditions with state updates
     let currentSessionId = activeSessionIdRef.current;
     let existing = recentChats.find(c => c.id === currentSessionId);
 
@@ -334,10 +365,8 @@ export function Dashboard() {
     };
 
     try {
-      // Await the save and get the (possibly new) ID
       const savedId = await invoke<string>('save_chat', { chat: sessionToSave });
 
-      // Update state and ref only if it was a new chat
       if (!currentSessionId) {
         setActiveSessionId(savedId);
         activeSessionIdRef.current = savedId;
@@ -345,11 +374,9 @@ export function Dashboard() {
       }
 
       setRecentChats(prev => {
-        // Filter out any older versions of the same chat (prevents duplicates)
         const otherChats = prev.filter(c => c.id !== savedId);
         const updatedList = [sessionToSave, ...otherChats];
 
-        // Re-sort with pinning logic
         return updatedList.sort((a, b) => {
           if (a.pinned && !b.pinned) return -1;
           if (!a.pinned && b.pinned) return 1;
@@ -369,12 +396,8 @@ export function Dashboard() {
     const updatedMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
     setMessages(updatedMessages);
 
-    // Await initial save to ensure activeSessionId is set before stream ends
     await updateActiveSessionInList(updatedMessages);
-
-    // Reset inactivity timer on message send
     resetTimer();
-
     setIsThinking(true);
 
     let isFirstToken = true;
@@ -416,7 +439,6 @@ export function Dashboard() {
         }
       },
       (finalStats) => {
-        // onComplete
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1];
           if (lastMessage && lastMessage.role === 'ai') {
@@ -431,10 +453,7 @@ export function Dashboard() {
                 }
               }
             ];
-            
-            // Perform final save OUTSIDE the render cycle to ensure purity and avoid race conditions
             setTimeout(() => updateActiveSessionInList(finalMessages), 0);
-            
             return finalMessages;
           }
           return prev;
@@ -442,7 +461,6 @@ export function Dashboard() {
         setIsThinking(false);
       },
       (error) => {
-        // onError
         setIsThinking(false);
         toast.error(`Error: ${error}`);
       }
@@ -452,40 +470,48 @@ export function Dashboard() {
 
   return (
     <TooltipProvider>
-      <div 
-        className={`flex flex-col h-screen w-full overflow-hidden font-sans transition-all duration-500 ${
-          isIncognito 
-            ? (isDark ? "bg-black" : "bg-neutral-100") 
-            : (!isIncognito && (isDark ? customBgDark : customBgLight)) ? 'bg-transparent text-foreground' : 'bg-background text-foreground'
-        } ${(!isIncognito && (isDark ? customBgDark : customBgLight)) ? 'has-custom-bg' : ''}`}
-        style={!isIncognito && (isDark ? customBgDark : customBgLight) ? {
-          backgroundImage: `url(${convertFileSrc(isDark ? customBgDark : customBgLight)})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
-        } : {}}
+      <div
+        className={`flex flex-col h-screen w-full overflow-hidden font-sans transition-all duration-500 ${isIncognito
+          ? (isDark ? "bg-black" : "bg-neutral-100")
+          : (!isIncognito && (isDark ? customBgDark : customBgLight))
+            ? 'bg-transparent text-foreground'
+            : showPinkMode
+              ? 'bg-[#fff5f7] text-foreground is-pink-mode'
+              : 'bg-background text-foreground'
+          } ${(!isIncognito && (isDark ? customBgDark : customBgLight)) ? 'has-custom-bg' : ''}`}
+        style={{
+          ...(!isIncognito && (isDark ? customBgDark : customBgLight) ? {
+            backgroundImage: `url(${convertFileSrc(isDark ? customBgDark : customBgLight)})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+          } : {}),
+          ...(showPinkMode ? {
+            background: 'linear-gradient(to bottom, #fff5f7, #ffe4e8)'
+          } : {})
+        }}
       >
-        {/* CONSOLIDATED HEADER */}
-        <header 
+        <header
           data-tauri-drag-region
-          className={`h-14 flex items-center justify-between px-4 sticky top-0 z-20 transition-all shrink-0 ${
-            isIncognito ? 'border-transparent bg-transparent' : 'bg-background/40 backdrop-blur-xl border-b border-white/10 dark:border-white/5'
-          }`}
+          className={`h-14 flex items-center justify-between px-4 sticky top-0 z-20 transition-all shrink-0 ${isIncognito
+            ? 'border-transparent bg-transparent'
+            : showPinkMode
+              ? 'bg-gradient-to-r from-pink-300/40 via-rose-200/40 to-fuchsia-200/40 backdrop-blur-xl border-b border-pink-200/30'
+              : 'bg-background/40 backdrop-blur-xl border-b border-white/10 dark:border-white/5'
+            }`}
         >
-          {/* Left Side: Sidebar Toggles & Branding */}
           <div className="flex-1 flex items-center justify-start gap-2 pointer-events-none">
             <Button
               variant="ghost"
               size="icon"
-              className={`h-9 w-9 rounded-lg transition-all no-drag pointer-events-auto ${
-                sidebarContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
-              }`}
+              className={`h-9 w-9 rounded-lg transition-all no-drag pointer-events-auto ${sidebarContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
+                }`}
               onClick={() => setIsLeftSidebarOpen(prev => !prev)}
             >
-              <img 
-                src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"} 
-                className={`h-5 w-5 transition-all duration-300 ${sidebarContrast === 'dark' ? 'brightness-0' : 'brightness-0 invert'}`} 
+              <img
+                src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"}
+                className={`h-5 w-5 transition-all duration-300 ${sidebarContrast === 'dark' ? 'brightness-0' : 'brightness-0 invert'}`}
                 alt="Toggle Left Sidebar"
               />
             </Button>
@@ -509,10 +535,11 @@ export function Dashboard() {
                   className="h-9 w-9 opacity-50 hover:opacity-100 transition-opacity no-drag"
                   onClick={async () => {
                     try {
-                      await invoke('eject_model', { 
-                        provider: selectedProvider, 
-                        modelId: selectedModel 
-                      });                      setSelectedModel('');
+                      await invoke('eject_model', {
+                        provider: selectedProvider,
+                        modelId: selectedModel
+                      });
+                      setSelectedModel('');
                       setSelectedProvider('');
                       toast.success('Model ejected successfully');
                     } catch (err) {
@@ -530,21 +557,18 @@ export function Dashboard() {
           {/* Right Side: System Controls */}
           <div className="flex-1 flex items-center justify-end gap-2 pointer-events-none">
             <div className="flex items-center gap-2 no-drag pointer-events-auto">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleIncognito} 
-                className={`h-9 w-9 rounded-lg transition-all ${
-                  isIncognito 
-                    ? (isDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/10") 
-                    : (headerContrast === 'dark' ? "text-black hover:bg-black/10" : "text-white hover:bg-white/10")
-                }`}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleIncognito}
+                className={`h-9 w-9 rounded-lg transition-all ${isIncognito
+                  ? (isDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/10")
+                  : (headerContrast === 'dark' ? "text-black hover:bg-black/10" : "text-white hover:bg-white/10")
+                  }`}
               >
                 <Ghost className="h-5 w-5" />
               </Button>
             </div>
-
-
 
             <div className="flex items-center gap-4 no-drag pointer-events-auto">
               <Switch checked={isDark} onChange={handleThemeChange} />
@@ -552,9 +576,8 @@ export function Dashboard() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsRightSidebarOpen(prev => !prev)}
-                className={`h-9 w-9 rounded-lg transition-all ${
-                  headerContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
-                }`}
+                className={`h-9 w-9 rounded-lg transition-all ${headerContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
+                  }`}
               >
                 <img
                   src={isRightSidebarOpen ? "/assets/open-state-right.svg" : "/assets/closed-state-right.svg"}
@@ -569,7 +592,7 @@ export function Dashboard() {
 
         {/* ZONE */}
         <div className="flex flex-1 overflow-hidden relative">
-          <SidebarProvider open={isLeftSidebarOpen} onOpenChange={setIsLeftSidebarOpen} className="min-h-0">
+          <SidebarProvider open={isLeftSidebarOpen} onOpenChange={setIsLeftSidebarOpen} className="h-full min-h-0">
             <ChatSidebar
               recentChats={recentChats}
               activeSessionId={activeSessionId || ''}
@@ -599,21 +622,29 @@ export function Dashboard() {
               handleDeleteChat={handleDeleteChat}
               setIsProfileOpen={setIsProfileOpen}
               setIsSettingsOpen={setIsSettingsOpen}
-              className={!isIncognito && (isDark ? customBgDark : customBgLight) ? "bg-background/20 backdrop-blur-2xl border-r border-white/10 dark:border-white/5" : ""}
+              className={
+                showPinkMode
+                  ? "bg-gradient-to-b from-pink-100/80 to-rose-100/80 backdrop-blur-2xl border-r border-pink-200/50"
+                  : !isIncognito && (isDark ? customBgDark : customBgLight)
+                    ? "bg-background/20 backdrop-blur-2xl border-r border-white/10 dark:border-white/5"
+                    : ""
+              }
               contrast={sidebarContrast}
+              isPinkMode={showPinkMode}
             />
 
             <SidebarInset className={`flex flex-col min-w-0 min-h-0 relative bg-transparent border-none`}>
               {/* Main Content */}
               <SidebarIncognitoController isIncognito={isIncognito}>
                 <main
-                  className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-500 ease-in-out overflow-hidden ${
-                    isIncognito 
-                      ? (isDark 
-                          ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]" 
-                          : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
+                  className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-500 ease-in-out overflow-hidden ${isIncognito
+                    ? (isDark
+                      ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]"
+                      : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
+                    : showPinkMode
+                      ? "bg-gradient-to-br from-rose-50/90 to-pink-50/90 shadow-none"
                       : (!isIncognito && (isDark ? customBgDark : customBgLight) ? "bg-transparent shadow-none" : "bg-background")
-                  } text-foreground`}
+                    } text-foreground`}
                 >
                   <ContextMenu>
                     <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
@@ -626,8 +657,8 @@ export function Dashboard() {
 
                       {/* Unified Background Pattern */}
                       <BackgroundPlus
-                        plusColor="#888888"
-                        className="absolute inset-0 opacity-[0.05] dark:opacity-[0.1] z-0"
+                        plusColor={showPinkMode ? "#db2777" : "#888888"}
+                        className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.08]" : "opacity-[0.05] dark:opacity-[0.1]"}`}
                         fade={true}
                         plusSize={40}
                       />
@@ -642,6 +673,7 @@ export function Dashboard() {
                           setInput={setInput}
                           isIncognito={isIncognito}
                           hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
+                          isPinkMode={showPinkMode}
                         />
 
                         {/* Input Area */}
@@ -660,6 +692,7 @@ export function Dashboard() {
                             isIncognito={isIncognito}
                             isDark={isDark}
                             hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
+                            isPinkMode={showPinkMode}
                           />
                         </div>
                       </div>
@@ -683,8 +716,13 @@ export function Dashboard() {
               </SidebarIncognitoController>
             </SidebarInset>
           </SidebarProvider>
-          <div className={`flex-shrink-0 transition-all duration-300 relative z-30 ${isRightSidebarOpen ? 'w-[300px]' : 'w-0 overflow-hidden'} ${!isIncognito && (isDark ? customBgDark : customBgLight) ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5" : ""}`}>
-            <RightSidebar isOpen={isRightSidebarOpen} />
+          <div className={`flex-shrink-0 transition-all duration-300 relative z-30 ${isRightSidebarOpen ? 'w-[300px]' : 'w-0 overflow-hidden'} ${showPinkMode
+            ? "bg-gradient-to-b from-fuchsia-50/80 to-pink-50/80 backdrop-blur-2xl border-l border-pink-200/50"
+            : !isIncognito && (isDark ? customBgDark : customBgLight)
+              ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5"
+              : ""
+            }`}>
+            <RightSidebar isOpen={isRightSidebarOpen} isPinkMode={showPinkMode} />
           </div>
         </div>
       </div>

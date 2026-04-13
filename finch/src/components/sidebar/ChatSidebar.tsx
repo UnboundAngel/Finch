@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { useDebounce } from '../../hooks/useDebounce';
 import {
   Sidebar,
@@ -62,6 +63,8 @@ interface ChatSidebarProps {
   setProfileEmail: (email: string) => void;
   handleSwitchSession: (id: string) => void;
   className?: string;
+  contrast?: 'light' | 'dark';
+  isPinkMode?: boolean;
 }
 
 export const ChatSidebar = ({
@@ -91,6 +94,8 @@ export const ChatSidebar = ({
   isIncognito,
   setIsIncognito,
   className,
+  contrast,
+  isPinkMode,
 }: ChatSidebarProps) => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -100,12 +105,12 @@ export const ChatSidebar = ({
   };
 
   return (
-    <Sidebar className={className}>
+    <Sidebar className={cn("bg-transparent border-none", className)}>
       <SidebarHeader className="p-4 select-none">
         <div className="no-drag">
-          <Button 
-            variant="outline" 
-            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm bg-background border-muted-foreground/20 transition-all ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'}`}
+          <Button
+            variant="outline"
+            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm transition-all ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'} ${isPinkMode ? 'bg-white/60 border-rose-200/50 text-foreground' : (contrast === 'dark' ? 'bg-white/10 text-black border-black/10' : 'bg-background border-muted-foreground/20 text-foreground')}`}
             onClick={isIncognito ? undefined : handleNewChat}
             disabled={isIncognito}
           >
@@ -114,10 +119,10 @@ export const ChatSidebar = ({
           </Button>
           <div className="mt-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
+            <Input
               id="sidebar-search-input"
-              placeholder="Search chats..." 
-              className="pl-9 h-9 rounded-lg bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-primary/50"
+              placeholder="Search chats..."
+              className={`pl-9 h-9 rounded-lg border-transparent focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : 'bg-muted/50'}`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isIncognito}
@@ -145,15 +150,18 @@ export const ChatSidebar = ({
                     <SidebarMenu>
                       {pinnedChats.map((chat) => (
                         <SidebarMenuItem key={chat.id}>
-                          <SidebarMenuButton 
+                          <SidebarMenuButton
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold' : ''}`} 
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all group ${activeSessionId === chat.id
+                                ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold'
+                                : (contrast === 'dark' ? 'text-black/70 hover:text-black font-medium' : 'text-muted-foreground hover:text-foreground')
+                              }`}
                             onClick={() => !isIncognito && handleSwitchSession(chat.id)}
                             disabled={isIncognito}
                           >
                             {getChatIcon(activeSessionId === chat.id ? 'active' : chat.type)}
                             {editingSessionId === chat.id ? (
-                              <Input 
+                              <Input
                                 autoFocus
                                 value={editingTitle}
                                 onChange={(e) => setEditingTitle(e.target.value)}
@@ -163,7 +171,7 @@ export const ChatSidebar = ({
                                 onClick={(e) => e.preventDefault()}
                               />
                             ) : (
-                              <span 
+                              <span
                                 className={`truncate text-sm font-medium flex-1 ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
                                 onDoubleClick={(e) => {
                                   if (isIncognito) return;
@@ -199,15 +207,18 @@ export const ChatSidebar = ({
                     <SidebarMenu>
                       {unpinnedChats.map((chat) => (
                         <SidebarMenuItem key={chat.id}>
-                          <SidebarMenuButton 
+                          <SidebarMenuButton
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all text-muted-foreground hover:text-foreground group ${activeSessionId === chat.id ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold' : ''}`} 
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all group ${activeSessionId === chat.id
+                                ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold'
+                                : (contrast === 'dark' ? 'text-black/70 hover:text-black font-medium' : 'text-muted-foreground hover:text-foreground')
+                              }`}
                             onClick={() => !isIncognito && handleSwitchSession(chat.id)}
                             disabled={isIncognito}
                           >
                             {getChatIcon(activeSessionId === chat.id ? 'active' : chat.type)}
                             {editingSessionId === chat.id ? (
-                              <Input 
+                              <Input
                                 autoFocus
                                 value={editingTitle}
                                 onChange={(e) => setEditingTitle(e.target.value)}
@@ -217,7 +228,7 @@ export const ChatSidebar = ({
                                 onClick={(e) => e.preventDefault()}
                               />
                             ) : (
-                              <span 
+                              <span
                                 className={`truncate text-sm font-medium flex-1 ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
                                 onDoubleClick={(e) => {
                                   if (isIncognito) return;
