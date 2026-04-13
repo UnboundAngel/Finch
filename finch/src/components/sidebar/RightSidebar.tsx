@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, X, Plus } from 'lucide-react';
-import { useParamsStore } from '@/src/store/useParamsStore';
+import { HelpCircle, X } from 'lucide-react';
+import { useModelParams } from '@/src/store';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -15,29 +14,60 @@ interface RightSidebarProps {
 
 export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
   const {
-    system_prompt,
+    systemPrompt,
     temperature,
-    top_p,
-    max_tokens,
-    stop_strings,
+    topP,
+    maxTokens,
+    stopStrings,
     setSystemPrompt,
     setTemperature,
     setTopP,
     setMaxTokens,
     addStopString,
     removeStopString
-  } = useParamsStore();
+  } = useModelParams();
 
-  const [newStop, setNewStop] = useState('');
+  const stopInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleAddStop = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && newStop.trim()) {
-      addStopString(newStop.trim());
-      setNewStop('');
+  // Auto-resize textarea on mount and when systemPrompt changes
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 144)}px`;
+    }
+  }, [systemPrompt]);
+
+  const handleAddStop = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && stopInputRef.current) {
+      const val = stopInputRef.current.value.trim();
+      if (val) {
+        addStopString(val);
+        stopInputRef.current.value = '';
+      }
     }
   };
 
-  const tokenCount = Math.ceil(system_prompt.length / 4);
+  const tokenCount = Math.ceil(systemPrompt.length / 4);
+
+  const getTemperatureColor = (val: number) => {
+    if (val <= 0.3) return 'accent-red-500';
+    if (val <= 1.2) return 'accent-emerald-500';
+    if (val <= 1.8) return 'accent-amber-500';
+    return 'accent-red-500';
+  };
+
+  const getTopPColor = (val: number) => {
+    if (val <= 0.3) return 'accent-red-500';
+    if (val <= 0.7) return 'accent-amber-500';
+    return 'accent-emerald-500';
+  };
+
+  const getMaxTokensColor = (val: number) => {
+    if (val <= 256) return 'accent-amber-500';
+    if (val <= 4096) return 'accent-emerald-500';
+    return 'accent-amber-500';
+  };
 
   return (
     <motion.aside
@@ -48,51 +78,65 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
       }}
       className="h-full border-l border-white/10 overflow-hidden flex flex-col"
     >
-      <ScrollArea className="flex-1">
-        <div className="p-6 space-y-8">
-          {/* Header */}
-          <div className="space-y-1.5">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/80">Parameters</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Global configuration for all AI interactions.
-            </p>
-          </div>
-
-          {/* System Prompt */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">System Prompt</Label>
-              <span className="text-[10px] font-medium text-muted-foreground/60">{tokenCount} tokens</span>
+      <TooltipProvider delay={200}>
+        <ScrollArea className="flex-1">
+          <div className="p-6 space-y-8">
+            {/* Header */}
+            <div className="space-y-1.5">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-foreground/80">Parameters</h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Global configuration for all AI interactions.
+              </p>
             </div>
-            <textarea
-              value={system_prompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder="You are a helpful assistant..."
-              className={cn(
-                "w-full min-h-[120px] p-3 text-xs bg-black/20 border border-white/10 rounded-xl resize-none focus:outline-none focus:ring-1 transition-all",
-                isPinkMode ? "focus:ring-rose-400 border-rose-200/30" : "focus:ring-primary/50"
-              )}
-            />
-          </div>
 
-          {/* Creativity - Temperature */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            {/* 1. System Prompt */}
+            <div className="space-y-3 group">
               <div className="flex items-center gap-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Creativity</Label>
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">System Prompt</Label>
                 <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors" />
-                  </TooltipTrigger>
-
-                  <TooltipContent side="left" className="max-w-[200px] p-3 text-xs">
-                    Temperature — controls randomness. Higher = more creative, lower = more predictable.
+                  <TooltipTrigger render={(props) => (
+                    <div {...props}>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                    </div>
+                  )} />
+                  <TooltipContent side="left" className="max-w-[200px]">
+                    Sets the persona and behavior constraints for the AI.
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground/80">Temperature</span>
+              <textarea
+                ref={textareaRef}
+                value={systemPrompt}
+                onChange={(e) => setSystemPrompt(e.target.value)}
+                placeholder="You are a helpful assistant..."
+                className={cn(
+                  "w-full min-h-[120px] p-3 text-xs bg-black/20 border border-white/10 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all hover:translate-y-[-1px]",
+                  isPinkMode && "focus:ring-rose-400/40 border-rose-200/30"
+                )}
+              />
+              <div className="flex justify-end">
+                <span className="text-[10px] font-medium text-muted-foreground/60">{tokenCount} tokens</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+
+            {/* 2. Creativity (Temperature) */}
+            <div className="space-y-3 group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Creativity</Label>
+                  <Tooltip>
+                    <TooltipTrigger render={(props) => (
+                      <div {...props}>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                      </div>
+                    )} />
+                    <TooltipContent side="left" className="max-w-[200px]">
+                      Temperature: Controls randomness. 0 is deterministic, 2 is max chaos.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground/80">{temperature.toFixed(2)}</span>
+              </div>
               <input
                 type="range"
                 min="0"
@@ -101,143 +145,134 @@ export const RightSidebar = ({ isOpen, isPinkMode }: RightSidebarProps) => {
                 value={temperature}
                 onChange={(e) => setTemperature(parseFloat(e.target.value))}
                 className={cn(
-                  "flex-1 h-1 rounded-lg appearance-none cursor-pointer accent-primary",
-                  isPinkMode && "accent-rose-400"
+                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-black/40 transition-all hover:translate-y-[-1px]",
+                  getTemperatureColor(temperature)
                 )}
               />
-              <Input
-                type="number"
-                value={temperature}
-                onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                className="w-14 h-7 text-[10px] px-1.5 text-center bg-black/20 border-white/10"
-              />
             </div>
-          </div>
 
-          {/* Focus - Top P */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Focus</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors" />
-                  </TooltipTrigger>
-
-                  <TooltipContent side="left" className="max-w-[200px] p-3 text-xs">
-                    Top P — narrows token selection. Lower = more focused.
-                  </TooltipContent>
-                </Tooltip>
+            {/* 3. Focus (Top P) */}
+            <div className="space-y-3 group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Focus</Label>
+                  <Tooltip>
+                    <TooltipTrigger render={(props) => (
+                      <div {...props}>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                      </div>
+                    )} />
+                    <TooltipContent side="left" className="max-w-[200px]">
+                      Top P: Narrows token selection. Lower values make output more focused/precise.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground/80">{topP.toFixed(2)}</span>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground/80">Top P</span>
-            </div>
-            <div className="flex items-center gap-3">
               <input
                 type="range"
                 min="0"
                 max="1"
                 step="0.01"
-                value={top_p}
+                value={topP}
                 onChange={(e) => setTopP(parseFloat(e.target.value))}
                 className={cn(
-                  "flex-1 h-1 rounded-lg appearance-none cursor-pointer accent-primary",
-                  isPinkMode && "accent-rose-400"
+                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-black/40 transition-all hover:translate-y-[-1px]",
+                  getTopPColor(topP)
                 )}
               />
-              <Input
-                type="number"
-                value={top_p}
-                onChange={(e) => setTopP(parseFloat(e.target.value))}
-                className="w-14 h-7 text-[10px] px-1.5 text-center bg-black/20 border-white/10"
+            </div>
+
+            {/* 4. Response Length (Max Tokens) */}
+            <div className="space-y-3 group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Response Length</Label>
+                  <Tooltip>
+                    <TooltipTrigger render={(props) => (
+                      <div {...props}>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                      </div>
+                    )} />
+                    <TooltipContent side="left" className="max-w-[200px]">
+                      Maximum number of tokens to generate in the response.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground/80">{maxTokens}</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8192"
+                step="1"
+                value={maxTokens}
+                onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                className={cn(
+                  "w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-black/40 transition-all hover:translate-y-[-1px]",
+                  getMaxTokensColor(maxTokens)
+                )}
               />
             </div>
-          </div>
 
-          {/* Response Length */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Response Length</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors" />
-                  </TooltipTrigger>
-
-                  <TooltipContent side="left" className="max-w-[200px] p-3 text-xs">
-                    Max Tokens — maximum length of the AI response.
-                  </TooltipContent>
-                </Tooltip>
+            {/* 5. Stop Words */}
+            <div className="space-y-3 group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Stop Words</Label>
+                  <Tooltip>
+                    <TooltipTrigger render={(props) => (
+                      <div {...props}>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors hover:scale-110 active:scale-95" />
+                      </div>
+                    )} />
+                    <TooltipContent side="left" className="max-w-[200px]">
+                      The model will stop generating text if it encounters any of these strings.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground/80">Max Tokens</span>
-            </div>
-            <Input
-              type="number"
-              value={max_tokens}
-              onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-              className="w-full h-9 text-xs bg-black/20 border-white/10 focus:ring-1"
-            />
-          </div>
-
-          {/* Stop Words */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Stop Words</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground/40 cursor-help hover:text-muted-foreground transition-colors" />
-                  </TooltipTrigger>
-
-                  <TooltipContent side="left" className="max-w-[200px] p-3 text-xs">
-                    Stop Strings — model stops generating when it hits these.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <span className="text-[10px] font-mono text-muted-foreground/80">Stop Strings</span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  value={newStop}
-                  onChange={(e) => setNewStop(e.target.value)}
+              <div className="space-y-3">
+                <input
+                  ref={stopInputRef}
+                  type="text"
                   onKeyDown={handleAddStop}
-                  placeholder="Add string..."
-                  className="h-8 text-xs bg-black/20 border-white/10"
-                />
-                <button 
-                  onClick={() => { if(newStop.trim()) { addStopString(newStop.trim()); setNewStop(''); } }}
+                  placeholder="Type and press Enter..."
                   className={cn(
-                    "p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all active:scale-95",
-                    isPinkMode && "bg-rose-400/10 text-rose-500 hover:bg-rose-400/20"
+                    "w-full h-9 px-3 text-xs bg-black/20 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all hover:translate-y-[-1px]",
+                    isPinkMode && "focus:ring-rose-400/40 border-rose-200/30"
                   )}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <AnimatePresence>
-                  {stop_strings.map((stop) => (
-                    <motion.span
-                      key={stop}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      className={cn(
-                        "inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] group cursor-pointer hover:bg-destructive/10 hover:border-destructive/20 transition-all",
-                        isPinkMode && "border-rose-200/20"
-                      )}
-                      onClick={() => removeStopString(stop)}
-                    >
-                      {stop}
-                      <X className="h-2.5 w-2.5 opacity-40 group-hover:opacity-100 group-hover:text-destructive transition-all" />
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  <AnimatePresence initial={false}>
+                    {stopStrings.map((stop) => (
+                      <motion.span
+                        key={stop}
+                        layout
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] group cursor-default transition-all hover:bg-white/10",
+                          isPinkMode && "border-rose-200/20"
+                        )}
+                      >
+                        {stop}
+                        <button
+                          onClick={() => removeStopString(stop)}
+                          className="hover:text-destructive transition-colors focus:outline-none"
+                        >
+                          <X className="h-3 w-3 opacity-40 group-hover:opacity-100" />
+                        </button>
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </ScrollArea>
+        </ScrollArea>
+      </TooltipProvider>
     </motion.aside>
   );
 };
