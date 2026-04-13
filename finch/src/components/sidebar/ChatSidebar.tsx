@@ -105,7 +105,7 @@ export const ChatSidebar = ({
   };
 
   return (
-    <Sidebar className={cn("!absolute !inset-y-0 bg-transparent border-none", className)}>
+    <Sidebar className={cn("!absolute !inset-y-0 !h-full bg-transparent border-none", className)}>
       <SidebarHeader className="p-4 select-none">
         <div className="no-drag">
           <Button
