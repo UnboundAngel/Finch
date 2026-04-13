@@ -122,7 +122,6 @@ export function Dashboard() {
 
   // Polling for local model status
   useEffect(() => {
-    console.log('[POLL DEBUG]', { selectedModel, selectedProvider, startsWithLocal: selectedProvider?.startsWith('local_') });
     if (!selectedModel || !selectedProvider.startsWith('local_')) {
       setIsModelLoaded(true);
       return;
@@ -137,8 +136,6 @@ export function Dashboard() {
           modelId: selectedModel
         });
         
-        console.log(`[Status Check] ${selectedProvider} | ${selectedModel} | Loaded: ${status}`);
-
         setIsModelLoaded(prev => {
           if (prev !== status) return status;
           return prev;
@@ -152,9 +149,43 @@ export function Dashboard() {
       }
     };
 
+    let interval: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (interval) clearInterval(interval);
+      interval = setInterval(checkStatus, 30000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const handleFocus = () => {
+      checkStatus();
+      startPolling();
+    };
+
+    const handleBlur = () => {
+      stopPolling();
+    };
+
+    // Initial check and start polling
     checkStatus();
-    const interval = setInterval(checkStatus, 5000);
-    return () => clearInterval(interval);
+    if (document.hasFocus()) {
+      startPolling();
+    }
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      stopPolling();
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
   }, [selectedModel, selectedProvider]);
 
   useEffect(() => {
@@ -749,7 +780,6 @@ export function Dashboard() {
 
                         {/* Input Area */}
                         <div className="relative z-20">
-                           {console.log('[DEBUG] ChatInput props:', { selectedModel, isModelLoaded, computed: selectedModel ? isModelLoaded : true })}
                            <ChatInput
                             input={input}
                             setInput={handleInputChange}

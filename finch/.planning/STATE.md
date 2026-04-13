@@ -81,6 +81,7 @@ progress:
 
 | Task | Status | Date |
 | :--- | :--- | :--- |
+| Optimize model status polling — focus-aware with slow interval | Completed | 2026-04-12 |
 | Fix model_id param formatting and log catch block in Dashboard.tsx | Completed | 2026-04-12 |
 | Add debug log to polling useEffect in Dashboard.tsx | Completed | 2026-04-12 |
 | Fix get_model_loaded_status store access timing bug | Completed | 2026-04-12 |
