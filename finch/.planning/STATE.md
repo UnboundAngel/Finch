@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-last_updated: "2026-04-12T22:40:00.000Z"
+last_updated: "2026-04-13T03:10:31.172Z"
 progress:
-  total_phases: 14
-  completed_phases: 13
-  total_plans: 19
+  total_phases: 16
+  completed_phases: 14
+  total_plans: 18
   completed_plans: 18
-  percent: 94
+  percent: 100
 ---
 
 # STATE — Finch
@@ -18,7 +18,7 @@ progress:
 
 ## Status: Planning
 
-## Progress: 94% [========= ]
+## Progress: 100% [==========]
 
 ## Completed Phases
 
@@ -40,6 +40,7 @@ progress:
 - Phase 09.7: Eject Model Implementation (Completed)
 - Phase 09.8: Window Controls Fix (Completed)
 - Phase 10: Inactivity Eject (Completed)
+- Phase 12: Token Stats Fix (Completed)
 
 ## Active Phase
 
@@ -63,12 +64,15 @@ progress:
 - [Phase 09.8]: Updated WindowControls.tsx for Tauri v2 and fixed tooltip nested button errors.
 - [Phase 10]: Implemented `useInactivityEject` hook with 10-minute timer (10s in DEV mode) to free hardware resources.
 - [Phase 11]: Implementing `activeSessionIdRef` to prevent race conditions during first message chat creation.
+- [Phase 12]: Prioritizing native LM Studio stats (duration, TPS) over wall-clock overrides.
+- [Phase 12]: D-12-01: Extract native total_duration (ms) from LM Studio final chunk in backend.
+- [Phase 12]: D-12-02: Prioritize native total_duration and tokens_per_second in frontend stats parser.
 
 ## Session Info
 
-- Last session: 2026-04-12T22:40:00Z
-- Stopped at: Planned Phase 11.
+- Last session: 2026-04-12T23:10:00Z
+- Stopped at: Planned Phase 11 and Phase 12.
 
 ## Upcoming Phases
 
-- Phase 12: Voice & Search (Deferred)
+- Phase 13: Voice & Search (Deferred)

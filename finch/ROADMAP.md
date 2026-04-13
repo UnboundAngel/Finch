@@ -94,7 +94,7 @@
 
 ## Phase 09.8: Window Controls Fix
 **Requirements:** [WINDOW-FIX-01]
-- [x] WINDOW-FIX-01: Fix WindowControls.tsx for Tauri v2 API and nested button errors in tooltips.        
+- [x] WINDOW-FIX-01: Fix WindowControls.tsx for Tauri v2 API and nested button House errors in tooltips.   
 
 **Plans:** 1 plan
 - [x] 09.8-01-PLAN.md — Fix WindowControls.tsx
@@ -114,4 +114,12 @@
 **Plans:** 1 plan
 - [ ] 11-01-PLAN.md — Ref-track activeSessionId and fix handleSend callback.
 
-## Phase 12: Voice & Search (Deferred)
+## Phase 12: Token Stats Fix
+**Requirements:** [R-12-01, R-12-02]
+- [x] R-12-01: Extract native LM Studio duration in Rust.
+- [x] R-12-02: Prioritize native stats in useAIStreaming hook.
+
+**Plans:** 1 plan
+- [x] 12-01-PLAN.md — Implement Token Stats Fix.
+
+## Phase 13: Voice & Search (Deferred)
