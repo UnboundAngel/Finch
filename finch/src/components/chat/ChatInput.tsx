@@ -60,10 +60,8 @@ export const ChatInput = ({
   };
 
   return (
-    <div className={`flex-shrink-0 w-full pt-3 px-4 pb-1.5 md:pt-4 md:px-6 md:pb-2 z-20 transition-all ${
-      isIncognito ? 'bg-transparent' : 'bg-background/80 backdrop-blur-md'
-    }`}>
-      <div className="max-w-3xl mx-auto relative">
+    <div className="flex-shrink-0 w-full z-20 transition-all bg-transparent">
+      <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
         <div className={`relative flex items-end w-full rounded-2xl transition-all overflow-hidden border-[1.5px] ${
           isWebSearchActive 
             ? 'border-blue-500/50' 

@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { BackgroundPlus } from '@/components/ui/background-plus';
-import { Message } from '../../types/chat';
 import { MessageBubble } from './MessageBubble';
 import { ThinkingBox } from './ThinkingBox';
 
@@ -29,17 +27,9 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
   }, [messages, isThinking]);
 
   return (
-    <div className="flex-1 relative overflow-hidden flex flex-col min-h-0">
-      {/* Background Pattern */}
-      <BackgroundPlus 
-        plusColor="#888888" 
-        className="opacity-[0.05] dark:opacity-[0.1]" 
-        fade={true}
-        plusSize={40}
-      />
-      
+    <div className="flex-1 relative overflow-hidden flex flex-col bg-transparent">
       <div className="flex-1 min-h-0 overflow-y-auto w-full relative z-10 scroll-smooth">
-        <div className="max-w-3xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-8 pb-10">
+        <div className="max-w-3xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-8 pb-0">
           
           {/* Empty State / Welcome */}
           {messages.length === 0 && (
@@ -142,8 +132,6 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
           <div ref={messagesEndRef} />
         </div>
       </div>
-      {/* Bottom Fade Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background via-background/80 to-transparent z-20 pointer-events-none" />
     </div>
   );
 };

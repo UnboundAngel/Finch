@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-04-12T21:15:00.000Z"
+last_updated: "2026-04-12T21:20:00.000Z"
 progress:
   total_phases: 13
   completed_phases: 12
-  total_plans: 17
-  completed_plans: 16
+  total_plans: 18
+  completed_plans: 17
   percent: 94
 ---
 
@@ -16,7 +16,7 @@ progress:
 
 ## Current Phase: Phase 10
 
-## Status: Planning Pending
+## Status: Planning
 
 ## Current Plan: 10-01
 
@@ -44,7 +44,7 @@ progress:
 
 ## Active Phase
 
-- Phase 10: Voice & Search (Planned)
+- Phase 10: Inactivity Eject
 
 ## Decisions
 
@@ -61,13 +61,14 @@ progress:
 - [Phase 09.7]: Enabled eject_model command in Tauri permissions and wired it to the Dashboard eject button.
 - [Hotfix]: Added updated_at fallback to chat migration and created_at/updated_at to Dashboard save_chat calls.
 - [Hotfix]: Corrected eject_model argument from modelId to model_id to match Rust backend.
-- [Phase 09.8]: Update WindowControls.tsx for Tauri v2 and fix tooltip nested button errors.
+- [Phase 09.8]: Updated WindowControls.tsx for Tauri v2 and fixed tooltip nested button errors.
+- [Phase 10]: Using `model_id` in `invoke('eject_model', ...)` per previous hotfix decision.
 
 ## Session Info
 
-- Last session: 2026-04-12T21:05:00Z
-- Stopped at: Planned Phase 09.8.
+- Last session: 2026-04-12T21:15:00Z
+- Stopped at: Planned Phase 10.
 
 ## Upcoming Phases
 
-- Phase 10: Voice & Search (Planned)
+- Phase 11: Voice & Search (Deferred)

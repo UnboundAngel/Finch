@@ -111,7 +111,7 @@ export const SettingsDialog = ({
                     </div>
                     <input 
                       type="checkbox" 
-                      checked={enterToSend} 
+                      checked={!!enterToSend} 
                       onChange={(e) => {
                         setEnterToSend(e.target.checked);
                       }} 

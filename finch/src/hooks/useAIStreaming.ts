@@ -6,6 +6,7 @@ export interface AIStats {
   totalTokens: number;
   tokensPerSecond: number;
   stopReason: string;
+  totalDuration?: number;
 }
 
 export function useAIStreaming() {
@@ -52,11 +53,13 @@ export function useAIStreaming() {
         onToken(tokens[i] + (i === tokens.length - 1 ? "" : " "));
       }
       
-      const duration = (performance.now() - startTime.current) / 1000;
+      const durationMs = performance.now() - startTime.current;
+      const durationSec = durationMs / 1000;
       const finalStats = {
         totalTokens: tokenCount.current,
-        tokensPerSecond: Math.round((tokenCount.current / duration) * 10) / 10,
-        stopReason: "end_turn"
+        tokensPerSecond: Math.round((tokenCount.current / durationSec) * 10) / 10,
+        stopReason: "end_turn",
+        totalDuration: durationMs
       };
       
       setStats(finalStats);
@@ -73,15 +76,17 @@ export function useAIStreaming() {
         if (token.startsWith("__STATS__:")) {
           try {
             const rawStats = JSON.parse(token.substring(10));
-            const duration = (performance.now() - startTime.current) / 1000;
+            const durationMs = performance.now() - startTime.current;
+            const durationSec = durationMs / 1000;
             
             // Prefer total_tokens from Rust if available, otherwise use our counter
             const totalTokens = rawStats.total_tokens || tokenCount.current;
             
             finalStats = {
               totalTokens,
-              tokensPerSecond: Math.round((totalTokens / duration) * 10) / 10,
-              stopReason: rawStats.stop_reason || "end_turn"
+              tokensPerSecond: Math.round((totalTokens / durationSec) * 10) / 10,
+              stopReason: rawStats.stop_reason || "end_turn",
+              totalDuration: durationMs
             };
             setStats(finalStats);
           } catch (e) {
@@ -94,6 +99,21 @@ export function useAIStreaming() {
       };
 
       await invoke("stream_message", { prompt, model, provider, channel });
+      
+      // Ensure we have final duration if it hasn't been set by stats sentinel yet
+      if (!finalStats) {
+        const durationMs = performance.now() - startTime.current;
+        finalStats = {
+          totalTokens: tokenCount.current,
+          tokensPerSecond: Math.round((tokenCount.current / (durationMs / 1000)) * 10) / 10,
+          stopReason: "stop",
+          totalDuration: durationMs
+        };
+      } else {
+         // Finalize duration on completion to be precise
+         finalStats.totalDuration = performance.now() - startTime.current;
+      }
+      
       setIsStreaming(false);
       onComplete?.(finalStats);
     } catch (err: any) {

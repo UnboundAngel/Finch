@@ -153,7 +153,7 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
                     {/* Pair 1: Halves */}
                     <div className="flex flex-col items-center gap-3">
                       <div className="text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/40 font-bold">Split</div>
-                      <div className="flex gap-1.5 h-14 w-22">
+                      <div className="flex gap-1.5 h-20 w-28">
                         <button onClick={() => snapTo('l50')} className="flex-1 border border-black/5 dark:border-white/5 rounded-md bg-black/[0.03] dark:bg-white/[0.03] hover:bg-primary/20 transition-all relative overflow-hidden group">
                           <div className="absolute inset-y-0.5 left-0.5 w-[calc(100%-4px)] bg-primary/30 group-hover:bg-primary/50 rounded-sm transition-colors" />
                         </button>
@@ -166,7 +166,7 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
                     {/* Pair 3: Quarters */}
                     <div className="flex flex-col items-center gap-3">
                       <div className="text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/40 font-bold">Quarters</div>
-                      <div className="grid grid-cols-2 grid-rows-2 gap-1.5 h-14 w-22">
+                      <div className="grid grid-cols-2 grid-rows-2 gap-1.5 h-20 w-28">
                         <button onClick={() => snapTo('tl25')} className="border border-black/5 dark:border-white/5 rounded-md bg-black/[0.03] dark:bg-white/[0.03] hover:bg-primary/20 transition-all relative overflow-hidden group">
                           <div className="absolute inset-0.5 bg-primary/30 group-hover:bg-primary/50 rounded-sm transition-colors" />
                         </button>
@@ -186,7 +186,7 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
                   {/* Bottom Row: Focus */}
                   <div className="flex flex-col items-center gap-3">
                     <div className="text-[9px] uppercase tracking-[0.15em] text-black/40 dark:text-white/40 font-bold">Focus</div>
-                    <div className="flex gap-1.5 h-16 w-full">
+                    <div className="flex gap-1.5 h-20 w-full">
                       <button onClick={() => snapTo('l25')} className="w-1/4 border border-black/5 dark:border-white/5 rounded-md bg-black/[0.03] dark:bg-white/[0.03] hover:bg-primary/20 transition-all relative overflow-hidden group">
                         <div className="absolute inset-y-1.5 left-1 w-[calc(100%-8px)] bg-primary/30 group-hover:bg-primary/50 rounded-sm transition-colors" />
                       </button>

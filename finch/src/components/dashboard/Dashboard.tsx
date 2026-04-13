@@ -34,6 +34,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/ui/sidebar';
 import { WindowControls } from '@/src/components/dashboard/WindowControls';
 import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
+import { useInactivityEject } from '@/src/hooks/useInactivityEject';
 
 const SidebarIncognitoController = ({ isIncognito, children }: { isIncognito: boolean, children: React.ReactNode }) => {
   const { setOpen } = useSidebar();
@@ -71,6 +72,16 @@ export function Dashboard() {
   const [editingTitle, setEditingTitle] = useState('');
 
   const { streamMessage, abort, isStreaming, stats } = useAIStreaming();
+
+  const { resetTimer } = useInactivityEject({
+    provider: selectedProvider,
+    modelId: selectedModel,
+    onEject: () => {
+      setSelectedModel('');
+      setSelectedProvider('');
+      toast.info("Local model unloaded due to inactivity");
+    }
+  });
 
   useChatPersistence({
     recentChats,
@@ -293,6 +304,9 @@ export function Dashboard() {
     // Await initial save to ensure activeSessionId is set before stream ends
     await updateActiveSessionInList(updatedMessages);
     
+    // Reset inactivity timer on message send
+    resetTimer();
+    
     setIsThinking(true);
 
     let isFirstToken = true;
@@ -415,7 +429,7 @@ export function Dashboard() {
                     try {
                       await invoke('eject_model', { 
                         provider: selectedProvider, 
-                        modelId: selectedModel 
+                        model_id: selectedModel 
                       });
                       setSelectedModel('');
                       setSelectedProvider('');

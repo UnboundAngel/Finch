@@ -39,7 +39,7 @@
 
 ## Phase 09.1: Header & Sidebar Refinement (Bug Fixes)
 **Requirements:** [R-09.1-01, R-09.1-02]
-- [x] R-09.1-01: Header must separate chat controls from system controls with a vertical separator.
+- [x] R-09.1-01: Header must separate chat controls from system controls with a vertical separator.       
 - [x] R-09.1-02: Right sidebar toggle must use functional state updates and correctly trigger layout shift.
 
 **Plans:** 1 plans
@@ -64,7 +64,7 @@
 
 ## Phase 09.4: Header Consolidation
 **Requirements:** [R-09.4-01]
-- [x] R-09.4-01: Header must be a single unified strip (h-14) containing all chat and system controls.
+- [x] R-09.4-01: Header must be a single unified strip (h-14) containing all chat and system controls.    
 
 **Plans:** 1 plans
 - [x] 09.4-01-PLAN.md — Consolidate header bars into single strip.
@@ -79,7 +79,7 @@
 
 ## Phase 09.6: Dark Mode SVG Fixes
 **Requirements:** [R-09.6-01]
-- [x] R-09.6-01: Ensure all SVG icons in Dashboard are visible in dark mode via `dark:invert` class.
+- [x] R-09.6-01: Ensure all SVG icons in Dashboard are visible in dark mode via `dark:invert` class.      
 
 **Plans:** 1 plan
 - [x] 09.6-01-PLAN.md — Add dark:invert to Dashboard icons (Completed).
@@ -87,9 +87,24 @@
 ## Phase 09.7: Eject Model Implementation
 **Requirements:** [R-09.7-01, R-09.7-02]
 - [x] R-09.7-01: Implement Tauri permissions for the `eject_model` command.
-- [x] R-09.7-02: Wire the `eject_model` command to the Dashboard eject button with error handling.
+- [x] R-09.7-02: Wire the `eject_model` command to the Dashboard eject button with error handling.        
 
 **Plans:** 1 plan
 - [x] 09.7-01-PLAN.md — Implement permissions and wire eject button.
 
-## Phase 10: Voice & Search (Planned)
+## Phase 09.8: Window Controls Fix
+**Requirements:** [WINDOW-FIX-01]
+- [x] WINDOW-FIX-01: Fix WindowControls.tsx for Tauri v2 API and nested button errors in tooltips.        
+
+**Plans:** 1 plan
+- [x] 09.8-01-PLAN.md — Fix WindowControls.tsx
+
+## Phase 10: Inactivity Eject
+**Requirements:** [R-10-01, R-10-02]
+- [ ] R-10-01: Implement `useInactivityEject` hook to auto-unload local models.
+- [ ] R-10-02: Wire hook to Dashboard for automatic cleanup on 10-minute inactivity.
+
+**Plans:** 1 plan
+- [ ] 10-01-PLAN.md — Implement useInactivityEject and wire Dashboard.
+
+## Phase 11: Voice & Search (Deferred)

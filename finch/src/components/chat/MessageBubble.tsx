@@ -29,7 +29,7 @@ export const MessageBubble = ({ msg, selectedModel, isDark, isLatest, isIncognit
           <MessageSquare className="h-4 w-4 text-primary-foreground" />
         </div>
       )}
-      <div className="flex-1 space-y-2 overflow-hidden">
+      <div className="flex-1 space-y-2 text-wrap">
         <div className="font-medium text-sm px-1">{msg.role === 'user' ? 'You' : selectedModel}</div>
         
         <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors ${
