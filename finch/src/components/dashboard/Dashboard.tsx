@@ -90,12 +90,67 @@ export function Dashboard() {
   const [customBgDark, setCustomBgDark] = useState('');
   const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [sidebarContrast, setSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
+  const [isModelLoaded, setIsModelLoaded] = useState(true);
 
   // Dev mode flag
   const IS_DEV_PINK_MODE = false; // pink mode for susie.. turn it on if you dare
   const showPinkMode = IS_DEV_PINK_MODE && !isDark && !customBgLight && !isIncognito;
 
   const { streamMessage, abort, isStreaming, stats } = useAIStreaming();
+  
+  const isTyping = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleInputChange = React.useCallback((val: string) => {
+    setInput(val);
+    isTyping.current = true;
+    
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      isTyping.current = false;
+    }, 1000);
+  }, []);
+
+  const handleInputFocus = React.useCallback(() => {
+    isTyping.current = true;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      isTyping.current = false;
+    }, 1000);
+  }, []);
+
+  // Polling for local model status
+  useEffect(() => {
+    if (!selectedModel || !selectedProvider.startsWith('local_')) {
+      setIsModelLoaded(true);
+      return;
+    }
+
+    const checkStatus = async () => {
+      if (isTyping.current) return;
+      
+      try {
+        const status = await invoke<boolean>('get_model_loaded_status', {
+          provider: selectedProvider,
+          modelId: selectedModel
+        });
+        
+        setIsModelLoaded(prev => {
+          if (prev !== status) return status;
+          return prev;
+        });
+      } catch (e) {
+        setIsModelLoaded(prev => {
+          if (prev !== false) return false;
+          return prev;
+        });
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, [selectedModel, selectedProvider]);
 
   useEffect(() => {
     if (showPinkMode) {
@@ -104,14 +159,16 @@ export function Dashboard() {
     }
   }, [showPinkMode]);
 
+  const handleEject = React.useCallback(() => {
+    setSelectedModel('');
+    setSelectedProvider('');
+    toast.info("Local model unloaded due to inactivity");
+  }, []);
+
   const { resetTimer } = useInactivityEject({
     provider: selectedProvider,
     modelId: selectedModel,
-    onEject: () => {
-      setSelectedModel('');
-      setSelectedProvider('');
-      toast.info("Local model unloaded due to inactivity");
-    }
+    onEject: handleEject
   });
 
   useChatPersistence({
@@ -678,9 +735,9 @@ export function Dashboard() {
 
                         {/* Input Area */}
                         <div className="relative z-20">
-                          <ChatInput
+                           <ChatInput
                             input={input}
-                            setInput={setInput}
+                            setInput={handleInputChange}
                             handleSend={handleSend}
                             onStop={abort}
                             isThinking={isThinking || isStreaming}
@@ -693,6 +750,8 @@ export function Dashboard() {
                             isDark={isDark}
                             hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
                             isPinkMode={showPinkMode}
+                            isModelLoaded={selectedModel ? isModelLoaded : true}
+                            onFocus={handleInputFocus}
                           />
                         </div>
                       </div>
