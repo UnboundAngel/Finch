@@ -101,10 +101,17 @@
 
 ## Phase 10: Inactivity Eject
 **Requirements:** [R-10-01, R-10-02]
-- [ ] R-10-01: Implement `useInactivityEject` hook to auto-unload local models.
-- [ ] R-10-02: Wire hook to Dashboard for automatic cleanup on 10-minute inactivity.
+- [x] R-10-01: Implement `useInactivityEject` hook to auto-unload local models.
+- [x] R-10-02: Wire hook to Dashboard for automatic cleanup on 10-minute inactivity.
 
 **Plans:** 1 plan
-- [ ] 10-01-PLAN.md — Implement useInactivityEject and wire Dashboard.
+- [x] 10-01-PLAN.md — Implement useInactivityEject and wire Dashboard.
 
-## Phase 11: Voice & Search (Deferred)
+## Phase 11: Chat Duplication Fix
+**Requirements:** [R-07-10]
+- [ ] R-07-10: (REVISIT) Fix chat duplication on first message via ref tracking and save logic refinement.
+
+**Plans:** 1 plan
+- [ ] 11-01-PLAN.md — Ref-track activeSessionId and fix handleSend callback.
+
+## Phase 12: Voice & Search (Deferred)
