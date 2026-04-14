@@ -36,6 +36,10 @@
     "allow-get-model-loaded-status",
     "allow-get-hardware-info",
     "allow-get-context-intelligence",
+    "allow-start-recording",
+    "allow-stop-recording",
+    "allow-get-transcription-status",
+    "allow-download-voice-model",
     "dialog:default",
     "store:default"
   ]

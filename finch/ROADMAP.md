@@ -39,8 +39,10 @@
 - [ ] VOICE-13-04: Tauri commands: start_recording, stop_recording, get_transcription_status.
 - [ ] VOICE-13-05: Non-blocking inference on stop_recording.
 
-**Plans:** 1 plan
-- [ ] 13-02-PLAN.md — Local-First Voice Transcription Backend
+**Plans:** 3 plans
+- [x] 13-02-PLAN.md — Local-First Voice Transcription Backend
+- [ ] 13-03-PLAN.md — Local Model Downloader Backend (Rust)
+- [ ] 13-04-PLAN.md — Model Marketplace UI (React)
 
 ## Phase 14: Token Enrichment & Context Intelligence (Completed)
 

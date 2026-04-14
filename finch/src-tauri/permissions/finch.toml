@@ -87,3 +87,23 @@ commands.allow = ["get_hardware_info"]
 identifier = "allow-get-context-intelligence"
 description = "Allows the get_context_intelligence command"
 commands.allow = ["get_context_intelligence"]
+
+[[permission]]
+identifier = "allow-start-recording"
+description = "Allows starting audio recording"
+commands.allow = ["start_recording"]
+
+[[permission]]
+identifier = "allow-stop-recording"
+description = "Allows stopping audio recording and triggering transcription"
+commands.allow = ["stop_recording"]
+
+[[permission]]
+identifier = "allow-get-transcription-status"
+description = "Allows polling for transcription status"
+commands.allow = ["get_transcription_status"]
+
+[[permission]]
+identifier = "allow-download-voice-model"
+description = "Allows downloading voice models from external URLs"
+commands.allow = ["download_voice_model"]

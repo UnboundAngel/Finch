@@ -1,9 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { isTauri } from '@/src/lib/tauri';
+import { useChatStore } from '@/src/store/index';
 
 export interface AIStats {
   totalTokens: number;
+  inputTokens?: number;
+  outputTokens?: number;
   tokensPerSecond: number;
   stopReason: string;
   totalDuration?: number;
@@ -42,9 +45,10 @@ export function useAIStreaming() {
     model: string,
     provider: string,
     onToken: (token: string) => void,
+    onResearch?: (event: { type: string; data?: any }) => void,
     onComplete?: (finalStats?: AIStats) => void,
     onError?: (error: string) => void,
-    params?: GenerationParams
+    params?: GenerationParams & { enableWebSearch?: boolean }
   ) => {
     setIsStreaming(true);
     setError(null);
@@ -61,7 +65,7 @@ export function useAIStreaming() {
         tokenCount.current++;
         onToken(tokens[i] + (i === tokens.length - 1 ? "" : " "));
       }
-      
+
       const durationMs = performance.now() - startTime.current;
       const durationSec = durationMs / 1000;
       const finalStats = {
@@ -70,7 +74,7 @@ export function useAIStreaming() {
         stopReason: "end_turn",
         totalDuration: durationMs
       };
-      
+
       setStats(finalStats);
       setIsStreaming(false);
       onComplete?.(finalStats);
@@ -81,48 +85,75 @@ export function useAIStreaming() {
       const channel = new Channel<string>();
       let finalStats: AIStats | undefined;
 
-      channel.onmessage = (token) => {
-        if (token.startsWith("__STATS__:")) {
-          try {
-            const rawStats = JSON.parse(token.substring(10));
-            const wallClockDurationMs = performance.now() - startTime.current;
-            
-            // Prefer total_tokens from Rust if available, otherwise use our counter
-            const totalTokens = rawStats.total_tokens || tokenCount.current;
-            
-            // Use native duration if available (LM Studio provides total_duration in ms)
-            // Otherwise fallback to wall clock
-            const totalDuration = rawStats.total_duration || wallClockDurationMs;
-            
-            // Use native tokens per second if available, otherwise calculate from duration
-            const tokensPerSecond = rawStats.tokens_per_second 
-              ? Math.round(rawStats.tokens_per_second * 10) / 10
-              : Math.round((totalTokens / (totalDuration / 1000)) * 10) / 10;
-            
-            finalStats = {
-              totalTokens,
-              tokensPerSecond,
-              stopReason: rawStats.stop_reason || "end_turn",
-              totalDuration
-            };
-            setStats(finalStats);
-          } catch (e) {
-            console.error("Failed to parse stats sentinel:", e);
+      channel.onmessage = (eventJson) => {
+        try {
+          const event = JSON.parse(eventJson);
+
+          switch (event.type) {
+            case "text":
+              tokenCount.current++;
+              onToken(event.data);
+              break;
+
+            case "search_start":
+            case "search_source":
+            case "search_done":
+              onResearch?.(event);
+              break;
+
+            case "stats": {
+              const rawStats = event.data;
+              const wallClockDurationMs = performance.now() - startTime.current;
+
+              // Prefer total_tokens from Rust if available, otherwise use our counter
+              const totalTokens = rawStats.total_tokens || tokenCount.current;
+
+              // Use native duration if available (LM Studio provides total_duration in ms)
+              // Otherwise fallback to wall clock
+              const totalDuration = rawStats.total_duration || wallClockDurationMs;
+
+              // Use native tokens per second if available, otherwise calculate from duration
+              const tokensPerSecond = rawStats.tokens_per_second
+                ? Math.round(rawStats.tokens_per_second * 10) / 10
+                : Math.round((totalTokens / (totalDuration / 1000)) * 10) / 10;
+
+              const inputTokens = rawStats.input_tokens || 0;
+              const outputTokens = rawStats.output_tokens || 0;
+
+              finalStats = {
+                totalTokens,
+                inputTokens,
+                outputTokens,
+                tokensPerSecond,
+                stopReason: rawStats.stop_reason || "end_turn",
+                totalDuration
+              };
+              setStats(finalStats);
+
+              // Increment global token counter
+              useChatStore.getState().incrementTokensUsed(inputTokens + outputTokens);
+              break;
+            }
           }
-        } else {
-          tokenCount.current++;
-          onToken(token);
+        } catch (e) {
+          console.error("Failed to parse event JSON:", eventJson, e);
+          // Fallback: if it's not valid JSON and doesn't look like our protocol, 
+          // treat it as a raw token (for legacy reasons if any)
+          if (!eventJson.startsWith("{")) {
+            onToken(eventJson);
+          }
         }
       };
 
-      await invoke("stream_message", { 
-        prompt, 
-        model, 
-        provider, 
+      await invoke("stream_message", {
+        prompt,
+        model,
+        provider,
         channel,
+        enable_web_search: params?.enableWebSearch,
         ...params
       });
-      
+
       // Ensure we have final duration if it hasn't been set by stats sentinel yet
       if (!finalStats) {
         const durationMs = performance.now() - startTime.current;
@@ -133,7 +164,7 @@ export function useAIStreaming() {
           totalDuration: durationMs
         };
       }
-      
+
       setIsStreaming(false);
       onComplete?.(finalStats);
     } catch (err: any) {

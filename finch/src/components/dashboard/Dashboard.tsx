@@ -25,6 +25,7 @@ import Switch from '@/components/ui/sky-toggle';
 import { Message, ChatSession } from '../../types/chat';
 import { ChatArea } from '@/src/components/chat/ChatArea';
 import { ChatInput } from '@/src/components/chat/ChatInput';
+import { VoiceIndicator } from '@/src/components/chat/VoiceIndicator';
 import { ChatSidebar } from '@/src/components/sidebar/ChatSidebar';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
@@ -147,6 +148,7 @@ export function Dashboard() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
+  const [researchEvents, setResearchEvents] = useState<any[]>([]);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [enterToSend, setEnterToSend] = useState(true);
@@ -162,6 +164,7 @@ export function Dashboard() {
   const [rightSidebarContrast, setRightSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [isModelLoaded, setIsModelLoaded] = useState(true);
   const [isOverflowModalOpen, setIsOverflowModalOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
 
 
@@ -207,6 +210,8 @@ export function Dashboard() {
           provider: selectedProvider,
           modelId: selectedModel
         });
+
+        console.log(`[POLL] Provider: ${selectedProvider} Model: ${selectedModel} Loaded: ${status}`);
 
         setIsModelLoaded(prev => {
           if (prev !== status) return status;
@@ -368,6 +373,8 @@ export function Dashboard() {
       if (isIncognito) {
         setIsIncognito(false);
       }
+      setSelectedModel(session.model);
+      setSelectedProvider(session.provider);
       setActiveSessionId(id);
       activeSessionIdRef.current = id;
       setMessages(session.messages || []);
@@ -400,6 +407,7 @@ export function Dashboard() {
       activeSessionIdRef.current = null;
     } else {
       setIsIncognito(true);
+      setMessages([]);
       setActiveSessionId(null);
       activeSessionIdRef.current = null;
     }
@@ -589,6 +597,7 @@ export function Dashboard() {
 
     const userMessage = input.trim();
     setInput('');
+    setResearchEvents([]); // Reset for new message
     const updatedMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
     setMessages(updatedMessages);
 
@@ -624,8 +633,7 @@ export function Dashboard() {
                   ...lastMessage,
                   content: lastMessage.content + token,
                   metadata: {
-                    ...lastMessage.metadata,
-                    ...(stats || {})
+                    ...lastMessage.metadata
                   }
                 }
               ];
@@ -633,6 +641,9 @@ export function Dashboard() {
             return prev;
           });
         }
+      },
+      (researchEvent) => {
+        setResearchEvents(prev => [...prev, researchEvent]);
       },
       (finalStats) => {
         setMessages(prev => {
@@ -665,7 +676,8 @@ export function Dashboard() {
         temperature,
         topP,
         maxTokens,
-        stopStrings
+        stopStrings,
+        enableWebSearch: isWebSearchActive
       }
     );
   };
@@ -855,10 +867,12 @@ export function Dashboard() {
                       />
 
                       {/* Content Layer */}
+                      {/* Content Layer */}
                       <div className="flex-1 relative z-10 flex flex-col min-h-0">
                         <ChatArea
                           messages={messages}
                           isThinking={isThinking}
+                          researchEvents={researchEvents}
                           selectedModel={selectedModel}
                           isDark={isDark}
                           setInput={stableSetInput}
@@ -886,6 +900,8 @@ export function Dashboard() {
                             isPinkMode={showPinkMode}
                             isModelLoaded={selectedModel ? isModelLoaded : true}
                             onFocus={handleInputFocus}
+                            isListening={isListening}
+                            setIsListening={setIsListening}
                           />
                         </div>
                       </div>

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json;
 use reqwest::Client;
 use futures_util::StreamExt;
 use std::sync::Arc;
@@ -155,6 +156,8 @@ impl AnthropicClient {
         let mut stream = response.bytes_stream();
         let mut buffer = String::new();
         let mut total_tokens = 0;
+        let mut input_tokens = 0;
+        let mut output_tokens = 0;
         let mut stop_reason = "end_turn".to_string();
 
         while let Some(item) = stream.next().await {
@@ -176,9 +179,12 @@ impl AnthropicClient {
                     let data = &line[6..];
                     if let Ok(event) = serde_json::from_str::<AnthropicEvent>(data) {
                         match event {
+                            AnthropicEvent::MessageStart { message } => {
+                                input_tokens = message.usage.input_tokens;
+                            }
                             AnthropicEvent::ContentBlockDelta { delta, .. } => {
                                 if delta.r#type == "text_delta" {
-                                    channel.send(delta.text).map_err(|e| e.to_string())?;
+                                    let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Text(delta.text)).unwrap());
                                 }
                             }
                             AnthropicEvent::MessageDelta { delta, usage } => {
@@ -189,7 +195,8 @@ impl AnthropicClient {
                                         _ => reason,
                                     };
                                 }
-                                total_tokens = usage.output_tokens;
+                                output_tokens = usage.output_tokens;
+                                total_tokens = input_tokens + output_tokens;
                             }
                             AnthropicEvent::Error { error } => {
                                 return Err(format!("Anthropic stream error: {}", error.message));
@@ -201,11 +208,13 @@ impl AnthropicClient {
             }
         }
 
-        let stats = serde_json::json!({
+        let stats_val = serde_json::json!({
             "stop_reason": stop_reason,
-            "total_tokens": total_tokens
+            "total_tokens": total_tokens,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
         });
-        channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
+        let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Stats(stats_val)).unwrap());
 
         Ok(())
     }

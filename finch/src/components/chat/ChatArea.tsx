@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles } from 'lucide-react';
+import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { MessageBubble } from './MessageBubble';
 import { ThinkingBox } from './ThinkingBox';
 import { Message } from '../../types/chat';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { SearchStatus } from './SearchStatus';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -16,9 +18,10 @@ interface ChatAreaProps {
   isIncognito?: boolean;
   hasCustomBg?: boolean;
   isPinkMode?: boolean;
+  researchEvents: any[];
 }
 
-export const ChatArea = memo(({ messages, isThinking, selectedModel, isDark, setInput, isIncognito, hasCustomBg, isPinkMode }: ChatAreaProps) => {
+export const ChatArea = memo(({ messages, isThinking, researchEvents, selectedModel, isDark, setInput, isIncognito, hasCustomBg, isPinkMode }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -48,8 +51,23 @@ export const ChatArea = memo(({ messages, isThinking, selectedModel, isDark, set
                     <span>You're incognito</span>
                   </div>
                   <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
-                    Incognito chats aren't saved, added to memory, or used to train models.
-                    <a href="#" className="text-primary hover:underline ml-1">Learn more</a> about how your data is used.
+                    Incognito chats are never saved to this device and generally not used for training.
+                    <TooltipProvider delay={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-primary hover:underline ml-1 cursor-help inline-flex items-center gap-0.5">
+                            Learn more <HelpCircle className="h-3 w-3" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-[300px] p-4 space-y-2 text-xs leading-relaxed">
+                          <p className="font-bold border-b border-border pb-1 mb-2 text-foreground">Privacy Policy</p>
+                          <p>• <span className="font-semibold text-primary">Local Privacy:</span> Finch does not save this conversation to your history or disk.</p>
+                          <p>• <span className="font-semibold text-primary">Model Training:</span> API providers (OpenAI, Anthropic, Gemini) generally do not use API data for training.</p>
+                          <p>• <span className="font-semibold text-primary">Data Retention:</span> Cloud providers may keep logs for 15-30 days for safety reviews.</p>
+                          <p className="pt-1 italic opacity-80 text-[10px]">For 100% private offline use, use local models (Ollama/LM Studio).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </p>
                 </motion.div>
               </div>
@@ -133,6 +151,7 @@ export const ChatArea = memo(({ messages, isThinking, selectedModel, isDark, set
               </div>
               <div className="flex-1 space-y-2 overflow-hidden">
                 <div className="font-medium text-sm">{selectedModel}</div>
+                <SearchStatus events={researchEvents} isThinking={isThinking} />
                 <ThinkingBox isActivelyThinking={true} />
               </div>
             </div>

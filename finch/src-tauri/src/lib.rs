@@ -1,8 +1,15 @@
 mod anthropic;
+mod search;
+mod voice;
+mod download;
+mod tavily;
+
 use anthropic::{AnthropicClient, AnthropicRequest, Message};
+use voice::{VoiceManager, VoiceStatus};
+use download::{ModelManifest, download_model};
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, State, Manager, Wry};
 use tauri_plugin_store::StoreExt;
@@ -12,6 +19,7 @@ use chrono::Utc;
 
 pub struct AppState {
     pub abort_flag: Arc<AtomicBool>,
+    pub voice_manager: Arc<Mutex<VoiceManager>>,
 }
 
 impl Default for AppState {
@@ -19,6 +27,7 @@ impl Default for AppState {
         #[allow(clippy::redundant_closure)]
         Self {
             abort_flag: Arc::new(AtomicBool::new(false)),
+            voice_manager: Arc::new(Mutex::new(VoiceManager::new())),
         }
     }
 }
@@ -31,14 +40,40 @@ pub struct ProviderConfig {
     pub gemini_api_key: Option<String>,
     pub lmstudio_endpoint: Option<String>,
     pub ollama_endpoint: Option<String>,
+    pub tavily_api_key: Option<String>,
+    pub brave_api_key: Option<String>,
+    pub searxng_url: Option<String>,
     pub profile_name: Option<String>,
     pub profile_email: Option<String>,
     pub enter_to_send: Option<bool>,
     pub selected_model: Option<String>,
     pub selected_provider: Option<String>,
+    pub active_search_provider: Option<String>,
     pub bookmarked_models: Option<Vec<serde_json::Value>>,
     pub custom_bg_light: Option<String>,
     pub custom_bg_dark: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SourceEntry {
+    pub title: String,
+    pub url: String,
+    pub duration_ms: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "type", content = "data")]
+pub enum StreamingEvent {
+    #[serde(rename = "text")]
+    Text(String),
+    #[serde(rename = "search_start")]
+    SearchStart { query: String },
+    #[serde(rename = "search_source")]
+    SearchSource(SourceEntry),
+    #[serde(rename = "search_done")]
+    SearchDone,
+    #[serde(rename = "stats")]
+    Stats(serde_json::Value),
 }
 
 // ... existing structs ...
@@ -140,7 +175,6 @@ async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> Resu
     if let (Some(current_obj), Some(new_obj)) = (current_config_val.as_object_mut(), new_config_val.as_object()) {
         for (k, v) in new_obj {
             // Only update if the new value is not null
-            // This allows partial updates and prevents overwriting with None
             if !v.is_null() {
                 current_obj.insert(k.clone(), v.clone());
             }
@@ -150,6 +184,26 @@ async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> Resu
     }
 
     store.set("provider_config", current_config_val);
+    store.save().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn update_search_config(handle: AppHandle, config: serde_json::Value) -> Result<(), String> {
+    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let config_val = store.get("provider_config");
+    let mut current_config: ProviderConfig = config_val
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default();
+
+    if let Some(obj) = config.as_object() {
+        if let Some(k) = obj.get("tavily_api_key").and_then(|v| v.as_str()) { current_config.tavily_api_key = Some(k.to_string()); }
+        if let Some(k) = obj.get("brave_api_key").and_then(|v| v.as_str()) { current_config.brave_api_key = Some(k.to_string()); }
+        if let Some(u) = obj.get("searxng_url").and_then(|v| v.as_str()) { current_config.searxng_url = Some(u.to_string()); }
+        if let Some(p) = obj.get("active_search_provider").and_then(|v| v.as_str()) { current_config.active_search_provider = Some(p.to_string()); }
+    }
+
+    store.set("provider_config", serde_json::to_value(current_config).unwrap());
     store.save().map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -491,11 +545,12 @@ async fn stream_message(
     top_p: Option<f32>,
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>,
+    enable_web_search: Option<bool>,
     channel: tauri::ipc::Channel<String>,
     state: State<'_, AppState>
 ) -> Result<(), String> {
     let top_p = top_p.map(|p| if p <= 0.0 { 0.01 } else { p.min(1.0) });
-    println!("Rust received stream request (provider: {}, model: {}): {}", provider, model, prompt);
+    println!("Rust received stream request (provider: {}, model: {}, search: {:?}): {}", provider, model, enable_web_search, prompt);
 
     state.abort_flag.store(false, Ordering::SeqCst);
 
@@ -503,7 +558,45 @@ async fn stream_message(
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
-    match provider.as_str() {
+    let mut final_prompt = prompt.clone();
+
+    // --- Web Search Pre-Pass ---
+    if enable_web_search.unwrap_or(false) {
+        let search_query = final_prompt.clone();
+        
+        // Lookup active provider from config, default to Tavily
+        let active_search = config.as_ref().and_then(|c| c.active_search_provider.as_deref()).unwrap_or("tavily");
+        
+        let search_provider = match active_search {
+            "brave" => {
+                let brave_key = config.as_ref().and_then(|c| c.brave_api_key.clone()).ok_or("Brave API key not set. Right-click the globe to configure.")?;
+                search::SearchProvider::Brave(brave_key)
+            },
+            "searxng" => {
+                let searx_url = config.as_ref().and_then(|c| c.searxng_url.clone()).ok_or("SearXNG URL not set. Right-click the globe to configure.")?;
+                search::SearchProvider::SearXNG(searx_url)
+            },
+            _ => {
+                let tavily_key = config.as_ref().and_then(|c| c.tavily_api_key.clone()).ok_or("Tavily API key not set. Click the globe to configure.")?;
+                search::SearchProvider::Tavily(tavily_key)
+            }
+        };
+
+        let _ = channel.send(serde_json::to_string(&StreamingEvent::SearchStart { query: search_query.clone() }).unwrap());
+        
+        let search_handle = channel.clone();
+        let search_context = search::execute_search(search_provider, &search_query, move |res| {
+            let _ = search_handle.send(serde_json::to_string(&StreamingEvent::SearchSource(SourceEntry {
+                title: res.title,
+                url: res.url,
+                duration_ms: res.duration_ms,
+            })).unwrap());
+        }).await?;
+
+        let _ = channel.send(serde_json::to_string(&StreamingEvent::SearchDone).unwrap());
+        final_prompt = format!("{}\n\n{}", search_context, final_prompt);
+    }
+    // ----------------------------
         "anthropic" => {
             let api_key = config.and_then(|c| c.anthropic_api_key)
                 .or_else(|| env::var("ANTHROPIC_API_KEY").ok())
@@ -512,7 +605,7 @@ async fn stream_message(
             let client = AnthropicClient::new(api_key);
             let request = AnthropicRequest {
                 model: map_model(&model),
-                messages: vec![Message { role: "user".to_string(), content: prompt }],
+                messages: vec![Message { role: "user".to_string(), content: final_prompt }],
                 max_tokens: max_tokens.unwrap_or(2048),
                 stream: true,
                 system: system_prompt,
@@ -608,7 +701,7 @@ async fn stream_message(
                                         }
                                         last_token_time = Some(std::time::Instant::now());
                                         manual_token_count += 1;
-                                        channel.send(content.to_string()).map_err(|e| e.to_string())?;
+                                        let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Text(content.to_string())).unwrap());
                                     }
                                     if let Some(reason) = choices[0]["finish_reason"].as_str() {
                                         stop_reason = match reason {
@@ -627,6 +720,8 @@ async fn stream_message(
                                 
                                 if prompt_tokens > 0 || completion_tokens > 0 {
                                     total_tokens = prompt_tokens + completion_tokens;
+                                    lm_stats["input_tokens"] = serde_json::json!(prompt_tokens);
+                                    lm_stats["output_tokens"] = serde_json::json!(completion_tokens);
                                     
                                     if let (Some(first), Some(last)) = (first_token_time, last_token_time) {
                                         let duration_ms = last.duration_since(first).as_millis() as f64;
@@ -673,7 +768,7 @@ async fn stream_message(
                     for (k, v) in lm_obj { obj.insert(k.clone(), v.clone()); }
                 }
             }
-            channel.send(format!("__STATS__:{}", final_stats)).map_err(|e| e.to_string())?;
+            let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Stats(final_stats)).unwrap());
             Ok(())
         },
         "gemini" => {
@@ -682,7 +777,7 @@ async fn stream_message(
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse&key={}", model, api_key);
             
             let mut contents = Vec::new();
-            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
+            contents.push(serde_json::json!({ "parts": [{ "text": final_prompt }] }));
 
             let mut body = serde_json::json!({
                 "contents": contents,
@@ -722,6 +817,8 @@ async fn stream_message(
             let mut stream = resp.bytes_stream();
             let mut buffer = String::new();
             let mut total_tokens = 0;
+            let mut input_tokens = 0;
+            let mut output_tokens = 0;
             let mut stop_reason = "end_turn".to_string();
             let mut manual_token_count = 0;
 
@@ -742,7 +839,7 @@ async fn stream_message(
                                 if !candidates.is_empty() {
                                     if let Some(content) = candidates[0]["content"]["parts"][0]["text"].as_str() {
                                         manual_token_count += 1;
-                                        channel.send(content.to_string()).map_err(|e| e.to_string())?;
+                                        let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Text(content.to_string())).unwrap());
                                     }
                                     if let Some(reason) = candidates[0]["finishReason"].as_str() {
                                         stop_reason = match reason {
@@ -754,17 +851,26 @@ async fn stream_message(
                                 }
                             }
                             if let Some(usage) = json.get("usageMetadata") {
-                                if let Some(count) = usage["candidatesTokenCount"].as_u64() {
-                                    total_tokens = count;
+                                let input = usage.get("promptTokenCount").and_then(|v| v.as_u64()).unwrap_or(0);
+                                let output = usage.get("candidatesTokenCount").and_then(|v| v.as_u64()).unwrap_or(0);
+                                if input > 0 || output > 0 {
+                                    total_tokens = input + output;
                                 }
+                                input_tokens = input;
+                                output_tokens = output;
                             }
                         }
                     }
                 }
             }
             if total_tokens == 0 { total_tokens = manual_token_count; }
-            let stats = serde_json::json!({ "stop_reason": stop_reason, "total_tokens": total_tokens });
-            channel.send(format!("__STATS__:{}", stats)).map_err(|e| e.to_string())?;
+            let stats_val = serde_json::json!({ 
+                "stop_reason": stop_reason, 
+                "total_tokens": total_tokens,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens
+            });
+            let _ = channel.send(serde_json::to_string(&StreamingEvent::Stats(stats_val)).unwrap());
             Ok(())
         },
         _ => Err(format!("Unsupported provider: {}", provider))
@@ -942,7 +1048,7 @@ async fn get_model_loaded_status(
         },
         "local_lmstudio" => {
             let endpoint = config.and_then(|c| c.lmstudio_endpoint).ok_or("LM Studio endpoint not configured")?;
-            let url = format!("{}/v1/models", endpoint.trim_end_matches('/'));
+            let url = format!("{}/api/v0/models", endpoint.trim_end_matches('/'));
             let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
             
             if resp.status() == reqwest::StatusCode::NOT_FOUND {
@@ -955,16 +1061,20 @@ async fn get_model_loaded_status(
 
             let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
             let model_id_lower = model_id.to_lowercase();
-            println!("[DEBUG] LM Studio Frontend model_id: {}", model_id);
             
             if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
                 for m in models {
                     if let Some(id) = m.get("id").and_then(|i| i.as_str()) {
                         let id_lower = id.to_lowercase();
                         let is_match = id_lower == model_id_lower || id_lower.contains(&model_id_lower) || model_id_lower.contains(&id_lower);
-                        println!("[DEBUG] LM Studio returned id: {} (Match: {})", id, is_match);
+                        
                         if is_match {
-                            return Ok(true);
+                            // Only return true if the model is explicitly LOADED
+                            if let Some(state) = m.get("state").and_then(|s| s.as_str()) {
+                                if state == "loaded" {
+                                    return Ok(true);
+                                }
+                            }
                         }
                     }
                 }
@@ -1109,6 +1219,29 @@ async fn get_context_intelligence(
     })
 }
 
+#[tauri::command]
+async fn start_recording(state: State<'_, AppState>) -> Result<(), String> {
+    let mut vm = state.voice_manager.lock().unwrap();
+    vm.start_recording()
+}
+
+#[tauri::command]
+async fn stop_recording(handle: AppHandle, state: State<'_, AppState>, model_id: Option<String>) -> Result<(), String> {
+    let mut vm = state.voice_manager.lock().unwrap();
+    vm.stop_recording(handle, model_id)
+}
+
+#[tauri::command]
+async fn get_transcription_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
+    let vm = state.voice_manager.lock().unwrap();
+    Ok(vm.get_status())
+}
+
+#[tauri::command]
+async fn download_voice_model(handle: AppHandle, manifest: ModelManifest) -> Result<(), String> {
+    download_model(handle, manifest).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1154,7 +1287,12 @@ pub fn run() {
             set_background_image,
             get_model_loaded_status,
             get_hardware_info,
-            get_context_intelligence
+            get_context_intelligence,
+            update_search_config,
+            start_recording,
+            stop_recording,
+            get_transcription_status,
+            download_voice_model
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
