@@ -31,7 +31,6 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
   const removeStopString = useModelParams(state => state.removeStopString);
   const fetchContextIntelligence = useModelParams(state => state.fetchContextIntelligence);
   const contextIntelligenceStatus = useModelParams(state => state.contextIntelligenceStatus);
-
   const selectedModel = useChatStore((state) => state.selectedModel);
   const selectedProvider = useChatStore((state) => state.selectedProvider);
   const setMaxTokens = useModelParams(state => state.setMaxTokens);
@@ -45,6 +44,13 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
   const [isPromptOpen, setIsPromptOpen] = React.useState(true);
   const [isSamplingOpen, setIsSamplingOpen] = React.useState(true);
   const [isOutputOpen, setIsOutputOpen] = React.useState(true);
+
+  // Theme-aware border for circular elements (slider thumbs/status dots)
+  const circleBorderClass = isPinkMode 
+    ? "[&::-webkit-slider-thumb]:border-[#064e3b] [&::-moz-range-thumb]:border-[#064e3b] border-[#064e3b]" 
+    : contrast === 'light' 
+        ? "[&::-webkit-slider-thumb]:border-black [&::-moz-range-thumb]:border-black border-black" 
+        : "[&::-webkit-slider-thumb]:border-zinc-400 [&::-moz-range-thumb]:border-zinc-400 border-zinc-400";
 
   // Sync with store
   React.useEffect(() => {
@@ -352,8 +358,9 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                       className={cn(
                         "w-full h-1 rounded-lg appearance-none cursor-pointer transition-none",
                         "active:scale-[1.002]",
-                        "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-zinc-300 dark:[&::-webkit-slider-thumb]:border-zinc-700",
-                        "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-none shadow-md"
+                        "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border",
+                        circleBorderClass,
+                        "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border shadow-md"
                       )}
                     />
                     <AnimatePresence>
@@ -362,7 +369,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           initial={{ opacity: 0, height: 0, marginTop: 0 }}
                           animate={{ opacity: 1, height: "auto", marginTop: 4 }}
                           exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                          className={cn("text-[9px] italic leading-tight px-1", isPinkMode ? "text-rose-500/80" : (temperature > 1.8 || temperature < 0.3 ? "text-rose-400/80" : "text-amber-400/80"))}
+                          className={cn("text-[9px] italic leading-tight px-1", isPinkMode ? (temperature > 1.8 || temperature < 0.3 ? "text-rose-500" : "text-amber-500") : (temperature > 1.8 || temperature < 0.3 ? "text-rose-400/80" : "text-amber-400/80"))}
                         >
                           {getTemperatureWarning(temperature)}
                         </motion.p>
@@ -435,8 +442,9 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                       className={cn(
                         "w-full h-1 rounded-lg appearance-none cursor-pointer transition-none",
                         "active:scale-[1.002]",
-                        "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-zinc-300 dark:[&::-webkit-slider-thumb]:border-zinc-700",
-                        "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-none shadow-md"
+                        "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border",
+                        circleBorderClass,
+                        "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border shadow-md"
                       )}
                     />
                     <AnimatePresence>
@@ -445,7 +453,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           initial={{ opacity: 0, height: 0, marginTop: 0 }}
                           animate={{ opacity: 1, height: "auto", marginTop: 4 }}
                           exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                          className={cn("text-[9px] italic leading-tight px-1", isPinkMode ? "text-rose-500/80" : (topP < 0.2 ? "text-rose-400/80" : "text-amber-400/80"))}
+                          className={cn("text-[9px] italic leading-tight px-1", isPinkMode ? (topP < 0.2 ? "text-rose-500" : "text-amber-500") : (topP < 0.2 ? "text-rose-400/80" : "text-amber-400/80"))}
                         >
                           {getTopPWarning(topP)}
                         </motion.p>
@@ -499,7 +507,8 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                       />
                     </div>
                   </div>
-                  <MaxTokensSlider contrast={contrast} />
+                  {/* Max Tokens */}
+                  <MaxTokensSlider contrast={contrast} isPinkMode={isPinkMode} />
                 </div>
               </ParameterZone>
 
