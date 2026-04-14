@@ -110,7 +110,7 @@ export const ChatSidebar = ({
         <div className="no-drag">
           <Button
             variant="outline"
-            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm transition-all ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'} ${isPinkMode ? 'bg-white/60 border-rose-200/50 text-foreground' : (contrast === 'dark' ? 'bg-white/10 text-black border-black/10' : 'bg-background border-muted-foreground/20 text-foreground')}`}
+            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm transition-none ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'} ${isPinkMode ? 'bg-white/60 border-rose-200/50 text-foreground' : (contrast === 'dark' ? 'bg-white/10 text-black border-black/10' : 'bg-background border-muted-foreground/20 text-foreground')}`}
             onClick={isIncognito ? undefined : handleNewChat}
             disabled={isIncognito}
           >
@@ -152,7 +152,7 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all group ${activeSessionId === chat.id
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-none group ${activeSessionId === chat.id
                                 ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold'
                                 : (contrast === 'dark' ? 'text-black/70 hover:text-black font-medium' : 'text-muted-foreground hover:text-foreground')
                               }`}
@@ -209,7 +209,7 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-all group ${activeSessionId === chat.id
+                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-none group ${activeSessionId === chat.id
                                 ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold'
                                 : (contrast === 'dark' ? 'text-black/70 hover:text-black font-medium' : 'text-muted-foreground hover:text-foreground')
                               }`}

@@ -193,7 +193,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                     <Tooltip>
                       <TooltipTrigger render={(props) => (
                         <div {...props}>
-                          <HelpCircle className={cn("h-3 w-3 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
+                          <HelpCircle className={cn("h-3 w-3 cursor-help transition-none hover:scale-110 active:scale-95", iconColor)} />
                         </div>
                       )} />
                       <TooltipContent side="left" className="max-w-[200px]">
@@ -207,7 +207,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                     onChange={(e) => setSystemPrompt(e.target.value)}
                     placeholder="You are a helpful assistant..."
                     className={cn(
-                      "w-full min-h-[100px] p-2.5 text-xs border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all",
+                      "w-full min-h-[100px] p-2.5 text-xs border rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-primary/30 transition-none",
                       inputBg,
                       borderColor,
                       textColor,
@@ -240,7 +240,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                       <Tooltip>
                         <TooltipTrigger render={(props) => (
                           <div {...props}>
-                            <HelpCircle className={cn("h-3 w-3 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
+                            <HelpCircle className={cn("h-3 w-3 cursor-help transition-none hover:scale-110 active:scale-95", iconColor)} />
                           </div>
                         )} />
                         <TooltipContent side="left" className="max-w-[200px]">
@@ -254,7 +254,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           <button 
                             {...props}
                             onClick={() => setTemperature(0.7)}
-                            className={cn("p-1 rounded-md transition-all hover:bg-destructive/10 active:scale-90 opacity-40 hover:opacity-100", textColor)}
+                            className={cn("p-1 rounded-md transition-none hover:bg-destructive/10 active:scale-90 opacity-40 hover:opacity-100", textColor)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -277,7 +277,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           if (e.key === 'Enter') e.currentTarget.blur();
                         }}
                         className={cn(
-                          "w-12 h-6 px-1.5 rounded-md text-[10px] font-mono text-right border transition-all focus:outline-none focus:ring-1 focus:ring-primary/30",
+                          "w-12 h-6 px-1.5 rounded-md text-[10px] font-mono text-right border transition-none focus:outline-none focus:ring-1 focus:ring-primary/30",
                           "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                           inputBg,
                           borderColor,
@@ -295,7 +295,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                     onChange={(e) => setTemperature(parseFloat(e.target.value))}
                     style={{ background: getTemperatureGradient(temperature) }}
                     className={cn(
-                      "w-full h-1 rounded-lg appearance-none cursor-pointer transition-all hover:translate-y-[-0.5px]",
+                      "w-full h-1 rounded-lg appearance-none cursor-pointer transition-none hover:translate-y-[-0.5px]",
                       "active:scale-[1.002]",
                       "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-zinc-300 dark:[&::-webkit-slider-thumb]:border-zinc-700",
                       "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-none shadow-md"
@@ -311,7 +311,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                       <Tooltip>
                         <TooltipTrigger render={(props) => (
                           <div {...props}>
-                            <HelpCircle className={cn("h-3 w-3 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
+                            <HelpCircle className={cn("h-3 w-3 cursor-help transition-none hover:scale-110 active:scale-95", iconColor)} />
                           </div>
                         )} />
                         <TooltipContent side="left" className="max-w-[200px]">
@@ -325,7 +325,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           <button 
                             {...props}
                             onClick={() => setTopP(1.0)}
-                            className={cn("p-1 rounded-md transition-all hover:bg-destructive/10 active:scale-90 opacity-40 hover:opacity-100", textColor)}
+                            className={cn("p-1 rounded-md transition-none hover:bg-destructive/10 active:scale-90 opacity-40 hover:opacity-100", textColor)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>
@@ -348,7 +348,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           if (e.key === 'Enter') e.currentTarget.blur();
                         }}
                         className={cn(
-                          "w-12 h-6 px-1.5 rounded-md text-[10px] font-mono text-right border transition-all focus:outline-none focus:ring-1 focus:ring-primary/30",
+                          "w-12 h-6 px-1.5 rounded-md text-[10px] font-mono text-right border transition-none focus:outline-none focus:ring-1 focus:ring-primary/30",
                           "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                           inputBg,
                           borderColor,
@@ -366,7 +366,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                     onChange={(e) => setTopP(parseFloat(e.target.value))}
                     style={{ background: getTopPGradient(topP) }}
                     className={cn(
-                      "w-full h-1 rounded-lg appearance-none cursor-pointer transition-all hover:translate-y-[-0.5px]",
+                      "w-full h-1 rounded-lg appearance-none cursor-pointer transition-none hover:translate-y-[-0.5px]",
                       "active:scale-[1.002]",
                       "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-zinc-300 dark:[&::-webkit-slider-thumb]:border-zinc-700",
                       "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-none shadow-md"
@@ -394,7 +394,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                       <Tooltip>
                         <TooltipTrigger render={(props) => (
                           <div {...props}>
-                            <HelpCircle className={cn("h-3 w-3 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
+                            <HelpCircle className={cn("h-3 w-3 cursor-help transition-none hover:scale-110 active:scale-95", iconColor)} />
                           </div>
                         )} />
                         <TooltipContent side="left" className="max-w-[200px]">
@@ -411,7 +411,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                         onBlur={handleMaxTokensBlur}
                         onKeyDown={(e) => e.key === 'Enter' && handleMaxTokensBlur()}
                         className={cn(
-                          "w-16 h-6 px-1.5 rounded-lg text-[10px] font-mono text-right border focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all",
+                          "w-16 h-6 px-1.5 rounded-lg text-[10px] font-mono text-right border focus:outline-none focus:ring-1 focus:ring-primary/40 transition-none",
                           "appearance-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                           inputBg,
                           borderColor,
@@ -432,7 +432,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                     <Tooltip>
                       <TooltipTrigger render={(props) => (
                         <div {...props}>
-                          <HelpCircle className={cn("h-3 w-3 cursor-help transition-all hover:scale-110 active:scale-95", iconColor)} />
+                          <HelpCircle className={cn("h-3 w-3 cursor-help transition-none hover:scale-110 active:scale-95", iconColor)} />
                         </div>
                       )} />
                       <TooltipContent side="left" className="max-w-[200px]">
@@ -448,7 +448,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                     onKeyDown={handleAddStop}
                     placeholder="Type and press Enter..."
                     className={cn(
-                      "w-full h-9 px-3 text-xs border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all",
+                      "w-full h-9 px-3 text-xs border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary/30 transition-none",
                       inputBg,
                       borderColor,
                       textColor,
@@ -466,7 +466,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
                           exit={{ scale: 0.8, opacity: 0 }}
                           onClick={() => removeStopString(stop)}
                           className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] group cursor-default transition-all active:scale-95 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20",
+                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] group cursor-default transition-none active:scale-95 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20",
                             contrast === 'dark' ? "bg-black/5 text-black/80 border-black/10" : "bg-white/5 text-white/80 border-white/10",
                             isPinkMode && "border-rose-200/20"
                           )}
