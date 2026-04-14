@@ -19,111 +19,29 @@
 - [x] R-12: Chats must be stored in individual JSON files via Rust commands.
 
 ## Phase 08: Model Selector Polish
-**Requirements:** [R-13, R-14, R-15, R-16]
-- [x] R-13: Bookmarked models must only appear in the "Bookmarked" section.
-- [x] R-14: Models must return to their provider section when unbookmarked.
-- [x] R-15: Refreshing models must maintain exclusive bookmark visibility.
-- [x] R-16: Model selection must use Ghost Pill highlight and Typography Pop indicators.
-
-**Plans:** 2 plans
-- [x] 08-01-PLAN.md — Exclusive Bookmark Visibility (Completed as Quick Task)
-- [x] 002-model-selection-ui-refinement.md — Ghost Pill & Typography Pop
+- [x] R-13, R-14, R-15, R-16 (Completed)
 
 ## Phase 09: Right Sidebar Shell + Toggle
-**Requirements:** [R-17, R-18, R-19, R-20]
-- [x] R-17: Add a collapsible right sidebar shell to the app layout (shell only, no content).
-- [x] R-18: Sidebar toggle button in chat header using predefined SVG assets.
-- [x] R-19: Zustand state management for model parameters.
-- [x] R-20: Right Sidebar UI for model parameter configuration.
+- [x] R-17, R-18, R-19, R-20 (Completed)
 
-**Plans:** 3 plans
-- [x] 09-01-PLAN.md — Right Sidebar Shell + Toggle
-- [x] 09-02-PLAN.md — Parameter State Persistence
-- [x] 09-03-PLAN.md — Sidebar UI Controls
+## Phase 09.1 to 09.8 (Completed)
 
-## Phase 09.1: Header & Sidebar Refinement (Bug Fixes)
-**Requirements:** [R-09.1-01, R-09.1-02]
-- [x] R-09.1-01: Header must separate chat controls from system controls with a vertical separator.       
-- [x] R-09.1-02: Right sidebar toggle must use functional state updates and correctly trigger layout shift.
+## Phase 10: Inactivity Eject (Completed)
 
-**Plans:** 1 plans
-- [x] 09.1-01-PLAN.md — Header Grouping & Toggle Behavior Fix
+## Phase 11: Chat Duplication Fix (Completed)
 
-## Phase 09.2: Header Refinement & Model Bar (09-01 fixes)
-**Requirements:** [R-09.2-01, R-09.2-02]
-- [x] R-09.2-01: Move model selector and right sidebar toggle to a dedicated second bar.
-- [x] R-09.2-02: Add an unload (Eject) button for local models to clear current selection.
+## Phase 12: Token Stats Fix (Completed)
 
-**Plans:** 1 plans
-- [x] 09.2-01-PLAN.md — Refactor dashboard header and add model bar.
-
-## Phase 09.3: Layout Polish — Three-Tier Header & Sidebar Refinement
-**Requirements:** [R-09.3-01, R-09.3-02, R-09.3-03]
-- [x] R-09.3-01: Restructure Dashboard into Top Bar, Second Bar, and constrained Sidebar Zone.
-- [x] R-09.3-02: Polish RightSidebar background and width animation.
-- [x] R-09.3-03: Restrict drag regions to Top Bar and ensure component alignment.
-
-**Plans:** 1 plans
-- [x] 09.3-01-PLAN.md — Dashboard Layout Restructuring & Sidebar Polish
-
-## Phase 09.4: Header Consolidation
-**Requirements:** [R-09.4-01]
-- [x] R-09.4-01: Header must be a single unified strip (h-14) containing all chat and system controls.    
-
-**Plans:** 1 plans
-- [x] 09.4-01-PLAN.md — Consolidate header bars into single strip.
-
-## Phase 09.5: Layout Hotfixes & Migration Stability
-**Requirements:** [R-09.5-01, R-09.5-02]
-- [x] R-09.5-01: Ensure left sidebar toggle icons use correct assets with leading slashes.
-- [x] R-09.5-02: Ensure chat migration includes `created_at` timestamp.
-
-**Plans:** 1 plans
-- [x] 09.5-01-PLAN.md — Fix Sidebar Icon & Chat Migration (Completed)
-
-## Phase 09.6: Dark Mode SVG Fixes
-**Requirements:** [R-09.6-01]
-- [x] R-09.6-01: Ensure all SVG icons in Dashboard are visible in dark mode via `dark:invert` class.      
+## Phase 13: Voice Transcription (Local-First)
+**Requirements:** [VOICE-13-02, VOICE-13-03, VOICE-13-04, VOICE-13-05]
+- [ ] VOICE-13-02: Audio capture with 'cpal' and inference with 'whisper-rs' using 'small' model.
+- [ ] VOICE-13-03: Managed State for Whisper engine and audio buffers.
+- [ ] VOICE-13-04: Tauri commands: start_recording, stop_recording, get_transcription_status.
+- [ ] VOICE-13-05: Non-blocking inference on stop_recording.
 
 **Plans:** 1 plan
-- [x] 09.6-01-PLAN.md — Add dark:invert to Dashboard icons (Completed).
+- [ ] 13-02-PLAN.md — Local-First Voice Transcription Backend
 
-## Phase 09.7: Eject Model Implementation
-**Requirements:** [R-09.7-01, R-09.7-02]
-- [x] R-09.7-01: Implement Tauri permissions for the `eject_model` command.
-- [x] R-09.7-02: Wire the `eject_model` command to the Dashboard eject button with error handling.        
+## Phase 14: Token Enrichment & Context Intelligence (Completed)
 
-**Plans:** 1 plan
-- [x] 09.7-01-PLAN.md — Implement permissions and wire eject button.
-
-## Phase 09.8: Window Controls Fix
-**Requirements:** [WINDOW-FIX-01]
-- [x] WINDOW-FIX-01: Fix WindowControls.tsx for Tauri v2 API and nested button House errors in tooltips.   
-
-**Plans:** 1 plan
-- [x] 09.8-01-PLAN.md — Fix WindowControls.tsx
-
-## Phase 10: Inactivity Eject
-**Requirements:** [R-10-01, R-10-02]
-- [x] R-10-01: Implement `useInactivityEject` hook to auto-unload local models.
-- [x] R-10-02: Wire hook to Dashboard for automatic cleanup on 10-minute inactivity.
-
-**Plans:** 1 plan
-- [x] 10-01-PLAN.md — Implement useInactivityEject and wire Dashboard.
-
-## Phase 11: Chat Duplication Fix
-**Requirements:** [R-07-10]
-- [ ] R-07-10: (REVISIT) Fix chat duplication on first message via ref tracking and save logic refinement.
-
-**Plans:** 1 plan
-- [ ] 11-01-PLAN.md — Ref-track activeSessionId and fix handleSend callback.
-
-## Phase 12: Token Stats Fix
-**Requirements:** [R-12-01, R-12-02]
-- [x] R-12-01: Extract native LM Studio duration in Rust.
-- [x] R-12-02: Prioritize native stats in useAIStreaming hook.
-
-**Plans:** 1 plan
-- [x] 12-01-PLAN.md — Implement Token Stats Fix.
-
-## Phase 13: Voice & Search (Deferred)
+## Phase 15: Context Intelligence System (Completed)
