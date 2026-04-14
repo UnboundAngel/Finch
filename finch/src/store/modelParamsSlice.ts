@@ -32,9 +32,9 @@ export interface ModelParamsState {
 export const createModelParamsSlice: StateCreator<ModelParamsState, [], [], ModelParamsState> = (set) => ({
   systemPrompt: '',
   temperature: 0.8,
-  topP: 0.95,
+  topP: 0.9,
   maxTokens: 2048,
-  stopStrings: [],
+  stopStrings: ['</think>'],
   contextIntelligence: {
     hardware_safe_limit: 8192,
     model_max: 8192,
@@ -44,7 +44,7 @@ export const createModelParamsSlice: StateCreator<ModelParamsState, [], [], Mode
 
   setSystemPrompt: (prompt) => set({ systemPrompt: prompt }),
   setTemperature: (temp) => set({ temperature: temp }),
-  setTopP: (topP) => set({ topP }),
+  setTopP: (topP) => set({ topP: Math.max(0.01, Math.min(1.0, topP)) }),
   setMaxTokens: (tokens) => set({ maxTokens: tokens }),
   setStopStrings: (stops) => set({ stopStrings: stops }),
   addStopString: (stop) => set((state) => ({

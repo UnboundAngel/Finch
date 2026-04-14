@@ -12,12 +12,13 @@ const appWindow = getCurrentWindow();
 interface WindowControlsProps {
   theme?: 'sketch' | 'terminal';
   isIncognito?: boolean;
+  contrast?: 'light' | 'dark';
 }
 
 /**
  * Custom window controls for Tauri desktop environment.
  */
-export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
+export function WindowControls({ theme, isIncognito, contrast }: WindowControlsProps) {
   const { isTauri, isMaximized } = useTauri();
   const [showSnapLayouts, setShowSnapLayouts] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -34,11 +35,10 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
 
   const isSketch = theme === 'sketch' || isIncognito;
 
-  const buttonClass = `p-1.5 transition-all flex items-center justify-center rounded-lg ${
-    isSketch 
-      ? "text-current hover:scale-110 bg-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white" 
-      : "text-muted-foreground hover:bg-black/[0.05] dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
-  }`;
+  const buttonClass = `p-1.5 transition-all flex items-center justify-center rounded-lg ${isSketch
+      ? `hover:scale-110 bg-transparent ${contrast === 'dark' ? 'text-black hover:bg-black/10' : 'text-white hover:bg-white/10'}`
+      : `${contrast === 'dark' ? 'text-black/60 hover:text-black hover:bg-black/5' : 'text-white/60 hover:text-white hover:bg-white/10'}`
+    }`;
 
   const snapTo = async (layout: string) => {
     try {
@@ -46,7 +46,7 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
       if (!monitor) return;
 
       const { position: { x, y }, size: { width, height } } = monitor.workArea;
-      
+
       // Robust unmaximize sequencing as suggested
       const isMax = await appWindow.isMaximized();
       if (isMax) {
@@ -103,11 +103,11 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
   return (
     <div className="flex items-center gap-0.5 ml-2 no-drag relative">
       <Tooltip>
-        <TooltipTrigger 
+        <TooltipTrigger
           render={(props) => (
-            <button 
+            <button
               {...props}
-              onClick={() => appWindow.minimize()} 
+              onClick={() => appWindow.minimize()}
               className={buttonClass}
             >
               {isSketch ? <SketchMinus /> : <Minus className="h-4 w-4" />}
@@ -117,13 +117,13 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
         <TooltipContent side="bottom">Minimize</TooltipContent>
       </Tooltip>
 
-      <div 
+      <div
         className="relative flex items-center"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <button 
-          onClick={handleMaximize} 
+        <button
+          onClick={handleMaximize}
           className={buttonClass}
         >
           {isSketch ? <SketchSquare /> : (isMaximized ? <Copy className="h-4 w-4" /> : <Square className="h-3.5 w-3.5" />)}
@@ -133,11 +133,11 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
           {showSnapLayouts && (
             <>
               {/* Hover bridge to prevent menu from closing when moving mouse between button and menu */}
-              <div 
-                className="absolute top-[80%] left-0 right-0 h-4 z-[90]" 
+              <div
+                className="absolute top-[80%] left-0 right-0 h-4 z-[90]"
                 onMouseEnter={handlePopupEnter}
               />
-              
+
               <motion.div
                 initial={{ opacity: 0, y: 4, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -206,11 +206,11 @@ export function WindowControls({ theme, isIncognito }: WindowControlsProps) {
       </div>
 
       <Tooltip>
-        <TooltipTrigger 
+        <TooltipTrigger
           render={(props) => (
-            <button 
+            <button
               {...props}
-              onClick={() => appWindow.close()} 
+              onClick={() => appWindow.close()}
               className={`${buttonClass} ${isSketch ? "hover:text-red-600 hover:bg-red-500/10" : "hover:bg-red-500/10 dark:hover:bg-red-500/20 hover:text-red-600 dark:hover:text-red-400"}`}
             >
               {isSketch ? <SketchX /> : <X className="h-4 w-4" />}

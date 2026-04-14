@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,7 +18,7 @@ interface ChatAreaProps {
   isPinkMode?: boolean;
 }
 
-export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput, isIncognito, hasCustomBg, isPinkMode }: ChatAreaProps) => {
+export const ChatArea = memo(({ messages, isThinking, selectedModel, isDark, setInput, isIncognito, hasCustomBg, isPinkMode }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -143,4 +143,4 @@ export const ChatArea = ({ messages, isThinking, selectedModel, isDark, setInput
       </div>
     </div>
   );
-};
+});

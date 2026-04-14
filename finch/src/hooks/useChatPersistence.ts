@@ -15,6 +15,10 @@ interface UseChatPersistenceProps {
   setSelectedModel: (model: string) => void;
   selectedProvider: string;
   setSelectedProvider: (provider: string) => void;
+  customBgLight: string;
+  setCustomBgLight: (path: string) => void;
+  customBgDark: string;
+  setCustomBgDark: (path: string) => void;
 }
 
 export const useChatPersistence = ({
@@ -30,6 +34,10 @@ export const useChatPersistence = ({
   setSelectedModel,
   selectedProvider,
   setSelectedProvider,
+  customBgLight,
+  setCustomBgLight,
+  customBgDark,
+  setCustomBgDark,
 }: UseChatPersistenceProps) => {
   const isLoaded = useRef(false);
 
@@ -45,6 +53,8 @@ export const useChatPersistence = ({
           if (config.enter_to_send !== undefined) setEnterToSend(config.enter_to_send);
           if (config.selected_model) setSelectedModel(config.selected_model);
           if (config.selected_provider) setSelectedProvider(config.selected_provider);
+          if (config.custom_bg_light) setCustomBgLight(config.custom_bg_light);
+          if (config.custom_bg_dark) setCustomBgDark(config.custom_bg_dark);
         } else {
           // Check for legacy profile in localStorage
           const savedProfile = localStorage.getItem('finch_profile');
@@ -83,7 +93,7 @@ export const useChatPersistence = ({
                   generationParams: chat.generationParams ?? { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
                   stats: chat.stats ?? { totalTokens: 0, totalMessages: chat.messages?.length || 0, averageSpeed: 0 }
                 };
-                
+
                 // Only migrate non-incognito chats
                 if (!migratedChat.incognito) {
                   await invoke('save_chat', { chat: migratedChat });
@@ -112,7 +122,7 @@ export const useChatPersistence = ({
     };
 
     loadAndMigrate();
-  }, [setRecentChats, setProfileName, setProfileEmail, setEnterToSend, setSelectedModel, setSelectedProvider]);
+  }, [setRecentChats, setProfileName, setProfileEmail, setEnterToSend, setSelectedModel, setSelectedProvider, setCustomBgLight, setCustomBgDark]);
 
   // Reactive Save for settings
   useEffect(() => {
@@ -127,6 +137,8 @@ export const useChatPersistence = ({
             enter_to_send: enterToSend,
             selected_model: selectedModel,
             selected_provider: selectedProvider,
+            custom_bg_light: customBgLight,
+            custom_bg_dark: customBgDark,
           }
         });
       } catch (e) {
@@ -135,5 +147,5 @@ export const useChatPersistence = ({
     };
 
     saveSettings();
-  }, [profileName, profileEmail, enterToSend, selectedModel, selectedProvider]);
+  }, [profileName, profileEmail, enterToSend, selectedModel, selectedProvider, customBgLight, customBgDark]);
 };

@@ -70,7 +70,7 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
   };
 
   return (
-    <div className="relative group/code my-4 rounded-xl overflow-hidden border border-muted-foreground/10 bg-muted/20">
+    <div className="relative group/code my-4 rounded-xl overflow-hidden border border-muted-foreground/10 bg-muted/20 max-w-full min-w-0">
       <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
         <span className="text-[10px] uppercase font-bold text-muted-foreground/50 px-2 py-1 rounded bg-muted/30 border border-muted-foreground/5 backdrop-blur-sm opacity-0 group-hover/code:opacity-100 transition-all">
           {language}
@@ -105,7 +105,6 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
           margin: 0 !important;
           padding: 0 !important;
           background: transparent !important;
-          overflow: visible !important;
         }
         .shiki-container code {
           background: transparent !important;

@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { Bot, Timer, Gauge, Cpu, Clock, AlertTriangle, HelpCircle, Copy, Check } from 'lucide-react';
 import { MessageMetadata } from '@/src/types/chat';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,9 +14,10 @@ import { toast } from 'sonner';
 interface MetadataRowProps {
   metadata: MessageMetadata;
   isLatest: boolean;
+  hasCustomBg?: boolean;
 }
 
-export const MetadataRow = ({ metadata, isLatest }: MetadataRowProps) => {
+export const MetadataRow = ({ metadata, isLatest, hasCustomBg }: MetadataRowProps) => {
   const [copied, setCopied] = React.useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = React.useState(false);
 
@@ -30,7 +32,7 @@ export const MetadataRow = ({ metadata, isLatest }: MetadataRowProps) => {
   const formatDuration = (ms?: number) => {
     if (ms === undefined) return null;
     if (ms < 1000) return `${ms}ms`;
-    
+
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -60,7 +62,10 @@ export const MetadataRow = ({ metadata, isLatest }: MetadataRowProps) => {
           y: 0
         }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="text-[10px] sm:text-xs text-muted-foreground/60 flex flex-wrap items-center gap-x-4 gap-y-2 mt-2"
+        className={cn(
+          "text-[10px] sm:text-xs flex flex-wrap items-center gap-x-4 gap-y-2 mt-2 transition-all duration-300",
+          hasCustomBg ? "text-muted-foreground opacity-100 font-medium" : "text-muted-foreground/60"
+        )}
       >
         {/* Performance Summary - Hidden by default unless latest or message hovered */}
         <div
@@ -96,8 +101,8 @@ export const MetadataRow = ({ metadata, isLatest }: MetadataRowProps) => {
                 <div {...props} className="flex items-center gap-1.5 cursor-help">
                   <Clock className="h-3 w-3 text-green-500/70" />
                   <span className={`font-medium ${isErrorStopReason(metadata.stopReason) ? 'text-red-500/90' : ''}`}>
-                    {isErrorStopReason(metadata.stopReason) 
-                      ? formatStopReason(metadata.stopReason) 
+                    {isErrorStopReason(metadata.stopReason)
+                      ? formatStopReason(metadata.stopReason)
                       : formatDuration(metadata.totalDuration) || 'complete'}
                   </span>
                 </div>

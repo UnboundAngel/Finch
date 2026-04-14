@@ -346,6 +346,7 @@ async fn send_message(
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>
 ) -> Result<String, String> {
+    let top_p = top_p.map(|p| if p <= 0.0 { 0.01 } else { p.min(1.0) });
     println!("Rust received (provider: {}, model: {}): {}", provider, model, prompt);
 
     let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
@@ -493,6 +494,7 @@ async fn stream_message(
     channel: tauri::ipc::Channel<String>,
     state: State<'_, AppState>
 ) -> Result<(), String> {
+    let top_p = top_p.map(|p| if p <= 0.0 { 0.01 } else { p.min(1.0) });
     println!("Rust received stream request (provider: {}, model: {}): {}", provider, model, prompt);
 
     state.abort_flag.store(false, Ordering::SeqCst);

@@ -108,7 +108,7 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
         ? "bg-gradient-to-b from-fuchsia-50/80 to-pink-50/80 backdrop-blur-2xl border-l border-pink-200/50"
         : !isIncognito && (isDark ? customBgDark : customBgLight)
           ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5"
-          : ""
+          : isDark ? "bg-[#161616] border-l border-black/40" : "bg-white border-l"
         }`}
     >
       <RightSidebar

@@ -30,12 +30,16 @@
 - [x] 002-model-selection-ui-refinement.md — Ghost Pill & Typography Pop
 
 ## Phase 09: Right Sidebar Shell + Toggle
-**Requirements:** [R-17, R-18]
+**Requirements:** [R-17, R-18, R-19, R-20]
 - [x] R-17: Add a collapsible right sidebar shell to the app layout (shell only, no content).
 - [x] R-18: Sidebar toggle button in chat header using predefined SVG assets.
+- [x] R-19: Zustand state management for model parameters.
+- [x] R-20: Right Sidebar UI for model parameter configuration.
 
-**Plans:** 1 plans
+**Plans:** 3 plans
 - [x] 09-01-PLAN.md — Right Sidebar Shell + Toggle
+- [x] 09-02-PLAN.md — Parameter State Persistence
+- [x] 09-03-PLAN.md — Sidebar UI Controls
 
 ## Phase 09.1: Header & Sidebar Refinement (Bug Fixes)
 **Requirements:** [R-09.1-01, R-09.1-02]

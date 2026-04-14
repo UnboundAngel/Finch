@@ -10,11 +10,11 @@ export interface AIStats {
 }
 
 export interface GenerationParams {
-  system_prompt?: string;
+  systemPrompt?: string;
   temperature?: number;
-  top_p?: number;
-  max_tokens?: number;
-  stop_strings?: string[];
+  topP?: number;
+  maxTokens?: number;
+  stopStrings?: string[];
 }
 
 export function useAIStreaming() {

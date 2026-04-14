@@ -21,6 +21,8 @@ interface ModelSelectorProps {
   setSelectedProvider: (provider: string) => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
+  contrast?: 'light' | 'dark';
+  isPinkMode?: boolean;
 }
 
 interface ProviderModels {
@@ -40,6 +42,8 @@ export const ModelSelector = ({
   setSelectedProvider,
   selectedModel,
   setSelectedModel,
+  contrast,
+  isPinkMode,
 }: ModelSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [bookmarkedModels, setBookmarkedModels] = useState<BookmarkedModel[]>([]);
@@ -68,13 +72,13 @@ export const ModelSelector = ({
       const anthropic = await invoke<string[]>('list_anthropic_models');
       const openai = await invoke<string[]>('list_openai_models');
       const gemini = await invoke<string[]>('list_gemini_models');
-      
+
       let ollama: string[] = [];
       if (config.ollama_endpoint) {
         try {
-          ollama = await invoke<string[]>('list_local_models', { 
-            endpoint: config.ollama_endpoint, 
-            provider: 'local_ollama' 
+          ollama = await invoke<string[]>('list_local_models', {
+            endpoint: config.ollama_endpoint,
+            provider: 'local_ollama'
           });
         } catch (e) { console.error("Ollama fetch failed", e); }
       }
@@ -82,9 +86,9 @@ export const ModelSelector = ({
       let lmstudio: string[] = [];
       if (config.lmstudio_endpoint) {
         try {
-          lmstudio = await invoke<string[]>('list_local_models', { 
-            endpoint: config.lmstudio_endpoint, 
-            provider: 'local_lmstudio' 
+          lmstudio = await invoke<string[]>('list_local_models', {
+            endpoint: config.lmstudio_endpoint,
+            provider: 'local_lmstudio'
           });
         } catch (e) { console.error("LM Studio fetch failed", e); }
       }
@@ -148,17 +152,31 @@ export const ModelSelector = ({
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger className="flex items-center h-9 px-3 gap-2 rounded-xl hover:bg-muted/50 transition-all font-semibold text-lg border-0 bg-transparent cursor-pointer outline-none active:scale-95 group">
-        <div className="p-1 rounded-md bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
+      <DropdownMenuTrigger className={cn(
+        "flex items-center h-9 px-3 gap-2 rounded-xl transition-all font-semibold text-lg border-0 bg-transparent cursor-pointer outline-none active:scale-95 group",
+        isPinkMode ? "hover:bg-rose-200/40" : "hover:bg-muted/50"
+      )}>
+        <div className={cn(
+          "p-1 rounded-md transition-colors",
+          isPinkMode ? "bg-rose-200/50 text-rose-600 group-hover:bg-rose-300/50" : "bg-primary/10 text-primary group-hover:bg-primary/20"
+        )}>
           {currentProvider?.icon && <currentProvider.icon className="h-4 w-4" />}
         </div>
-        <span className="truncate max-w-[200px] bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">{selectedModel}</span>
-        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
+        <span className={cn(
+          "truncate max-w-[200px] transition-colors duration-300",
+          contrast === 'dark' ? "text-black" : "text-white"
+        )}>{selectedModel}</span>
+        <ChevronDown className={cn("h-4 w-4 transition-all duration-300", isOpen && "rotate-180", contrast === 'dark' ? "text-black/60" : "text-white/60")} />
       </DropdownMenuTrigger>
-      
-      <DropdownMenuContent 
-        align="start" 
-        className="w-72 rounded-2xl shadow-2xl border-muted-foreground/10 bg-popover/95 backdrop-blur-xl p-1.5 z-50 overflow-hidden"
+
+      <DropdownMenuContent
+        align="start"
+        className={cn(
+          "w-72 rounded-2xl shadow-2xl backdrop-blur-xl p-1.5 z-50 overflow-hidden",
+          isPinkMode 
+            ? "bg-rose-50/95 border-rose-200/50" 
+            : "bg-popover/95 border-muted-foreground/10"
+        )}
       >
         <AnimatePresence>
           {isOpen && (
@@ -173,7 +191,10 @@ export const ModelSelector = ({
                 {/* Bookmarked Section */}
                 {bookmarkedModels.length > 0 && (
                   <div className="mb-2">
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-500/80 flex items-center gap-2 select-none">
+                    <div className={cn(
+                      "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none",
+                      isPinkMode ? "text-rose-500/80" : "text-blue-500/80"
+                    )}>
                       <Bookmark className="h-3 w-3" />
                       Bookmarked
                     </div>
@@ -181,13 +202,19 @@ export const ModelSelector = ({
                       {bookmarkedModels.map((bm) => (
                         <DropdownMenuItem
                           key={`bookmark-${bm.providerId}-${bm.modelId}`}
-                          className="relative z-0 flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                          className={cn(
+                            "relative z-0 flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl transition-colors group outline-none",
+                            isPinkMode ? "focus:bg-rose-200/50" : "focus:bg-accent/50"
+                          )}
                           onClick={() => handleSelect(bm.providerId, bm.modelId)}
                         >
                           {selectedModel === bm.modelId && (
                             <motion.div
                               layoutId="active-model-pill"
-                              className="absolute inset-0 bg-primary/10 rounded-xl -z-10"
+                              className={cn(
+                                "absolute inset-0 rounded-xl -z-10",
+                                isPinkMode ? "bg-rose-200/50" : "bg-primary/10"
+                              )}
                               transition={{ duration: 0.2, ease: "easeOut" }}
                             />
                           )}
@@ -205,9 +232,9 @@ export const ModelSelector = ({
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <BookmarkIconButton 
-                              isBookmarked={true} 
-                              onToggle={(e) => toggleBookmark(e, bm.providerId, bm.modelId)} 
+                            <BookmarkIconButton
+                              isBookmarked={true}
+                              onToggle={(e) => toggleBookmark(e, bm.providerId, bm.modelId)}
                             />
                           </div>
                         </DropdownMenuItem>
@@ -218,7 +245,7 @@ export const ModelSelector = ({
                 )}
 
                 {providers.map((provider) => {
-                  const visibleModels = provider.models.filter(modelId => 
+                  const visibleModels = provider.models.filter(modelId =>
                     !bookmarkedModels.some(bm => bm.providerId === provider.id && bm.modelId === modelId)
                   );
 
@@ -227,7 +254,10 @@ export const ModelSelector = ({
                   return (
                     <div key={provider.id}>
                       <div className="mb-2 last:mb-0">
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 flex items-center gap-2 select-none">
+                        <div className={cn(
+                          "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none",
+                          isPinkMode ? "text-rose-400/60" : "text-muted-foreground/50"
+                        )}>
                           <provider.icon className="h-3 w-3" />
                           {provider.name}
                         </div>
@@ -236,13 +266,19 @@ export const ModelSelector = ({
                             return (
                               <DropdownMenuItem
                                 key={`${provider.id}-${modelId}`}
-                                className="relative z-0 flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl focus:bg-accent/50 transition-colors group outline-none"
+                                className={cn(
+                                  "relative z-0 flex items-center justify-between px-3 py-2 cursor-pointer rounded-xl transition-colors group outline-none",
+                                  isPinkMode ? "focus:bg-rose-200/50" : "focus:bg-accent/50"
+                                )}
                                 onClick={() => handleSelect(provider.id, modelId)}
                               >
                                 {selectedModel === modelId && (
                                   <motion.div
                                     layoutId="active-model-pill"
-                                    className="absolute inset-0 bg-primary/10 rounded-xl -z-10"
+                                    className={cn(
+                                      "absolute inset-0 rounded-xl -z-10",
+                                      isPinkMode ? "bg-rose-200/50" : "bg-primary/10"
+                                    )}
                                     transition={{ duration: 0.2, ease: "easeOut" }}
                                   />
                                 )}
@@ -253,9 +289,9 @@ export const ModelSelector = ({
                                   {modelId}
                                 </span>
                                 <div className="flex items-center gap-1">
-                                  <BookmarkIconButton 
-                                    isBookmarked={false} 
-                                    onToggle={(e) => toggleBookmark(e, provider.id, modelId)} 
+                                  <BookmarkIconButton
+                                    isBookmarked={false}
+                                    onToggle={(e) => toggleBookmark(e, provider.id, modelId)}
                                   />
                                 </div>
                               </DropdownMenuItem>
@@ -267,8 +303,8 @@ export const ModelSelector = ({
                     </div>
                   );
                 })}
-                
-                <DropdownMenuItem 
+
+                <DropdownMenuItem
                   className="mt-1 px-3 py-2 cursor-pointer rounded-xl focus:bg-primary/10 text-center justify-center font-bold text-[11px] uppercase tracking-tighter text-primary/80 hover:text-primary transition-all active:scale-95"
                   onClick={(e) => { e.stopPropagation(); fetchModels(); }}
                 >

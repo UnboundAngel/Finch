@@ -105,12 +105,16 @@ export const ChatSidebar = ({
   };
 
   return (
-    <Sidebar className={cn("!absolute !inset-y-0 !h-full bg-transparent border-none", className)}>
+    <Sidebar className={cn(
+      "!absolute !inset-y-0 !h-full border-none",
+      (!isPinkMode && contrast === 'light') ? "bg-[#161616]" : "bg-transparent",
+      className
+    )}>
       <SidebarHeader className="p-4 select-none">
         <div className="no-drag">
           <Button
             variant="outline"
-            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm transition-none ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'} ${isPinkMode ? 'bg-white/60 border-rose-200/50 text-foreground' : (contrast === 'dark' ? 'bg-white/10 text-black border-black/10' : 'bg-background border-muted-foreground/20 text-foreground')}`}
+            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm transition-none ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'} ${isPinkMode ? 'bg-white/60 border-rose-200/50 text-foreground' : (contrast === 'light' ? 'bg-white/5 text-white border-white/5' : 'bg-background border-muted-foreground/20 text-foreground')}`}
             onClick={isIncognito ? undefined : handleNewChat}
             disabled={isIncognito}
           >
@@ -122,7 +126,7 @@ export const ChatSidebar = ({
             <Input
               id="sidebar-search-input"
               placeholder="Search chats..."
-              className={`pl-9 h-9 rounded-lg border-transparent focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : 'bg-muted/50'}`}
+              className={`pl-9 h-9 rounded-lg border-transparent focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : (contrast === 'light' ? 'bg-white/5 placeholder:text-white/40' : 'bg-muted/50')}`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isIncognito}
