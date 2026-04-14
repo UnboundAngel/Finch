@@ -491,14 +491,19 @@ export function Dashboard() {
       document.documentElement.classList.remove('dark');
     }
 
-    // Synchronously update selection tokens to prevent flash
+    // Synchronously update selection and contrast to prevent flash
     const activeBg = checked ? customBgDark : customBgLight;
     if (!activeBg || isIncognito) {
+      const newContrast = checked ? 'light' : 'dark';
+      setHeaderContrast(newContrast);
+      setSidebarContrast(newContrast);
+      setRightSidebarContrast(newContrast);
+      
       document.documentElement.style.setProperty('--selection-bg', checked ? 'oklch(0.7 0.2 300 / 30%)' : 'oklch(0.6 0.2 300 / 20%)');
       document.documentElement.style.setProperty('--selection-text', checked ? 'oklch(0.9 0.1 300)' : 'oklch(0.4 0.2 300)');
     }
 
-    // Trigger analysis immediately for contrast synchronization
+    // Trigger analysis for full synchronization
     analyzeBackground();
   };
 
