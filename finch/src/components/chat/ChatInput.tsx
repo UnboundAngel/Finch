@@ -202,7 +202,7 @@ export const ChatInput = ({
         }
       `}</style>
       <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
-        <VoiceIndicator isActive={isListening || false} isPinkMode={isPinkMode} />
+        <VoiceIndicator isActive={(isListening && !isTranscribing) || false} isPinkMode={isPinkMode} />
         
         <ModelMarketplace 
           isOpen={isMarketplaceOpen}
