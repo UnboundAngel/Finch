@@ -42,12 +42,13 @@ progress:
 - Phase 10: Inactivity Eject (Completed)
 - Phase 11: Chat Duplication Fix (Completed)
 - Phase 12: Token Stats Fix (Completed)
+- Phase 13: Voice Transcription (Local-First) (Completed)
 - Phase 14: Token Enrichment & Context Intelligence (Completed)
 - Phase 15: Context Intelligence System (Completed)
 
 ## Active Phase
 
-- Phase 13: Voice Transcription (Local-First)
+None. All currently planned phases for the v1.0 milestone are complete.
 
 ## Quick Tasks Completed
 
@@ -57,6 +58,10 @@ progress:
 | 021-fix-theme-crossfade-flash | Removed text transitions to prevent crossfade flash | Completed | 2026-04-13 |
 | 022-fix-theme-crossfade-flash-final | Synchronized contrast state updates to prevent theme flash | Completed | 2026-04-13 |
 | 024-fix-incognito-new-chat | Fixed incognito mode not starting a new chat on first open | Completed | 2026-04-13 |
+| 025-fix-voice-transcription-ui | Fixed transcription callback and removed ugly green mic border | Completed | 2026-04-13 |
+| 026-min-window-width | Set minimum window width to 320px to preserve layout integrity | Completed | 2026-04-14 |
+| 027-voice-transcription-skeleton | Added visual transcription skeleton and microphone selection menu | Completed | 2026-04-14 |
+| 028-ui-crash-and-nesting-fixes | Fixed Dashboard crash and nested button errors in ChatInput | Completed | 2026-04-14 |
 
 ## Decisions
 

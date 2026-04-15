@@ -162,7 +162,9 @@ export function Dashboard() {
   const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [sidebarContrast, setSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [rightSidebarContrast, setRightSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
-  const [isModelLoaded, setIsModelLoaded] = useState(true);
+  const isModelLoaded = useChatStore(state => state.isModelLoaded);
+  const setIsModelLoaded = useChatStore(state => state.setIsModelLoaded);
+  const voiceStatus = useChatStore(state => state.voiceStatus);
   const [isOverflowModalOpen, setIsOverflowModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
@@ -879,6 +881,7 @@ export function Dashboard() {
                           isIncognito={isIncognito}
                           hasCustomBg={hasCustomBgValue}
                           isPinkMode={showPinkMode}
+                          voiceStatus={voiceStatus}
                         />
 
                         {/* Input Area */}

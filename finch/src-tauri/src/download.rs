@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Manager, Runtime, Emitter};
 use tokio::io::AsyncWriteExt;
 use futures_util::StreamExt;
 
@@ -66,7 +65,7 @@ pub async fn download_model<R: Runtime>(
                 progress,
                 total_bytes: total_size,
                 current_bytes: downloaded,
-            }).map_err(|e| e.to_string())?;
+            }).map_err(|e: tauri::Error| e.to_string())?;
             last_emit = std::time::Instant::now();
         }
     }

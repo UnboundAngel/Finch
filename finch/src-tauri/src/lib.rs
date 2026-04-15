@@ -11,23 +11,83 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, State, Manager, Wry};
+use tauri::{AppHandle, State, Manager, Emitter};
 use tauri_plugin_store::StoreExt;
 use std::fs;
 use uuid::Uuid;
 use chrono::Utc;
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
+}
+
 pub struct AppState {
     pub abort_flag: Arc<AtomicBool>,
-    pub voice_manager: Arc<Mutex<VoiceManager>>,
+    pub voice_manager: Arc<VoiceManager>,
 }
 
 impl Default for AppState {
     fn default() -> Self {
-        #[allow(clippy::redundant_closure)]
         Self {
             abort_flag: Arc::new(AtomicBool::new(false)),
-            voice_manager: Arc::new(Mutex::new(VoiceManager::new())),
+            voice_manager: Arc::new(VoiceManager::new()),
+        }
+    }
+}
+
+// ... existing structs ...
+
+fn prepare_messages(
+    history: Vec<ChatMessage>,
+    current_prompt: String,
+    provider: &str,
+    system_prompt: Option<String>,
+) -> serde_json::Value {
+    match provider {
+        "anthropic" => {
+            let mut messages: Vec<Message> = history
+                .into_iter()
+                .map(|m| Message {
+                    role: m.role,
+                    content: m.content,
+                })
+                .collect();
+            messages.push(Message {
+                role: "user".to_string(),
+                content: current_prompt,
+            });
+            serde_json::to_value(messages).unwrap_or(serde_json::json!([]))
+        }
+        "gemini" => {
+            let mut contents = Vec::new();
+            for m in history {
+                let role = if m.role == "assistant" { "model" } else { "user" };
+                contents.push(serde_json::json!({
+                    "role": role,
+                    "parts": [{ "text": m.content }]
+                }));
+            }
+            contents.push(serde_json::json!({
+                "role": "user",
+                "parts": [{ "text": current_prompt }]
+            }));
+            serde_json::to_value(contents).unwrap_or(serde_json::json!([]))
+        }
+        _ => {
+            // OpenAI, Ollama, LM Studio
+            let mut messages = Vec::new();
+            if let Some(sys) = system_prompt {
+                if !sys.is_empty() {
+                    messages.push(serde_json::json!({ "role": "system", "content": sys }));
+                }
+            }
+            for m in history {
+                messages.push(serde_json::json!({ "role": m.role, "content": m.content }));
+            }
+            messages.push(serde_json::json!({ "role": "user", "content": current_prompt }));
+            serde_json::to_value(messages).unwrap_or(serde_json::json!([]))
         }
     }
 }
@@ -394,6 +454,7 @@ async fn send_message(
     prompt: String, 
     model: String,
     provider: String,
+    conversation_history: Vec<ChatMessage>,
     system_prompt: Option<String>,
     temperature: Option<f32>,
     top_p: Option<f32>,
@@ -407,6 +468,8 @@ async fn send_message(
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
+    let messages = prepare_messages(conversation_history, prompt.clone(), &provider, system_prompt.clone());
+
     match provider.as_str() {
         "anthropic" => {
             let api_key = config.and_then(|c| c.anthropic_api_key)
@@ -416,10 +479,7 @@ async fn send_message(
             let client = AnthropicClient::new(api_key);
             let request = AnthropicRequest {
                 model: map_model(&model),
-                messages: vec![Message {
-                    role: "user".to_string(),
-                    content: prompt,
-                }],
+                messages: serde_json::from_value(messages).map_err(|e| e.to_string())?,
                 max_tokens: max_tokens.unwrap_or(2048),
                 stream: false,
                 system: system_prompt,
@@ -447,14 +507,6 @@ async fn send_message(
                 }.ok_or("Local endpoint not configured")?;
                 (format!("{}/v1/chat/completions", endpoint.trim_end_matches('/')), None)
             };
-
-            let mut messages = Vec::new();
-            if let Some(sys) = system_prompt {
-                if !sys.is_empty() {
-                    messages.push(serde_json::json!({ "role": "system", "content": sys }));
-                }
-            }
-            messages.push(serde_json::json!({ "role": "user", "content": prompt }));
 
             let mut body = serde_json::json!({
                 "model": model,
@@ -487,11 +539,8 @@ async fn send_message(
             let client = reqwest::Client::new();
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}", model, api_key);
             
-            let mut contents = Vec::new();
-            contents.push(serde_json::json!({ "parts": [{ "text": prompt }] }));
-
             let mut body = serde_json::json!({
-                "contents": contents,
+                "contents": messages,
             });
 
             if let Some(sys) = system_prompt {
@@ -540,6 +589,7 @@ async fn stream_message(
     prompt: String, 
     model: String, 
     provider: String,
+    conversation_history: Vec<ChatMessage>,
     system_prompt: Option<String>,
     temperature: Option<f32>,
     top_p: Option<f32>,
@@ -563,10 +613,10 @@ async fn stream_message(
     // --- Web Search Pre-Pass ---
     if enable_web_search.unwrap_or(false) {
         let search_query = final_prompt.clone();
-        
+
         // Lookup active provider from config, default to Tavily
         let active_search = config.as_ref().and_then(|c| c.active_search_provider.as_deref()).unwrap_or("tavily");
-        
+
         let search_provider = match active_search {
             "brave" => {
                 let brave_key = config.as_ref().and_then(|c| c.brave_api_key.clone()).ok_or("Brave API key not set. Right-click the globe to configure.")?;
@@ -583,7 +633,7 @@ async fn stream_message(
         };
 
         let _ = channel.send(serde_json::to_string(&StreamingEvent::SearchStart { query: search_query.clone() }).unwrap());
-        
+
         let search_handle = channel.clone();
         let search_context = search::execute_search(search_provider, &search_query, move |res| {
             let _ = search_handle.send(serde_json::to_string(&StreamingEvent::SearchSource(SourceEntry {
@@ -597,15 +647,19 @@ async fn stream_message(
         final_prompt = format!("{}\n\n{}", search_context, final_prompt);
     }
     // ----------------------------
+
+    let messages = prepare_messages(conversation_history, final_prompt, &provider, system_prompt.clone());
+
+    match provider.as_str() {
         "anthropic" => {
             let api_key = config.and_then(|c| c.anthropic_api_key)
                 .or_else(|| env::var("ANTHROPIC_API_KEY").ok())
                 .ok_or("Anthropic API key not set")?;
-            
+
             let client = AnthropicClient::new(api_key);
             let request = AnthropicRequest {
                 model: map_model(&model),
-                messages: vec![Message { role: "user".to_string(), content: final_prompt }],
+                messages: serde_json::from_value(messages).map_err(|e| e.to_string())?,
                 max_tokens: max_tokens.unwrap_or(2048),
                 stream: true,
                 system: system_prompt,
@@ -630,14 +684,6 @@ async fn stream_message(
                 (format!("{}/v1/chat/completions", endpoint.trim_end_matches('/')), None)
             };
 
-            let mut messages = Vec::new();
-            if let Some(sys) = system_prompt {
-                if !sys.is_empty() {
-                    messages.push(serde_json::json!({ "role": "system", "content": sys }));
-                }
-            }
-            messages.push(serde_json::json!({ "role": "user", "content": prompt }));
-
             let mut req_body = serde_json::json!({
                 "model": model,
                 "messages": messages,
@@ -649,7 +695,7 @@ async fn stream_message(
                 if let Some(p) = top_p { obj.insert("top_p".to_string(), serde_json::json!(p)); }
                 if let Some(m) = max_tokens { obj.insert("max_tokens".to_string(), serde_json::json!(m)); }
                 if let Some(s) = stop_strings { obj.insert("stop".to_string(), serde_json::json!(s)); }
-                
+
                 // Add stream_options for OpenAI/LM Studio to get usage
                 if provider == "openai" || provider == "local_lmstudio" {
                     obj.insert("stream_options".to_string(), serde_json::json!({"include_usage": true}));
@@ -658,7 +704,7 @@ async fn stream_message(
 
             let client = reqwest::Client::new();
             let mut req = client.post(url).json(&req_body);
-            
+
             if let Some(key) = api_key {
                 req = req.header("Authorization", format!("Bearer {}", key));
             }
@@ -672,7 +718,7 @@ async fn stream_message(
             let mut stop_reason = "end_turn".to_string();
             let mut manual_token_count = 0;
             let mut lm_stats = serde_json::json!({});
-            
+
             let mut first_token_time: Option<std::time::Instant> = None;
             let mut last_token_time: Option<std::time::Instant> = None;
 
@@ -712,17 +758,17 @@ async fn stream_message(
                                     }
                                 }
                             }
-                            
+
                             // Extract stats/usage
                             if let Some(usage) = json.get("usage") {
                                 let prompt_tokens = usage.get("prompt_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
                                 let completion_tokens = usage.get("completion_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
-                                
+
                                 if prompt_tokens > 0 || completion_tokens > 0 {
                                     total_tokens = prompt_tokens + completion_tokens;
                                     lm_stats["input_tokens"] = serde_json::json!(prompt_tokens);
                                     lm_stats["output_tokens"] = serde_json::json!(completion_tokens);
-                                    
+
                                     if let (Some(first), Some(last)) = (first_token_time, last_token_time) {
                                         let duration_ms = last.duration_since(first).as_millis() as f64;
                                         if duration_ms > 0.0 {
@@ -775,7 +821,7 @@ async fn stream_message(
             let api_key = config.and_then(|c| c.gemini_api_key).ok_or("Gemini API key not set")?;
             let client = reqwest::Client::new();
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse&key={}", model, api_key);
-            
+
             let mut contents = Vec::new();
             contents.push(serde_json::json!({ "parts": [{ "text": final_prompt }] }));
 
@@ -876,7 +922,6 @@ async fn stream_message(
         _ => Err(format!("Unsupported provider: {}", provider))
     }
 }
-
 #[tauri::command]
 async fn abort_generation(state: State<'_, AppState>) -> Result<(), String> {
     println!("Aborting generation...");
@@ -1221,25 +1266,59 @@ async fn get_context_intelligence(
 
 #[tauri::command]
 async fn start_recording(state: State<'_, AppState>) -> Result<(), String> {
-    let mut vm = state.voice_manager.lock().unwrap();
-    vm.start_recording()
+    state.voice_manager.start_recording()
 }
 
 #[tauri::command]
 async fn stop_recording(handle: AppHandle, state: State<'_, AppState>, model_id: Option<String>) -> Result<(), String> {
-    let mut vm = state.voice_manager.lock().unwrap();
-    vm.stop_recording(handle, model_id)
+    state.voice_manager.stop_recording(handle, model_id)
 }
 
 #[tauri::command]
 async fn get_transcription_status(state: State<'_, AppState>) -> Result<VoiceStatus, String> {
-    let vm = state.voice_manager.lock().unwrap();
-    Ok(vm.get_status())
+    Ok(state.voice_manager.get_status())
+}
+
+#[tauri::command]
+async fn list_audio_devices(state: State<'_, AppState>) -> Result<Vec<String>, String> {
+    Ok(state.voice_manager.list_devices())
+}
+
+#[tauri::command]
+async fn set_audio_device(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    state.voice_manager.set_device(name);
+    Ok(())
 }
 
 #[tauri::command]
 async fn download_voice_model(handle: AppHandle, manifest: ModelManifest) -> Result<(), String> {
     download_model(handle, manifest).await
+}
+
+#[tauri::command]
+async fn list_downloaded_voice_models(handle: AppHandle) -> Result<Vec<String>, String> {
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let whisper_dir = app_dir.join("models").join("whisper");
+    
+    if !whisper_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut models = Vec::new();
+    if let Ok(entries) = fs::read_dir(whisper_dir) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("bin") {
+                    if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+                        models.push(file_name.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(models)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1261,6 +1340,12 @@ pub fn run() {
             let bg_dir = app_dir.join("backgrounds");
             if !bg_dir.exists() {
                 fs::create_dir_all(&bg_dir)?;
+            }
+
+            // Ensure voice models directory exists
+            let whisper_dir = app_dir.join("models").join("whisper");
+            if !whisper_dir.exists() {
+                fs::create_dir_all(&whisper_dir)?;
             }
 
             // Initialize and load the store
@@ -1292,7 +1377,10 @@ pub fn run() {
             start_recording,
             stop_recording,
             get_transcription_status,
-            download_voice_model
+            list_audio_devices,
+            set_audio_device,
+            download_voice_model,
+            list_downloaded_voice_models
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

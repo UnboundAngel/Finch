@@ -107,3 +107,23 @@ commands.allow = ["get_transcription_status"]
 identifier = "allow-download-voice-model"
 description = "Allows downloading voice models from external URLs"
 commands.allow = ["download_voice_model"]
+
+[[permission]]
+identifier = "allow-list-audio-devices"
+description = "Allows listing available audio input devices"
+commands.allow = ["list_audio_devices"]
+
+[[permission]]
+identifier = "allow-set-audio-device"
+description = "Allows selecting a specific audio input device"
+commands.allow = ["set_audio_device"]
+
+[[permission]]
+identifier = "allow-list-downloaded-voice-models"
+description = "Allows listing the voice models currently stored on disk"
+commands.allow = ["list_downloaded_voice_models"]
+
+[[permission]]
+identifier = "allow-update-search-config"
+description = "Allows updating search provider API keys and settings"
+commands.allow = ["update_search_config"]

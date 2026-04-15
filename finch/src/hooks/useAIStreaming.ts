@@ -3,6 +3,8 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { isTauri } from '@/src/lib/tauri';
 import { useChatStore } from '@/src/store/index';
 
+import { Message } from '../types/chat';
+
 export interface AIStats {
   totalTokens: number;
   inputTokens?: number;
@@ -48,13 +50,23 @@ export function useAIStreaming() {
     onResearch?: (event: { type: string; data?: any }) => void,
     onComplete?: (finalStats?: AIStats) => void,
     onError?: (error: string) => void,
-    params?: GenerationParams & { enableWebSearch?: boolean }
+    params?: GenerationParams & { enableWebSearch?: boolean },
+    history: Message[] = []
   ) => {
     setIsStreaming(true);
     setError(null);
     setStats(null);
     tokenCount.current = 0;
     startTime.current = performance.now();
+
+    // Prepare conversation history for Rust
+    // 1. Slice up to (but not including) the last message
+    // 2. Map role 'ai' -> 'assistant'
+    // 3. Keep only role and content
+    const conversationHistory = history.slice(0, -1).map(m => ({
+      role: m.role === 'ai' ? 'assistant' : 'user',
+      content: m.content
+    }));
 
     if (!isTauri()) {
       console.warn("streamMessage called outside of Tauri context. Mocking stream.");
@@ -149,6 +161,7 @@ export function useAIStreaming() {
         prompt,
         model,
         provider,
+        conversation_history: conversationHistory,
         channel,
         enable_web_search: params?.enableWebSearch,
         ...params

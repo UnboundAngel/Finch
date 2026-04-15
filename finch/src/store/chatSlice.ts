@@ -8,6 +8,8 @@ export interface ChatState {
   isRightSidebarOpen: boolean;
   tokensUsed: number;
   contextWindowSize: number | null;
+  voiceStatus: 'idle' | 'recording' | 'transcribing';
+  isModelLoaded: boolean;
 
   setSelectedProvider: (provider: string) => void;
   setSelectedModel: (model: string) => void;
@@ -15,6 +17,8 @@ export interface ChatState {
   setIsRightSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
   incrementTokensUsed: (amount: number) => void;
   setContextWindowSize: (size: number | null) => void;
+  setVoiceStatus: (status: 'idle' | 'recording' | 'transcribing') => void;
+  setIsModelLoaded: (isLoaded: boolean) => void;
 }
 
 export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set) => ({
@@ -24,6 +28,8 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   isRightSidebarOpen: false,
   tokensUsed: 0,
   contextWindowSize: getContextWindowSize('claude-3-5-sonnet-20240620'),
+  voiceStatus: 'idle',
+  isModelLoaded: true,
 
   setSelectedProvider: (provider) => set({ selectedProvider: provider }),
   setSelectedModel: (model) => set({ 
@@ -36,4 +42,6 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   })),
   incrementTokensUsed: (amount) => set((state) => ({ tokensUsed: state.tokensUsed + amount })),
   setContextWindowSize: (size) => set({ contextWindowSize: size }),
+  setVoiceStatus: (voiceStatus) => set({ voiceStatus }),
+  setIsModelLoaded: (isModelLoaded) => set({ isModelLoaded }),
 });

@@ -39,7 +39,11 @@
     "allow-start-recording",
     "allow-stop-recording",
     "allow-get-transcription-status",
+    "allow-list-audio-devices",
+    "allow-set-audio-device",
     "allow-download-voice-model",
+    "allow-list-downloaded-voice-models",
+    "allow-update-search-config",
     "dialog:default",
     "store:default"
   ]

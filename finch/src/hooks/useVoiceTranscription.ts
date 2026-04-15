@@ -2,18 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
-import { WhisperModel, WHISPER_MODELS } from '../components/chat/ModelMarketplace';
+import { WhisperModel } from '../components/chat/ModelMarketplace';
+import { useChatStore } from '../store';
 
 export interface DownloadProgressEvent {
   id: string;
-  progress: f64;
-  total_bytes: u64;
-  current_bytes: u64;
+  progress: number;
+  total_bytes: number;
+  current_bytes: number;
 }
 
-export const useVoiceTranscription = () => {
+export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) => void) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'recording' | 'transcribing'>('idle');
+  const status = useChatStore(state => state.voiceStatus);
+  const setStatus = useChatStore(state => state.setVoiceStatus);
   const [installedModels, setInstalledModels] = useState<string[]>([]);
   const [downloadingModels, setDownloadingModels] = useState<Record<string, number>>({});
   const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
@@ -21,20 +23,46 @@ export const useVoiceTranscription = () => {
   // Check which models are already downloaded on mount
   useEffect(() => {
     const checkModels = async () => {
-      // In a real app, we'd have an invoke to check existing files
-      // For now, let's assume we check on mount or after downloads
-      // We'll implementation this backend-side in Phase 13.3 or similar
-      // For this POC, we'll just track state in-memory or check files if command exists
       try {
-        // Mocking for now, will implement Rust side if needed
-        // const models = await invoke<string[]>('list_downloaded_voice_models');
-        // setInstalledModels(models);
+        const models = await invoke<string[]>('list_downloaded_voice_models');
+        setInstalledModels(models);
       } catch (err) {
         console.error("Failed to check models:", err);
       }
     };
     checkModels();
   }, []);
+
+  // Polling for transcription result
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout | null = null;
+
+    if (status === 'transcribing') {
+      pollInterval = setInterval(async () => {
+        try {
+          const currentStatus = await invoke<any>('get_transcription_status');
+          if (currentStatus.status === 'Completed') {
+            const text = currentStatus.data;
+            if (onTranscriptionComplete) {
+              onTranscriptionComplete(text);
+            }
+            setStatus('idle');
+            if (pollInterval) clearInterval(pollInterval);
+          } else if (currentStatus.status === 'Error') {
+            toast.error(`Transcription failed: ${currentStatus.data}`);
+            setStatus('idle');
+            if (pollInterval) clearInterval(pollInterval);
+          }
+        } catch (err) {
+          console.error("Failed to poll transcription status:", err);
+        }
+      }, 500);
+    }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [status, onTranscriptionComplete]);
 
   // Listen for download progress from Rust
   useEffect(() => {
@@ -96,11 +124,9 @@ export const useVoiceTranscription = () => {
   const stopRecording = useCallback(async (modelId?: string) => {
     try {
       setStatus('transcribing');
+      setIsRecording(false);
       const selectedModel = modelId || installedModels[0];
       await invoke('stop_recording', { modelId: selectedModel });
-      // Logic to poll status would go here or in a separate effect
-      setIsRecording(false);
-      setStatus('idle');
     } catch (err: any) {
       toast.error(`Failed to stop recording: ${err}`);
       setIsRecording(false);

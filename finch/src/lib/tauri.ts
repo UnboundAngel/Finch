@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
+import { Message } from "../types/chat";
+
 /**
  * Checks if the application is running in a Tauri context.
  */
@@ -24,6 +26,8 @@ export async function greet(name: string): Promise<string> {
 export async function sendMessage(
   prompt: string, 
   model: string = "Finch 3.5 Sonnet",
+  provider: string = "anthropic",
+  conversationHistory: Message[] = [],
   systemPrompt?: string,
   temperature?: number,
   topP?: number,
@@ -34,9 +38,17 @@ export async function sendMessage(
     console.warn("sendMessage called outside of Tauri context. Returning mock response.");
     return `Mock: Rust received: ${prompt} using model ${model}`;
   }
+
+  const mappedHistory = conversationHistory.map(m => ({
+    role: m.role === 'ai' ? 'assistant' : 'user',
+    content: m.content
+  }));
+
   return await invoke<string>("send_message", { 
     prompt, 
     model,
+    provider,
+    conversationHistory: mappedHistory,
     systemPrompt,
     temperature,
     topP,

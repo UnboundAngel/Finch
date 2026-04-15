@@ -2,12 +2,13 @@ import React, { useRef, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MessageBubble } from './MessageBubble';
 import { ThinkingBox } from './ThinkingBox';
 import { Message } from '../../types/chat';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { SearchStatus } from './SearchStatus';
+import { TranscriptionSkeleton } from './TranscriptionSkeleton';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -19,9 +20,21 @@ interface ChatAreaProps {
   hasCustomBg?: boolean;
   isPinkMode?: boolean;
   researchEvents: any[];
+  voiceStatus: 'idle' | 'recording' | 'transcribing';
 }
 
-export const ChatArea = memo(({ messages, isThinking, researchEvents, selectedModel, isDark, setInput, isIncognito, hasCustomBg, isPinkMode }: ChatAreaProps) => {
+export const ChatArea = memo(({ 
+  messages, 
+  isThinking, 
+  researchEvents, 
+  selectedModel, 
+  isDark, 
+  setInput, 
+  isIncognito, 
+  hasCustomBg, 
+  isPinkMode,
+  voiceStatus 
+}: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,7 +43,7 @@ export const ChatArea = memo(({ messages, isThinking, researchEvents, selectedMo
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isThinking]);
+  }, [messages, isThinking, voiceStatus]);
 
   return (
     <div className="flex-1 relative overflow-hidden flex flex-col bg-transparent">
@@ -142,6 +155,13 @@ export const ChatArea = memo(({ messages, isThinking, researchEvents, selectedMo
               isPinkMode={isPinkMode}
             />
           ))}
+
+          {/* Voice Transcription Skeleton */}
+          <AnimatePresence>
+            {voiceStatus === 'transcribing' && (
+              <TranscriptionSkeleton isPinkMode={isPinkMode} />
+            )}
+          </AnimatePresence>
 
           {/* Thinking State */}
           {isThinking && (

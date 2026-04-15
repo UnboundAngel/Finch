@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
+import { cn } from '@/lib/utils';
 
 interface SearchOnboardingProps {
   onComplete: (apiKey: string) => void;

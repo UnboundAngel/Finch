@@ -48,8 +48,9 @@ impl TavilyClient {
             .map_err(|e| format!("Tavily request failed: {}", e))?;
 
         if !resp.status().is_success() {
+            let status = resp.status();
             let err_body = resp.text().await.unwrap_or_default();
-            return Err(format!("Tavily API error ({}): {}", resp.status(), err_body));
+            return Err(format!("Tavily API error ({}): {}", status, err_body));
         }
 
         let data: TavilyResponse = resp.json().await
