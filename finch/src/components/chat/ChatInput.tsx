@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SearchOnboarding } from './SearchOnboarding';
 import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-opener';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useChatStore } from '@/src/store/index';
 
 interface ChatInputProps {
@@ -343,7 +343,7 @@ export const ChatInput = ({
                             className="text-xs rounded-lg gap-2 cursor-pointer"
                             onClick={async () => {
                               try {
-                                await open('https://tavily.com/');
+                                await openUrl('https://tavily.com/');
                               } catch (e) {
                                 window.open('https://tavily.com/', '_blank');
                               }
