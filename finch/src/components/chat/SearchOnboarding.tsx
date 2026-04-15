@@ -156,7 +156,7 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
                 {(['tavily', 'brave', 'searxng'] as const).map((p) => (
                   <button
                     key={p}
-                    onClick={() => setActiveProvider(p)}
+                    onClick={() => setActiveSearchProvider(p)}
                     className={cn(
                       "flex-1 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-all",
                       activeProvider === p ? "bg-white/10 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
