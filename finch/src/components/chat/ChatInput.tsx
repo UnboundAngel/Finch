@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SearchOnboarding } from './SearchOnboarding';
 import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-opener';
 import { useChatStore } from '@/src/store/index';
 
 interface ChatInputProps {
@@ -120,15 +121,18 @@ export const ChatInput = ({
     status
   } = useVoiceTranscription((text) => {
     const trimmedText = text?.trim();
+    // Guard against empty results, blank audio sentinels, or hallucinatory chirping
     const isBlank = !trimmedText || 
                     trimmedText === '[BLANK_AUDIO]' || 
                     trimmedText === '{empty-audio}' || 
                     trimmedText.includes('[Birds chirping]');
 
     if (!isBlank) {
+      // Append text WITHOUT triggering auto-send
       setInput(prev => prev ? `${prev} ${trimmedText}` : trimmedText);
       toast.success("Transcription added!");
     } else {
+      // No audio detected guard
       toast.error("No audio detected!", { 
         duration: 2500,
         position: 'bottom-center'
@@ -286,12 +290,14 @@ export const ChatInput = ({
                     <Popover open={showOnboarding && !hasSearchKey} onOpenChange={setShowOnboarding}>
                       <PopoverAnchor asChild>
                         <div className="inline-flex relative">
-                          <Button                            variant="ghost"
+                          <Button                            
+                            variant="ghost"
                             size="icon"
                             className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-blue-500 bg-blue-500/10 hover:bg-blue-500/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
                             onClick={(e) => {
                               if (!configLoaded) return;
                               if (!hasSearchKey) {
+                                setOnboardingStep(0);
                                 setShowOnboarding(true);
                               } else {
                                 setIsWebSearchActive(!isWebSearchActive);
@@ -304,6 +310,7 @@ export const ChatInput = ({
                               if (hasSearchKey) {
                                 setIsSearchMenuOpen(true);
                               } else {
+                                setOnboardingStep(0);
                                 setShowOnboarding(true);
                               }
                             }}
@@ -320,8 +327,13 @@ export const ChatInput = ({
                           <DropdownMenuItem 
                             className="text-xs rounded-lg gap-2 cursor-pointer"
                             onClick={() => {
-                              setOnboardingStep(3);
-                              setShowOnboarding(true);
+                              // Reset onboarding states to force a clean transition to step 3
+                              setShowOnboarding(false);
+                              setTimeout(() => {
+                                setOnboardingStep(3);
+                                setShowOnboarding(true);
+                                setIsSearchMenuOpen(false);
+                              }, 10);
                             }}
                           >
                             <Edit2 className="h-3.5 w-3.5" />
@@ -329,7 +341,13 @@ export const ChatInput = ({
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-xs rounded-lg gap-2 cursor-pointer"
-                            onClick={() => window.open('https://tavily.com/', '_blank')}
+                            onClick={async () => {
+                              try {
+                                await open('https://tavily.com/');
+                              } catch (e) {
+                                window.open('https://tavily.com/', '_blank');
+                              }
+                            }}
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                             View Documentation
@@ -353,6 +371,7 @@ export const ChatInput = ({
                                       await invoke('update_search_config', { 
                                         config: { active_search_provider: p } 
                                       });
+                                      setActiveSearchProvider(p);
                                       toast.success(`Search provider set to ${p}`);
                                     } catch (e: any) {
                                       toast.error(e.toString());
@@ -361,6 +380,7 @@ export const ChatInput = ({
                                   className="text-xs rounded-lg flex items-center justify-between cursor-pointer"
                                 >
                                   <span className="capitalize">{p}</span>
+                                  {activeSearchProvider === p && <Check className="h-3 w-3" />}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuSubContent>

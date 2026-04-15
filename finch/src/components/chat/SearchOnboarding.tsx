@@ -20,8 +20,25 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
   const [apiKey, setApiKey] = useState("");
   const [braveKey, setBraveKey] = useState("");
   const [searxUrl, setSearxUrl] = useState("");
-  const [activeProvider, setActiveProvider] = useState<'tavily' | 'brave' | 'searxng'>('tavily');
+  const [activeProvider, setActiveSearchProvider] = useState<'tavily' | 'brave' | 'searxng'>('tavily');
   const [isSaving, setIsSaving] = useState(false);
+
+  React.useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config: any = await invoke('get_provider_config');
+        if (config) {
+          if (config.tavily_api_key) setApiKey(config.tavily_api_key === "••••••••" ? "" : config.tavily_api_key);
+          if (config.brave_api_key) setBraveKey(config.brave_api_key === "••••••••" ? "" : config.brave_api_key);
+          if (config.searxng_url) setSearxUrl(config.searxng_url);
+          if (config.active_search_provider) setActiveSearchProvider(config.active_search_provider);
+        }
+      } catch (err) {
+        console.error("Failed to load search config:", err);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const steps = [
     {

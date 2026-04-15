@@ -39,15 +39,46 @@ impl Default for AppState {
 
 // ... existing structs ...
 
+fn estimate_tokens(text: &str) -> usize {
+    (text.chars().count() as f32 / 4.0).ceil() as usize
+}
+
+fn trim_history(
+    mut history: Vec<ChatMessage>,
+    budget: usize,
+    current_prompt: &str,
+    system_prompt: &Option<String>
+) -> Vec<ChatMessage> {
+    let mut current_total = estimate_tokens(current_prompt) + 
+        estimate_tokens(system_prompt.as_deref().unwrap_or(""));
+    
+    // Calculate initial history tokens
+    for m in &history {
+        current_total += estimate_tokens(&m.content);
+    }
+
+    // Prune oldest first until under budget
+    while current_total > budget && !history.is_empty() {
+        let removed = history.remove(0);
+        current_total -= estimate_tokens(&removed.content);
+    }
+
+    history
+}
+
 fn prepare_messages(
     history: Vec<ChatMessage>,
     current_prompt: String,
     provider: &str,
     system_prompt: Option<String>,
+    max_tokens: Option<u32>,
 ) -> serde_json::Value {
+    let budget = (max_tokens.unwrap_or(4096) as f32 * 0.75) as usize;
+    let trimmed_history = trim_history(history, budget, &current_prompt, &system_prompt);
+
     match provider {
         "anthropic" => {
-            let mut messages: Vec<Message> = history
+            let mut messages: Vec<Message> = trimmed_history
                 .into_iter()
                 .map(|m| Message {
                     role: m.role,
@@ -62,7 +93,7 @@ fn prepare_messages(
         }
         "gemini" => {
             let mut contents = Vec::new();
-            for m in history {
+            for m in trimmed_history {
                 let role = if m.role == "assistant" { "model" } else { "user" };
                 contents.push(serde_json::json!({
                     "role": role,
@@ -83,7 +114,7 @@ fn prepare_messages(
                     messages.push(serde_json::json!({ "role": "system", "content": sys }));
                 }
             }
-            for m in history {
+            for m in trimmed_history {
                 messages.push(serde_json::json!({ "role": m.role, "content": m.content }));
             }
             messages.push(serde_json::json!({ "role": "user", "content": current_prompt }));
@@ -468,7 +499,7 @@ async fn send_message(
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
-    let messages = prepare_messages(conversation_history, prompt.clone(), &provider, system_prompt.clone());
+    let messages = prepare_messages(conversation_history, prompt.clone(), &provider, system_prompt.clone(), max_tokens);
 
     match provider.as_str() {
         "anthropic" => {
@@ -648,7 +679,7 @@ async fn stream_message(
     }
     // ----------------------------
 
-    let messages = prepare_messages(conversation_history, final_prompt, &provider, system_prompt.clone());
+    let messages = prepare_messages(conversation_history, final_prompt, &provider, system_prompt.clone(), max_tokens);
 
     match provider.as_str() {
         "anthropic" => {

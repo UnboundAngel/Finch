@@ -44,7 +44,7 @@ progress:
 - Phase 12: Token Stats Fix (Completed)
 - Phase 13: Voice Transcription (Local-First) (Completed)
 - Phase 14: Token Enrichment & Context Intelligence (Completed)
-- Phase 15: Context Intelligence System (Completed)
+- Phase 15: Token-Aware Sliding Window (Completed)
 
 ## Active Phase
 
