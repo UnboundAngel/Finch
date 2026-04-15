@@ -8,7 +8,6 @@ import { ThinkingBox } from './ThinkingBox';
 import { Message } from '../../types/chat';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { SearchStatus } from './SearchStatus';
-import { TranscriptionSkeleton } from './TranscriptionSkeleton';
 
 interface ChatAreaProps {
   messages: Message[];
@@ -43,76 +42,54 @@ export const ChatArea = memo(({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isThinking, voiceStatus]);
+  }, [messages, isThinking]);
 
   return (
-    <div className="flex-1 relative overflow-hidden flex flex-col bg-transparent">
-      <div className="flex-1 min-h-0 overflow-y-auto w-full relative z-10 scroll-smooth">
-        <div className="max-w-3xl mx-auto w-full p-4 md:p-6 lg:p-8 flex flex-col gap-8 pb-0">
-
-          {/* Empty State / Welcome */}
+    <div className="flex-1 overflow-y-auto pt-20 pb-8 px-4 scrollbar-hide">
+      <div className="max-w-3xl mx-auto min-h-full flex flex-col">
+        <div className="flex-1 space-y-6">
           {messages.length === 0 && (
             isIncognito ? (
-              <div className="flex flex-col items-center justify-center text-center mt-20 mb-10">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col items-center space-y-6"
-                >
-                  <div className="flex items-center gap-3 text-4xl md:text-5xl font-serif tracking-tight">
-                    <Sparkles className="h-10 w-10 text-orange-400" />
-                    <span>You're incognito</span>
-                  </div>
-                  <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
-                    Incognito chats are never saved to this device and generally not used for training.
+              <div className="flex flex-col items-center justify-center py-24 text-center space-y-6">
+                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <ShieldCheck className="h-8 w-8 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-semibold tracking-tight">Incognito Mode Active</h2>
+                  <div className="flex items-center justify-center text-muted-foreground max-w-sm mx-auto">
+                    <p className="text-sm">Your conversation will not be saved to history.</p>
                     <TooltipProvider delay={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-primary hover:underline ml-1 cursor-help inline-flex items-center gap-0.5">
-                            Learn more <HelpCircle className="h-3 w-3" />
-                          </span>
+                          <span className="text-primary hover:underline ml-1 cursor-help inline-flex items-center gap-0.5"><HelpCircle className="h-3 w-3" /> Privacy Policy</span>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="max-w-[300px] p-4 space-y-2 text-xs leading-relaxed">
-                          <p className="font-bold border-b border-border pb-1 mb-2 text-foreground">Privacy Policy</p>
-                          <p>• <span className="font-semibold text-primary">Local Privacy:</span> Finch does not save this conversation to your history or disk.</p>
-                          <p>• <span className="font-semibold text-primary">Model Training:</span> API providers (OpenAI, Anthropic, Gemini) generally do not use API data for training.</p>
-                          <p>• <span className="font-semibold text-primary">Data Retention:</span> Cloud providers may keep logs for 15-30 days for safety reviews.</p>
-                          <p className="pt-1 italic opacity-80 text-[10px]">For 100% private offline use, use local models (Ollama/LM Studio).</p>
+                        <TooltipContent 
+                          side="bottom" 
+                          className="w-72 p-4 space-y-3 text-xs leading-relaxed bg-popover/95 backdrop-blur-md border-white/10 shadow-2xl"
+                        >
+                          <p className="font-bold border-b border-white/10 pb-1.5 mb-2 text-foreground text-[13px]">Privacy Policy</p>
+                          <div className="space-y-2">
+                            <p><span className="font-semibold text-primary">Local Privacy:</span> Finch does not save this conversation to your history or disk.</p>
+                            <p><span className="font-semibold text-primary">Model Training:</span> API providers (OpenAI, Anthropic, Gemini) generally do not use API data for training.</p>
+                            <p><span className="font-semibold text-primary">Data Retention:</span> Cloud providers may keep logs for 15-30 days for safety reviews.</p>
+                          </div>
+                          <p className="pt-1.5 border-t border-white/5 italic opacity-70 text-[10px]">For 100% private offline use, use local models (Ollama/LM Studio).</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </p>
-                </motion.div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center text-center mt-20 mb-10 space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  className={`h-32 w-32 rounded-[2.5rem] backdrop-blur-xl flex items-center justify-center mb-4 shadow-2xl border ${
-                    isPinkMode 
-                      ? "bg-rose-100/50 border-rose-200/50" 
-                      : "bg-zinc-100/80 dark:bg-zinc-900/80 border-zinc-200/50 dark:border-zinc-800/50"
-                  }`}
-                >
-                  <img
-                    src="/assets/finch.svg"
-                    className={`h-24 w-24 object-contain select-none ${isPinkMode ? "drop-shadow-[0_0_10px_rgba(255,192,203,0.8)]" : ""}`}
-                    alt="Finch Logo"
-                  />
-                </motion.div>
-                <h1 className="text-3xl font-semibold tracking-tight">How can I help you today?</h1>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-8 items-stretch">
-                  <Button
-                    variant="outline"
-                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
-                    onClick={() => { setInput('Summarize this article: '); toast('Added prompt to input'); }}
-                  >
-                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><Globe className="h-4 w-4 text-blue-500" /> Summarize an article</span>
-                    <span className="text-xs text-muted-foreground font-normal leading-relaxed">Paste a URL or text to get a quick summary of the main points.</span>
-                  </Button>
+              <div className="flex flex-col items-center justify-center py-16 space-y-10">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-medium tracking-tight text-center">How can I help you today?</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mx-auto px-4 h-full min-h-[140px]">
                   <Button
                     variant="outline"
                     className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
@@ -156,21 +133,10 @@ export const ChatArea = memo(({
             />
           ))}
 
-          {/* Voice Transcription Skeleton */}
-          <AnimatePresence>
-            {voiceStatus === 'transcribing' && (
-              <TranscriptionSkeleton isPinkMode={isPinkMode} />
-            )}
-          </AnimatePresence>
-
           {/* Thinking State */}
           {isThinking && (
-            <div className="flex gap-4 w-full">
-              <div className="h-8 w-8 shrink-0 mt-0.5 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-                <MessageSquare className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="flex-1 space-y-2 overflow-hidden">
-                <div className="font-medium text-sm">{selectedModel}</div>
+            <div className="flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-4">
                 <SearchStatus events={researchEvents} isThinking={isThinking} />
                 <ThinkingBox isActivelyThinking={true} />
               </div>
@@ -183,3 +149,21 @@ export const ChatArea = memo(({
     </div>
   );
 });
+
+const ShieldCheck = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+    <path d="m9 12 2 2 4-4"/>
+  </svg>
+);

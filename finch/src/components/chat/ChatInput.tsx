@@ -108,6 +108,7 @@ export const ChatInput = ({
   };
 
   const hasSearchKey = !!(config?.tavily_api_key || config?.brave_api_key || config?.searxng_url);
+  
   const {
     installedModels,
     downloadingModels,
@@ -119,26 +120,21 @@ export const ChatInput = ({
     status
   } = useVoiceTranscription((text) => {
     const trimmedText = text?.trim();
-    // Guard against empty results, blank audio sentinels, or hallucinatory chirping
     const isBlank = !trimmedText || 
                     trimmedText === '[BLANK_AUDIO]' || 
                     trimmedText === '{empty-audio}' || 
                     trimmedText.includes('[Birds chirping]');
 
     if (!isBlank) {
-      // FIX: Append or replace text WITHOUT triggering auto-send
-      // Using functional setInput to ensure we have the latest state if recording multiple times
       setInput(prev => prev ? `${prev} ${trimmedText}` : trimmedText);
       toast.success("Transcription added!");
     } else {
-      // No audio detected guard
       toast.error("No audio detected!", { 
         duration: 2500,
         position: 'bottom-center'
       });
     }
   });
-
 
   const isMicEnabled = installedModels.length > 0;
   const isTranscribing = status === 'transcribing';
@@ -184,12 +180,11 @@ export const ChatInput = ({
   // Theme helper for skeleton colors
   const getSkeletonStyles = () => {
     if (isPinkMode) {
-      return { base: '#fda4af', highlight: '#fecdd3' }; // Darker pink base, lighter pink shimmer
+      return { base: '#fda4af', highlight: '#fecdd3' }; 
     }
     if (isDark) {
       return { base: '#3a3a3a', highlight: '#555555' };
     }
-    // Light or Custom fallback
     return { base: '#dedede', highlight: '#f5f5f5' };
   };
 
@@ -209,6 +204,7 @@ export const ChatInput = ({
         }
       `}</style>
       <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
+        {/* Waveform pill ONLY during active recording */}
         <VoiceIndicator isActive={(isListening && !isTranscribing) || false} isPinkMode={isPinkMode} />
         
         <ModelMarketplace 
@@ -250,7 +246,8 @@ export const ChatInput = ({
             )}
             
             {isTranscribing ? (
-              <div className="w-full flex flex-col gap-2.5 px-4 py-5 pointer-events-none">
+              /* SKELETON INSIDE THE MESSAGE BUBBLE/INPUT BOX */
+              <div className="w-full flex flex-col gap-2.5 px-4 py-5 pointer-events-none min-h-[56px]">
                 <div className="h-2 w-3/4 rounded-full skeleton-line" />
                 <div className="h-2 w-1/2 rounded-full skeleton-line" />
               </div>
@@ -287,7 +284,7 @@ export const ChatInput = ({
                 <div className="inline-flex relative">
                   <DropdownMenu open={isSearchMenuOpen} onOpenChange={setIsSearchMenuOpen}>
                     <Popover open={showOnboarding && !hasSearchKey} onOpenChange={setShowOnboarding}>
-                      <PopoverAnchor>
+                      <PopoverAnchor asChild>
                         <div className="inline-flex relative">
                           <Button                            variant="ghost"
                             size="icon"
@@ -356,7 +353,6 @@ export const ChatInput = ({
                                       await invoke('update_search_config', { 
                                         config: { active_search_provider: p } 
                                       });
-                                      setActiveSearchProvider(p);
                                       toast.success(`Search provider set to ${p}`);
                                     } catch (e: any) {
                                       toast.error(e.toString());
@@ -365,7 +361,6 @@ export const ChatInput = ({
                                   className="text-xs rounded-lg flex items-center justify-between cursor-pointer"
                                 >
                                   <span className="capitalize">{p}</span>
-                                  {activeSearchProvider === p && <Check className="h-3 w-3" />}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuSubContent>
