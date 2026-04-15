@@ -822,11 +822,8 @@ async fn stream_message(
             let client = reqwest::Client::new();
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse&key={}", model, api_key);
 
-            let mut contents = Vec::new();
-            contents.push(serde_json::json!({ "parts": [{ "text": final_prompt }] }));
-
             let mut body = serde_json::json!({
-                "contents": contents,
+                "contents": messages,
             });
 
             if let Some(sys) = system_prompt {

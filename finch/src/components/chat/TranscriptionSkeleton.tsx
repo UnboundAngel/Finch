@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Mic } from 'lucide-react';
 
 interface TranscriptionSkeletonProps {
   isPinkMode?: boolean;
@@ -8,65 +8,56 @@ interface TranscriptionSkeletonProps {
 
 export const TranscriptionSkeleton = ({ isPinkMode }: TranscriptionSkeletonProps) => {
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      className="flex flex-col items-start w-full pl-12 pr-4 py-2"
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="flex gap-4 w-full"
     >
-      <div className={cn(
-        "relative overflow-hidden rounded-2xl px-4 py-3 min-w-[120px] max-w-[60%] shadow-sm",
+      <div className={`h-8 w-8 shrink-0 mt-0.5 rounded-lg flex items-center justify-center shadow-sm ${
         isPinkMode 
-          ? "bg-rose-100/30 border border-rose-200/30" 
-          : "bg-primary/5 border border-primary/10"
-      )}>
-        {/* Shimmer Effect */}
-        <motion.div
-          animate={{
-            x: ['-100%', '100%']
-          }}
-          transition={{
-            duration: 1.5,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className={cn(
-            "absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent",
-            isPinkMode && "via-rose-200/20"
-          )}
-        />
-
-        <div className="flex items-center gap-2 relative z-10">
+          ? "bg-pink-500 text-white" 
+          : "bg-primary text-primary-foreground"
+      }`}>
+        <Mic className="h-4 w-4 animate-pulse" />
+      </div>
+      
+      <div className="flex-1 space-y-3 overflow-hidden">
+        <div className="flex items-center gap-2">
+          <div className={`text-xs font-bold tracking-wider uppercase opacity-50 ${
+            isPinkMode ? "text-pink-600" : ""
+          }`}>
+            Transcribing Audio
+          </div>
           <div className="flex gap-1">
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                animate={{ 
-                  opacity: [0.3, 1, 0.3] 
-                }}
-                transition={{ 
-                  duration: 1, 
-                  repeat: Infinity, 
-                  delay: i * 0.2 
-                }}
-                className={cn(
-                  "h-1 w-1 rounded-full",
-                  isPinkMode ? "bg-rose-400" : "bg-primary/60"
-                )}
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                className={`h-1 w-1 rounded-full ${isPinkMode ? "bg-pink-400" : "bg-primary/40"}`}
               />
             ))}
           </div>
-          <span className={cn(
-            "text-[10px] font-medium tracking-wide uppercase opacity-60",
-            isPinkMode ? "text-rose-500" : "text-primary"
-          )}>
-            Transcribing
-          </span>
         </div>
-        
-        <div className="mt-2 space-y-1.5 relative z-10">
-          <div className={cn("h-1.5 w-full rounded-full opacity-20", isPinkMode ? "bg-rose-400" : "bg-primary")} />
-          <div className={cn("h-1.5 w-[70%] rounded-full opacity-20", isPinkMode ? "bg-rose-400" : "bg-primary")} />
+
+        <div className={`relative overflow-hidden rounded-2xl p-4 min-h-[80px] border ${
+          isPinkMode
+            ? "bg-white/40 border-pink-200/50 backdrop-blur-md"
+            : "bg-muted/40 border-white/10 backdrop-blur-md"
+        }`}>
+          {/* Shimmer Effect */}
+          <motion.div
+            animate={{ x: ['-100%', '100%'] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            className={`absolute inset-0 z-0 bg-gradient-to-r from-transparent via-white/20 to-transparent`}
+          />
+          
+          <div className="space-y-2 relative z-10">
+            <div className={`h-4 w-3/4 rounded-md ${isPinkMode ? "bg-pink-200/50" : "bg-foreground/5"}`} />
+            <div className={`h-4 w-1/2 rounded-md ${isPinkMode ? "bg-pink-200/30" : "bg-foreground/5"}`} />
+          </div>
         </div>
       </div>
     </motion.div>

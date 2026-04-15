@@ -120,14 +120,12 @@ export const ChatInput = ({
     status
   } = useVoiceTranscription((text) => {
     const trimmedText = text?.trim();
-    // Guard against empty results, blank audio sentinels, or hallucinatory chirping
     if (trimmedText && trimmedText !== '[BLANK_AUDIO]' && !trimmedText.includes('[Birds chirping]')) {
       setInput(trimmedText);
       setTimeout(() => {
         handleSend();
       }, 150);
     } else {
-      // No audio detected guard
       toast.error("No audio detected!", { 
         duration: 2500,
         position: 'bottom-center'
@@ -176,6 +174,20 @@ export const ChatInput = ({
     }
   };
 
+  // Theme helper for skeleton colors
+  const getSkeletonStyles = () => {
+    if (isPinkMode) {
+      return { base: '#fda4af', highlight: '#fecdd3' }; // Darker pink base, lighter pink shimmer
+    }
+    if (isDark) {
+      return { base: '#3a3a3a', highlight: '#555555' };
+    }
+    // Light or Custom fallback
+    return { base: '#dedede', highlight: '#f5f5f5' };
+  };
+
+  const skeletonColors = getSkeletonStyles();
+
   return (
     <div className="flex-shrink-0 w-full z-20 transition-all bg-transparent">
       <style>{`
@@ -183,14 +195,10 @@ export const ChatInput = ({
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
         }
-        .transcription-skeleton {
-          background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.1) 50%, transparent 75%);
+        .skeleton-line {
+          background: linear-gradient(90deg, ${skeletonColors.base} 25%, ${skeletonColors.highlight} 50%, ${skeletonColors.base} 75%);
           background-size: 200% 100%;
-          animation: shimmer-sweep 2s infinite linear;
-        }
-        .dark .transcription-skeleton {
-          background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.05) 50%, transparent 75%);
-          background-size: 200% 100%;
+          animation: shimmer-sweep 1.5s infinite linear;
         }
       `}</style>
       <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
@@ -218,7 +226,7 @@ export const ChatInput = ({
                       ? 'bg-background/20 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-lg focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50' 
                       : 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50'))))
           }`}>
-          <div className="flex flex-col w-full min-h-[56px]">
+          <div className="flex flex-col w-full min-h-[56px] relative">
             {attachedFile && (
               <div className="px-4 pt-3 pb-1">
                 <div className="inline-flex items-center gap-2 bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-1.5 text-sm">
@@ -235,9 +243,9 @@ export const ChatInput = ({
             )}
             
             {isTranscribing ? (
-              <div className="w-full flex flex-col gap-2 px-4 py-5 pointer-events-none">
-                <div className="h-2 w-3/4 rounded-full bg-muted/40 transcription-skeleton" />
-                <div className="h-2 w-1/2 rounded-full bg-muted/40 transcription-skeleton" />
+              <div className="w-full flex flex-col gap-2.5 px-4 py-5 pointer-events-none">
+                <div className="h-2 w-3/4 rounded-full skeleton-line" />
+                <div className="h-2 w-1/2 rounded-full skeleton-line" />
               </div>
             ) : (
               <textarea

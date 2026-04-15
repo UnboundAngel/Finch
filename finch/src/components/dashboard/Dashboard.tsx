@@ -680,7 +680,8 @@ export function Dashboard() {
         maxTokens,
         stopStrings,
         enableWebSearch: isWebSearchActive
-      }
+      },
+      updatedMessages
     );
   };
 
