@@ -108,7 +108,6 @@ export const ChatInput = ({
   };
 
   const hasSearchKey = !!(config?.tavily_api_key || config?.brave_api_key || config?.searxng_url);
-  
   const {
     installedModels,
     downloadingModels,
@@ -120,18 +119,26 @@ export const ChatInput = ({
     status
   } = useVoiceTranscription((text) => {
     const trimmedText = text?.trim();
-    if (trimmedText && trimmedText !== '[BLANK_AUDIO]' && !trimmedText.includes('[Birds chirping]')) {
-      setInput(trimmedText);
-      setTimeout(() => {
-        handleSend();
-      }, 150);
+    // Guard against empty results, blank audio sentinels, or hallucinatory chirping
+    const isBlank = !trimmedText || 
+                    trimmedText === '[BLANK_AUDIO]' || 
+                    trimmedText === '{empty-audio}' || 
+                    trimmedText.includes('[Birds chirping]');
+
+    if (!isBlank) {
+      // FIX: Append or replace text WITHOUT triggering auto-send
+      // Using functional setInput to ensure we have the latest state if recording multiple times
+      setInput(prev => prev ? `${prev} ${trimmedText}` : trimmedText);
+      toast.success("Transcription added!");
     } else {
+      // No audio detected guard
       toast.error("No audio detected!", { 
         duration: 2500,
         position: 'bottom-center'
       });
     }
   });
+
 
   const isMicEnabled = installedModels.length > 0;
   const isTranscribing = status === 'transcribing';

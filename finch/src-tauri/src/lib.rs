@@ -769,7 +769,20 @@ async fn stream_message(
                                     lm_stats["input_tokens"] = serde_json::json!(prompt_tokens);
                                     lm_stats["output_tokens"] = serde_json::json!(completion_tokens);
 
-                                    if let (Some(first), Some(last)) = (first_token_time, last_token_time) {
+                                    // Use native timing if available (eval_duration is in ms or nanoseconds depending on version)
+                                    // LM Studio SSE final usage chunk usually has eval_duration
+                                    if let Some(eval_ms) = usage.get("eval_duration").and_then(|v| v.as_f64()) {
+                                        let duration_sec = eval_ms / 1000.0;
+                                        if duration_sec > 0.0 {
+                                            lm_stats["total_duration"] = serde_json::json!(eval_ms);
+                                            // FINCH INVARIANT — DO NOT CHANGE
+                                            // tokens/sec uses eval_duration from LM Studio's final SSE usage chunk.
+                                            // Wall-clock elapsed time inflates this ~3x (network + prompt eval overhead).
+                                            // Do not revert to wall-clock. Regression history: reintroduced multiple times.
+                                            lm_stats["tokens_per_second"] = serde_json::json!(completion_tokens as f64 / duration_sec);
+                                        }
+                                    } else if let (Some(first), Some(last)) = (first_token_time, last_token_time) {
+                                        // Fallback to wall-clock if eval_duration is missing
                                         let duration_ms = last.duration_since(first).as_millis() as f64;
                                         if duration_ms > 0.0 {
                                             lm_stats["total_duration"] = serde_json::json!(duration_ms);
@@ -778,7 +791,6 @@ async fn stream_message(
                                     }
                                 }
                             }
-
                             // Extract LM Studio specific stats if present (fallback)
                             if let Some(stats) = json.get("stats") {
                                 if let Some(tps) = stats["tokens_per_second"].as_f64() {
