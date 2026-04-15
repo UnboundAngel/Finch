@@ -280,10 +280,9 @@ export const ChatInput = ({
                 <div className="inline-flex relative">
                   <DropdownMenu open={isSearchMenuOpen} onOpenChange={setIsSearchMenuOpen}>
                     <Popover open={showOnboarding && !hasSearchKey} onOpenChange={setShowOnboarding}>
-                      <PopoverAnchor asChild>
+                      <PopoverAnchor>
                         <div className="inline-flex relative">
-                          <Button
-                            variant="ghost"
+                          <Button                            variant="ghost"
                             size="icon"
                             className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-blue-500 bg-blue-500/10 hover:bg-blue-500/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
                             onClick={(e) => {

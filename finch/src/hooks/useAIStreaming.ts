@@ -161,7 +161,7 @@ export function useAIStreaming() {
         prompt,
         model,
         provider,
-        conversation_history: conversationHistory,
+        conversationHistory: conversationHistory,
         channel,
         enable_web_search: params?.enableWebSearch,
         ...params
