@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-background: oklch(0.145 0 0);
+  --color-surface: oklch(0.205 0 0);
+  --color-primary: oklch(0.922 0 0);
+  --color-muted: oklch(0.269 0 0);
+  --color-border: oklch(1 0 0 / 10%);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* From Uiverse.io by gharsh11032000 - Scaled down */
+.animated-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 14px;
+  border: 2px solid;
+  border-color: transparent;
+  font-size: 10px;
+  background-color: inherit;
+  border-radius: 100px;
+  font-weight: 600;
+  color: #d4d4d8;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button svg {
+  position: absolute;
+  width: 12px;
+  fill: #d4d4d8;
+  z-index: 9;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button .arr-1 {
+  right: 8px;
+}
+
+.animated-button .arr-2 {
+  left: -25%;
+}
+
+.animated-button .circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background-color: #d4d4d8;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button .text {
+  position: relative;
+  z-index: 1;
+  transform: translateX(-6px);
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button.filled {
+  box-shadow: 0 0 0 6px transparent;
+  color: #141414;
+  border-radius: 8px;
+}
+
+.animated-button.filled .arr-1 {
+  right: -25%;
+}
+
+.animated-button.filled .arr-2 {
+  left: 8px;
+}
+
+.animated-button.filled .text {
+  transform: translateX(6px);
+}
+
+.animated-button.filled svg {
+  fill: #141414;
+}
+
+.animated-button:active {
+  scale: 0.95;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.animated-button.filled .circle {
+  width: 120px;
+  height: 120px;
+  opacity: 1;
+}
