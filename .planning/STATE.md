@@ -39,6 +39,8 @@ progress:
 - Phase 10 (Refactor): Right Sidebar Split (Completed)
 
 # Quick Tasks Completed
+- [2026-04-16] Extract ProviderSection from SettingsDialog.tsx into its own file.
+- [2026-04-16] Map SettingsDialog.tsx as a component anatomy note.
 - [2026-04-16] Extract WebSearchControl from ChatInput.tsx.
 - [2026-04-16] Verify theme flags in Zustand store.
 - [2026-04-16] Map ChatInput.tsx as a component anatomy note.
