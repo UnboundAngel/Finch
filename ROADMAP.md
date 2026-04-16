@@ -47,3 +47,14 @@
 ## Phase 14: Token Enrichment & Context Intelligence (Completed)
 
 ## Phase 15: Context Intelligence System (Completed)
+
+## Phase 10 (Refactor): Right Sidebar Split
+**Requirements:** [RS-SPLIT-01, RS-SPLIT-02, RS-SPLIT-03]
+- [x] RS-SPLIT-01: Foundation hooks (theme, gradients) and ParameterZone UI.
+- [x] RS-SPLIT-02: Extracted sections: SystemPrompt, Sampling, Output, StopWords.
+- [x] RS-SPLIT-03: Integration into RightSidebar.tsx and final polish.
+
+**Plans:** 3 plans
+- [x] 10-01-PLAN.md — Foundation Hooks and Components
+- [x] 10-02-PLAN.md — Section Components Extraction
+- [x] 10-03-PLAN.md — Integration & Refactor
