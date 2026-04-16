@@ -1,5 +1,6 @@
 use tauri::{AppHandle, command, State, Manager};
-use crate::types::{AppState, VoiceStatus};
+use crate::types::AppState;
+use crate::voice::VoiceStatus;
 use crate::download::{ModelManifest, download_model};
 use std::fs;
 

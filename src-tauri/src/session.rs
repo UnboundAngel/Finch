@@ -1,10 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
-use tauri_plugin_store::StoreExt;
 use std::fs;
 use uuid::Uuid;
 use chrono::Utc;
-use crate::types::ChatMessage;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatSession {
@@ -18,12 +16,13 @@ pub struct ChatSession {
     pub timestamp: Option<i64>, // Added to match Dashboard.tsx usage
     pub pinned: Option<bool>,
     pub incognito: Option<bool>,
-    pub systemPrompt: Option<String>,
-    pub generationParams: Option<serde_json::Value>,
+    #[serde(rename = "systemPrompt")]
+    pub system_prompt: Option<String>,
+    #[serde(rename = "generationParams")]
+    pub generation_params: Option<serde_json::Value>,
     pub stats: Option<serde_json::Value>,
 }
 
-#[tauri::command]
 pub async fn list_chats(handle: AppHandle) -> Result<Vec<ChatSession>, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chats_dir = app_dir.join("chats");
@@ -48,7 +47,6 @@ pub async fn list_chats(handle: AppHandle) -> Result<Vec<ChatSession>, String> {
     Ok(chats)
 }
 
-#[tauri::command]
 pub async fn load_chat(handle: AppHandle, id: String) -> Result<ChatSession, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chat_path = app_dir.join("chats").join(format!("{}.json", id));
@@ -62,7 +60,6 @@ pub async fn load_chat(handle: AppHandle, id: String) -> Result<ChatSession, Str
     Ok(chat)
 }
 
-#[tauri::command]
 pub async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<String, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| format!("Could not resolve app data dir: {}", e))?;
     let chats_dir = app_dir.join("chats");
@@ -87,7 +84,6 @@ pub async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<Strin
     Ok(id)
 }
 
-#[tauri::command]
 pub async fn delete_chat(handle: AppHandle, id: String) -> Result<(), String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chat_path = app_dir.join("chats").join(format!("{}.json", id));

@@ -124,7 +124,8 @@ pub async fn stream_message_local(
                                 }
                                 last_token_time = Some(std::time::Instant::now());
                                 manual_token_count += 1;
-                                let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Text(content.to_string())).unwrap());
+                                let _ = channel.send(serde_json::to_string(&StreamingEvent::Text(content.to_string())).unwrap());
+
                             }
                             if let Some(reason) = choices[0]["finish_reason"].as_str() {
                                 stop_reason = match reason {

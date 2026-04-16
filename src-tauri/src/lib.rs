@@ -1,4 +1,3 @@
-mod anthropic;
 mod search;
 mod voice;
 mod download;
@@ -10,7 +9,8 @@ mod config;
 mod ipc;
 
 use types::AppState;
-use tauri::{Manager, path::BaseDirectory};
+use tauri::Manager;
+use tauri_plugin_store::StoreExt;
 use std::fs;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -37,7 +37,7 @@ pub fn run() {
             }
 
             // Initialize store
-            let _ = app.store("finch_config.json")?;
+            let _ = app.get_store("finch_config.json");
             
             Ok(())
         })

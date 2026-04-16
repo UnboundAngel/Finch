@@ -184,7 +184,7 @@ impl AnthropicClient {
                             }
                             AnthropicEvent::ContentBlockDelta { delta, .. } => {
                                 if delta.r#type == "text_delta" {
-                                    let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Text(delta.text)).unwrap());
+                                    let _ = channel.send(serde_json::to_string(&crate::types::StreamingEvent::Text(delta.text)).unwrap());
                                 }
                             }
                             AnthropicEvent::MessageDelta { delta, usage } => {
@@ -214,7 +214,7 @@ impl AnthropicClient {
             "input_tokens": input_tokens,
             "output_tokens": output_tokens
         });
-        let _ = channel.send(serde_json::to_string(&crate::StreamingEvent::Stats(stats_val)).unwrap());
+        let _ = channel.send(serde_json::to_string(&crate::types::StreamingEvent::Stats(stats_val)).unwrap());
 
         Ok(())
     }

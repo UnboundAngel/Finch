@@ -4,7 +4,6 @@ use std::fs;
 use crate::types::{ProviderConfig, HardwareInfo};
 use sysinfo::System;
 
-#[tauri::command]
 pub async fn set_background_image(handle: AppHandle, mode: String) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
     
@@ -49,7 +48,6 @@ pub async fn set_background_image(handle: AppHandle, mode: String) -> Result<Str
     Ok(dest_path_str)
 }
 
-#[tauri::command]
 pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderConfig>, String> {
     let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config = store.get("provider_config");
@@ -74,7 +72,6 @@ pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderCon
     }
 }
 
-#[tauri::command]
 pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> Result<(), String> {
     let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     
@@ -97,7 +94,6 @@ pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> 
     Ok(())
 }
 
-#[tauri::command]
 pub async fn update_search_config(handle: AppHandle, config: serde_json::Value) -> Result<(), String> {
     let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
     let config_val = store.get("provider_config");
@@ -117,7 +113,6 @@ pub async fn update_search_config(handle: AppHandle, config: serde_json::Value) 
     Ok(())
 }
 
-#[tauri::command]
 pub async fn get_hardware_info() -> Result<HardwareInfo, String> {
     let mut sys = System::new_all();
     sys.refresh_all();

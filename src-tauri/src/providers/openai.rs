@@ -1,7 +1,7 @@
 use crate::types::{ProviderConfig, StreamingEvent};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, Manager, ipc::Channel};
+use tauri::{AppHandle, ipc::Channel};
 use tauri_plugin_store::StoreExt;
 use futures_util::StreamExt;
 
@@ -12,7 +12,10 @@ pub async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String
     
     let api_key = match config.and_then(|c| c.openai_api_key) {
         Some(k) if k != "••••••••" => k,
-        _ => return Ok(vec![]),
+        _ => match std::env::var("OPENAI_API_KEY") {
+            Ok(k) => k,
+            Err(_) => return Ok(vec![]),
+        }
     };
 
     let client = reqwest::Client::new();
@@ -50,7 +53,10 @@ pub async fn send_message_openai(
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>,
 ) -> Result<String, String> {
-    let key = config.openai_api_key.as_ref().ok_or("OpenAI API key not set")?;
+    let env_key = std::env::var("OPENAI_API_KEY").ok();
+    let key = config.openai_api_key.as_ref()
+        .or(env_key.as_ref())
+        .ok_or("OpenAI API key not set")?;
     let url = "https://api.openai.com/v1/chat/completions";
 
     let mut body = serde_json::json!({
@@ -92,7 +98,10 @@ pub async fn stream_message_openai(
     channel: Channel<String>,
     abort_flag: Arc<AtomicBool>
 ) -> Result<(), String> {
-    let key = config.openai_api_key.as_ref().ok_or("OpenAI API key not set")?;
+    let env_key = std::env::var("OPENAI_API_KEY").ok();
+    let key = config.openai_api_key.as_ref()
+        .or(env_key.as_ref())
+        .ok_or("OpenAI API key not set")?;
     let url = "https://api.openai.com/v1/chat/completions";
 
     let mut req_body = serde_json::json!({
@@ -123,9 +132,6 @@ pub async fn stream_message_openai(
     let mut stop_reason = "end_turn".to_string();
     let mut manual_token_count = 0;
 
-    let mut first_token_time: Option<std::time::Instant> = None;
-    let mut last_token_time: Option<std::time::Instant> = None;
-
     while let Some(item) = stream.next().await {
         if abort_flag.load(Ordering::SeqCst) {
             stop_reason = "abort".to_string();
@@ -146,8 +152,6 @@ pub async fn stream_message_openai(
                     if let Some(choices) = json.get("choices").and_then(|c| c.as_array()) {
                         if !choices.is_empty() {
                             if let Some(content) = choices[0]["delta"]["content"].as_str() {
-                                if first_token_time.is_none() { first_token_time = Some(std::time::Instant::now()); }
-                                last_token_time = Some(std::time::Instant::now());
                                 manual_token_count += 1;
                                 let _ = channel.send(serde_json::to_string(&StreamingEvent::Text(content.to_string())).unwrap());
                             }
