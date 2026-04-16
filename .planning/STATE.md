@@ -36,6 +36,7 @@ progress:
 
 # Quick Tasks Completed
 - [2026-04-15] Fix compilation errors after Phase 10 refactor.
+- [2026-04-16] Map RightSidebar.tsx as an Obsidian component anatomy note.
 
 # Incomplete Plans
 - [Phase 10]: 10-01-PLAN.md: Refactor monolithic lib.rs and Dashboard.tsx into modular components. (Verify completion)
