@@ -6,11 +6,15 @@
 import { Dashboard } from '@/src/components/dashboard/Dashboard';
 import { Toaster } from 'sonner';
 import '@/src/styles/toasts.css';
+import { useProfileStore } from './store';
+import StartupScreen from './components/startup/StartupScreen';
 
 export default function App() {
+  const activeProfile = useProfileStore(state => state.activeProfile);
+
   return (
     <>
-      <Dashboard />
+      {activeProfile ? <Dashboard /> : <StartupScreen />}
       <Toaster 
         position="top-right" 
         visibleToasts={3} 

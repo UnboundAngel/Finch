@@ -13,24 +13,21 @@ export const VoiceIndicator = ({ isActive, isPinkMode }: VoiceIndicatorProps) =>
   const barsCount = 15;
   const rawLevels = useAudioVisualization(isActive, barsCount);
 
-  // Energy Pulse Logic: Ensure all dots react to the VOLUME, not just frequency
-  // This stops the 'left-right walk' and ensures a cohesive vertical bounce
+  // Reorder levels for the perfect Whisper 'Middle-Out' distribution
+  // We want the highest energy (bass/mids) in the center, tapering to high frequencies on the ends
   const levels = React.useMemo(() => {
-    // 1. Calculate the active volume (average of all bins)
-    const average = rawLevels.reduce((a, b) => a + b, 0) / (barsCount || 1);
+    const reordered = new Array(barsCount).fill(0.12);
+    const mid = Math.floor(barsCount / 2);
     
-    // 2. Map volume to bars with a Gaussian-like weight distribution
-    // Center bars react more, edge bars react less
-    return new Array(barsCount).fill(0).map((_, i) => {
-      const distFromCenter = Math.abs(i - Math.floor(barsCount / 2));
-      const weight = Math.max(0.3, 1 - (distFromCenter / (barsCount / 1.5)));
-      
-      // Ensure a minimum floor so dots never 'delete' (disappear) as requested
-      const floor = 0.12; 
-      const reaction = average * weight * 1.5; // Boost the reaction slightly
-      
-      return Math.max(floor, reaction);
-    });
+    // Distribute frequency bins symmetrically from the center
+    // rawLevels[0] is the most energetic (bass), we place it in the center.
+    // Higher indices (treble) move to the edges.
+    for (let i = 0; i <= mid; i++) {
+      const value = rawLevels[i] || 0.12;
+      if (mid + i < barsCount) reordered[mid + i] = value;
+      if (mid - i >= 0) reordered[mid - i] = value;
+    }
+    return reordered;
   }, [rawLevels, barsCount]);
 
   return (
@@ -44,28 +41,28 @@ export const VoiceIndicator = ({ isActive, isPinkMode }: VoiceIndicatorProps) =>
           style={{ left: '50%' }}
           className={cn(
             "absolute bottom-full mb-2 z-[100] pointer-events-none",
-            "px-2.5 py-2 rounded-full flex items-center justify-center min-w-[70px]", // Increased min-width for stability
+            "px-2.5 py-2 rounded-full flex items-center justify-center min-w-[56px]",
             "backdrop-blur-3xl border shadow-[0_15px_40px_rgba(0,0,0,0.25)]",
             isPinkMode 
               ? "bg-rose-500/10 border-rose-200/50 shadow-rose-200/20" 
-              : "bg-black/75 border-white/15 dark:border-white/10"
+              : "bg-black/70 border-white/15 dark:border-white/10"
           )}
         >
-          {/* Stabilized Unified Waveform */}
-          <div className="flex items-center gap-[1.5px] h-3.5 w-[50px] justify-center">
+          {/* Symmetrical Waveform */}
+          <div className="flex items-center gap-[1.5px] h-3.5">
             {levels.map((level, i) => (
               <motion.div 
                 key={i}
                 initial={{ scaleY: 0.12 }}
                 animate={{ 
                   scaleY: level,
-                  opacity: 0.4 + (level * 0.6)
+                  opacity: 0.35 + (level * 0.65)
                 }}
                 transition={{ 
                   type: "spring", 
-                  damping: 35, // Smoother vertical damping
-                  stiffness: 450,
-                  mass: 0.5
+                  damping: 25, 
+                  stiffness: 500,
+                  mass: 0.4
                 }}
                 style={{ originY: 0.5 }} 
                 className={cn(

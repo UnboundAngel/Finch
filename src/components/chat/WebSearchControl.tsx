@@ -205,4 +205,4 @@ export const WebSearchControl = ({
     </motion.div>
   );
 };
-
+export default WebSearchControl;

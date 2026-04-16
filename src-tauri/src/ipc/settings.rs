@@ -32,18 +32,6 @@ pub async fn set_background_image(handle: AppHandle, mode: String) -> Result<Str
 
     let dest_path_str = dest_path.to_string_lossy().to_string();
 
-    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
-    let mut config_val = store.get("provider_config").unwrap_or(serde_json::json!({}));
-    
-    if mode == "light" {
-        config_val["custom_bg_light"] = serde_json::json!(dest_path_str);
-    } else {
-        config_val["custom_bg_dark"] = serde_json::json!(dest_path_str);
-    }
-
-    store.set("provider_config", config_val);
-    store.save().map_err(|e| e.to_string())?;
-
     Ok(dest_path_str)
 }
 

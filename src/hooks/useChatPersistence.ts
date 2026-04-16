@@ -48,23 +48,10 @@ export const useChatPersistence = ({
         // 1. Load settings from Tauri store
         const config: any = await invoke('get_provider_config');
         if (config) {
-          if (config.profile_name) setProfileName(config.profile_name);
-          if (config.profile_email) setProfileEmail(config.profile_email);
           if (config.enter_to_send !== undefined) setEnterToSend(config.enter_to_send);
           if (config.selected_model) setSelectedModel(config.selected_model);
           if (config.selected_provider) setSelectedProvider(config.selected_provider);
-          if (config.custom_bg_light) setCustomBgLight(config.custom_bg_light);
-          if (config.custom_bg_dark) setCustomBgDark(config.custom_bg_dark);
         } else {
-          // Check for legacy profile in localStorage
-          const savedProfile = localStorage.getItem('finch_profile');
-          if (savedProfile) {
-            try {
-              const { name, email } = JSON.parse(savedProfile);
-              if (name) setProfileName(name);
-              if (email) setProfileEmail(email);
-            } catch (e) { console.error('Failed to parse legacy profile:', e); }
-          }
           const savedEnterToSend = localStorage.getItem('finch_enter_to_send');
           if (savedEnterToSend !== null) {
             setEnterToSend(savedEnterToSend === 'true');
@@ -132,13 +119,9 @@ export const useChatPersistence = ({
       try {
         await invoke('save_provider_config', {
           config: {
-            profile_name: profileName,
-            profile_email: profileEmail,
             enter_to_send: enterToSend,
             selected_model: selectedModel,
             selected_provider: selectedProvider,
-            custom_bg_light: customBgLight,
-            custom_bg_dark: customBgDark,
           }
         });
       } catch (e) {

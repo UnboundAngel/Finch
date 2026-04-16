@@ -38,6 +38,7 @@ pub fn run() {
 
             // Initialize store
             let _ = app.get_store("finch_config.json");
+            let _ = app.get_store("finch_profiles.json");
             
             Ok(())
         })
@@ -67,7 +68,10 @@ pub fn run() {
             ipc::voice::list_audio_devices,
             ipc::voice::set_audio_device,
             ipc::voice::download_voice_model,
-            ipc::voice::list_downloaded_voice_models
+            ipc::voice::list_downloaded_voice_models,
+            ipc::profiles::get_profiles,
+            ipc::profiles::save_profile,
+            ipc::profiles::delete_profile
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

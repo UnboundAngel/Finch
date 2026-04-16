@@ -23,6 +23,7 @@ export interface ChatState {
   setIsModelLoaded: (isLoaded: boolean) => void;
   setIsDark: (isDark: boolean | ((prev: boolean) => boolean)) => void;
   setIsLeftSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
+  reset: () => void;
 }
 
 export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set) => ({
@@ -56,4 +57,9 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   setIsLeftSidebarOpen: (isOpen) => set((state) => ({ 
     isLeftSidebarOpen: typeof isOpen === 'function' ? isOpen(state.isLeftSidebarOpen) : isOpen 
   })),
+  reset: () => set({
+    tokensUsed: 0,
+    isModelLoaded: true,
+    isIncognito: false,
+  }),
 });

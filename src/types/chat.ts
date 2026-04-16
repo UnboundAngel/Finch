@@ -43,3 +43,16 @@ export type ChatSession = {
     averageSpeed: number;
   };
 };
+
+export type Profile = {
+  id: string;
+  name: string;
+  avatarUrl: string;
+  email?: string;
+  prompt?: string;
+  model?: string;
+  passiveLearning?: boolean;
+  webSearch?: boolean;
+  customBgLight?: string;
+  customBgDark?: string;
+};

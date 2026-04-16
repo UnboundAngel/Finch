@@ -15,7 +15,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuGroup
 } from '@/components/ui/dropdown-menu';
-import { WebSearchControl } from './WebSearchControl';
+import { WebSearchControl } from '@/src/components/chat/WebSearchControl';
 import { invoke } from '@tauri-apps/api/core';
 
 interface ChatInputProps {

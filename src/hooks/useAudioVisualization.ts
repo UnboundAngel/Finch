@@ -38,20 +38,20 @@ export const useAudioVisualization = (isActive: boolean, numberOfBars: number = 
       // Decay the target volume constantly so it drops when no events arrive
       targetVolumeRef.current *= 0.92;
 
-      // Generate the bars
+      // Generate the bars (pseudo-spectrum)
+      // Index 0 is highest energy (bass), decaying towards higher indices
       const newLevels = new Array(numberOfBars).fill(0).map((_, i) => {
-        // Subtle Gaussian weight (higher in center)
-        const distFromCenter = Math.abs(i - Math.floor(numberOfBars / 2));
-        const centerWeight = Math.max(0.4, 1 - (distFromCenter / (numberOfBars / 1.5)));
+        // Linear decay factor for pseudo-spectrum
+        const spectralFactor = Math.max(0.3, 1 - (i / numberOfBars));
         
         // Add a tiny bit of random jitter for that "live" look
-        const jitter = (Math.random() - 0.5) * 0.05;
+        const jitter = (Math.random() - 0.5) * 0.04;
         
         // Calculate final bar height
-        const height = (currentVolumeRef.current * centerWeight) + jitter;
+        const height = (currentVolumeRef.current * spectralFactor) + jitter;
         
-        // Enforce the 'floor' requested so dots never delete
-        return Math.max(0.05, height);
+        // Enforce the 'floor' (0.12) requested so dots never delete
+        return Math.max(0.12, height);
       });
 
       setLevels(newLevels);

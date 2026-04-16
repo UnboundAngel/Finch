@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Cloud, Cpu, Sparkles, Zap, Bookmark } from 'lucide-react';
+import { ChevronDown, Bookmark } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +28,6 @@ interface ModelSelectorProps {
 interface ProviderModels {
   id: string;
   name: string;
-  icon: React.ElementType;
   models: string[];
 }
 
@@ -56,11 +55,11 @@ export const ModelSelector = ({
   });
 
   const providers: ProviderModels[] = [
-    { id: 'anthropic', name: 'Anthropic', icon: Sparkles, models: models.anthropic },
-    { id: 'openai', name: 'OpenAI', icon: Cloud, models: models.openai },
-    { id: 'gemini', name: 'Gemini', icon: Zap, models: models.gemini },
-    { id: 'local_ollama', name: 'Ollama', icon: Cpu, models: models.local_ollama },
-    { id: 'local_lmstudio', name: 'LM Studio', icon: Cpu, models: models.local_lmstudio },
+    { id: 'anthropic', name: 'Anthropic', models: models.anthropic },
+    { id: 'openai', name: 'OpenAI', models: models.openai },
+    { id: 'gemini', name: 'Gemini', models: models.gemini },
+    { id: 'local_ollama', name: 'Ollama', models: models.local_ollama },
+    { id: 'local_lmstudio', name: 'LM Studio', models: models.local_lmstudio },
   ];
 
   const fetchModels = async () => {
@@ -162,12 +161,6 @@ export const ModelSelector = ({
               isPinkMode ? "hover:bg-rose-200/40" : "hover:bg-muted/50"
             )}
           >
-            <div className={cn(
-              "p-1 rounded-md transition-colors",
-              isPinkMode ? "bg-rose-200/50 text-rose-600 group-hover:bg-rose-300/50" : "bg-primary/10 text-primary group-hover:bg-primary/20"
-            )}>
-              {currentProvider?.icon && <currentProvider.icon className="h-4 w-4" />}
-            </div>
             <span className={cn(
               "truncate max-w-[200px] transition-colors duration-300",
               contrast === 'dark' ? "text-black" : "text-white"
@@ -227,11 +220,6 @@ export const ModelSelector = ({
                             />
                           )}
                           <div className="flex items-center gap-2 overflow-hidden">
-                            {(() => {
-                              const provider = providers.find(p => p.id === bm.providerId);
-                              const Icon = provider?.icon;
-                              return Icon ? <Icon className="h-3 w-3 text-muted-foreground/60" /> : null;
-                            })()}
                             <span className={cn(
                               "text-sm truncate transition-all duration-200",
                               selectedModel === bm.modelId ? "font-bold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground"
@@ -266,7 +254,6 @@ export const ModelSelector = ({
                           "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none border-none bg-transparent",
                           isPinkMode ? "text-rose-400/60" : "text-muted-foreground/50"
                         )}>
-                          <provider.icon className="h-3 w-3" />
                           {provider.name}
                         </DropdownMenuLabel>
                         <div className="space-y-0.5">

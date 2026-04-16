@@ -240,7 +240,7 @@ export const SettingsDialog = ({
                   <ProviderSection 
                     title="Anthropic" 
                     icon={Sparkles} 
-                    description="Power Finch with Claude-3 series models."
+                    description="Power Finch with Claude-4 series models."
                     storeKey="anthropic_api_key"
                     type="key"
                     testCommand="list_anthropic_models"
@@ -248,7 +248,7 @@ export const SettingsDialog = ({
                   <ProviderSection 
                     title="OpenAI" 
                     icon={Cloud} 
-                    description="Use GPT-4o, o1, and more."
+                    description="Use GPT-5.4, o3, and more."
                     storeKey="openai_api_key"
                     type="key"
                     testCommand="list_openai_models"
@@ -256,7 +256,7 @@ export const SettingsDialog = ({
                   <ProviderSection 
                     title="Google Gemini" 
                     icon={Zap} 
-                    description="Connect Gemini 1.5 Pro and Flash."
+                    description="Connect Gemini 3.1 Pro and Flash."
                     storeKey="gemini_api_key"
                     type="key"
                     testCommand="list_gemini_models"

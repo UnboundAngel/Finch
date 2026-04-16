@@ -46,6 +46,7 @@ progress:
 - Phase 10 (Refactor): Right Sidebar Split (Completed)
 
 # Quick Tasks Completed
+- [2026-04-16] Project structure audit: Identified source fragmentation, legacy artifacts, and documentation sprawl.
 - [2026-04-16] Map models.rs as an IPC module anatomy note.
 - [2026-04-16] Extract ProviderSection from SettingsDialog.tsx into its own file.
 - [2026-04-16] Map SettingsDialog.tsx as a component anatomy note.

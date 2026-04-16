@@ -6,7 +6,7 @@ import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
 import { useKeyboardShortcuts } from '@/src/hooks/useKeyboardShortcuts';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import { useModelParams, useChatStore } from '@/src/store';
+import { useModelParams, useChatStore, useProfileStore } from '@/src/store';
 import { useInactivityEject } from '@/src/hooks/useInactivityEject';
 import { useModelPolling } from '@/src/hooks/useModelPolling';
 import { useDynamicBackground } from '@/src/hooks/useDynamicBackground';
@@ -218,10 +218,19 @@ function DashboardContent({
 
 export function Dashboard() {
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
-  const [profileName, setProfileName] = useState('Jane Doe');
-  const [profileEmail, setProfileEmail] = useState('jane.doe@example.com');
-  const [customBgLight, setCustomBgLight] = useState('');
-  const [customBgDark, setCustomBgDark] = useState('');
+  const activeProfile = useProfileStore(state => state.activeProfile);
+  const saveProfile = useProfileStore(state => state.saveProfile);
+
+  const profileName = activeProfile?.name || 'Jane Doe';
+  const profileEmail = activeProfile?.email || '';
+  const customBgLight = activeProfile?.customBgLight || '';
+  const customBgDark = activeProfile?.customBgDark || '';
+
+  const setProfileName = (name: string) => activeProfile && saveProfile({ ...activeProfile, name });
+  const setProfileEmail = (email: string) => activeProfile && saveProfile({ ...activeProfile, email });
+  const setCustomBgLight = (path: string) => activeProfile && saveProfile({ ...activeProfile, customBgLight: path });
+  const setCustomBgDark = (path: string) => activeProfile && saveProfile({ ...activeProfile, customBgDark: path });
+
   const [enterToSend, setEnterToSend] = useState(true);
   const isDark = useChatStore(state => state.isDark);
   const setIsDark = useChatStore(state => state.setIsDark);
