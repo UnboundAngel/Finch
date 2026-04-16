@@ -5,7 +5,7 @@ use std::fs;
 use sysinfo::System;
 
 #[command]
-pub async fn set_background_image(handle: AppHandle, mode: String) -> Result<String, String> {
+pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
     
     let file_path_enum = handle.dialog()
