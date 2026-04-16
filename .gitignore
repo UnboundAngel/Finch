@@ -11,3 +11,4 @@ src-tauri/target/
 src-tauri/resources/*.bin
 src-tauri/resources/ggml-base.bin
 Old_references/
+# .planning/ # Don't ignore the whole thing if we want STATE.md

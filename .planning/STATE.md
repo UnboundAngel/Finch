@@ -12,7 +12,14 @@ progress:
   percent: 95
 ---
 
-# Phase History
+# Project State: Finch
+
+## Project Reference
+
+- **Core Value**: A fast, local, and extensible desktop AI chat interface that feels like a native application and maintains strict security by routing all LLM calls through Rust IPC.
+- **Current Focus**: Local-first intelligence and modular architecture.
+
+## Phase History
 
 - Phase 01: Core UI Scaffolding (Completed)
 - Phase 02: Rust Backend IPC Scaffolding (Completed)
