@@ -65,6 +65,7 @@ None. All currently planned phases for the v1.0 milestone are complete.
 | 029-functional-browser-navigation | Enabled address bar input and back/forward history navigation | Completed | 2026-04-15 |
 | 030-fix-browser-blank-load | Deferred style injection and added 3s fallback reload for hangs | Completed | 2026-04-15 |
 | 031-fix-browser-bots-and-capabilities | Fixed bot detection with custom UA and resolved sandbox IPC capabilities | Completed | 2026-04-15 |
+| 032-fix-indefinite-loading-stale-pages | Made bot-shield injection resilient and early, fixed 5s interaction fallback | Completed | 2026-04-15 |
 
 ## Decisions
 

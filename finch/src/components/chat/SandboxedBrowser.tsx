@@ -93,22 +93,36 @@ export const SandboxedBrowser = () => {
     if (!webviewLabel) return;
     const cssContent = getDynamicCSS(isDarkMode);
     
-    // Simpler script structure to avoid Vite parsing ghosts
+    // Resilient script: injects shield immediately (no DOM required), and polls for DOM to inject CSS
     const script = `
       (function() {
-        let style = document.getElementById('finch-browser-style') || document.createElement('style');
-        style.id = 'finch-browser-style';
-        style.textContent = ${JSON.stringify(cssContent)};
-        if (!style.parentElement) document.head.append(style);
-        
         const shield = () => {
           try {
             Object.defineProperty(navigator, 'webdriver', { get: () => false });
             Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
+            window.chrome = window.chrome || { runtime: {} };
           } catch (e) {}
         };
         shield();
         window.addEventListener('load', shield);
+        
+        const injectCss = () => {
+          try {
+            let style = document.getElementById('finch-browser-style') || document.createElement('style');
+            style.id = 'finch-browser-style';
+            style.textContent = ${JSON.stringify(cssContent)};
+            if (document.head) {
+              if (!style.parentElement) document.head.append(style);
+            } else if (document.documentElement) {
+              if (!style.parentElement) document.documentElement.appendChild(style);
+            } else {
+              setTimeout(injectCss, 50);
+            }
+          } catch(e) {
+            setTimeout(injectCss, 50);
+          }
+        };
+        injectCss();
       })()
     `;
     invoke('eval_browser_js', { label: webviewLabel, script }).catch(() => {});
@@ -121,21 +135,18 @@ export const SandboxedBrowser = () => {
     }
   }, [isDarkMode, webviewCreated, webviewLabel, isBrowserLoading]);
 
-  // Loading Fallback: If webview is created but still loading after 3s, try one reload
+  // Loading Fallback: If webview is created but still loading after 5s, assume it's an SPA or streaming site and clear the loading state to allow interaction.
   useEffect(() => {
     let fallbackTimeout: NodeJS.Timeout;
     
     if (webviewCreated && isBrowserLoading) {
-      fallbackTimeout = setTimeout(async () => {
+      fallbackTimeout = setTimeout(() => {
         if (isBrowserLoading && webviewLabel) {
-          console.warn(`[SANDBOX] [FALLBACK] Still loading after 3s, attempting reload: ${webviewLabel}`);
-          try {
-            await invoke('reload_browser', { label: webviewLabel });
-          } catch (e) {
-            console.error("[SANDBOX] [FALLBACK] Reload failed:", e);
-          }
+          console.warn(`[SANDBOX] [FALLBACK] Still loading after 5s, forcing ready state: ${webviewLabel}`);
+          setBrowserLoading(false);
+          injectStyle(); // Just in case it was missed
         }
-      }, 3000);
+      }, 5000);
     }
 
     return () => clearTimeout(fallbackTimeout);
@@ -239,6 +250,8 @@ export const SandboxedBrowser = () => {
             if (!isMounted) return;
             setWebviewCreated(true);
             setBrowserLoading(true);
+            // Inject resilient bot shields and style immediately
+            injectStyle();
           }),
           webview.listen('tauri://webview-load-finished', () => {
             console.log(`[SANDBOX] [EVENT] Load Finished: ${label} (Mount: ${mountId})`);
@@ -279,7 +292,11 @@ export const SandboxedBrowser = () => {
               }
             }
 
-            if (isMounted) setBrowserLoading(true);
+            if (isMounted) {
+              setBrowserLoading(true);
+              // Re-inject shields as early as possible on new navigation
+              injectStyle();
+            }
           }),
           webview.listen('tauri://window-move', () => {
             console.log(`[SANDBOX] [EVENT] Window Move: ${label} (Mount: ${mountId})`);
