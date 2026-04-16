@@ -60,7 +60,7 @@ export const ChatArea = memo(({
                     <p className="text-sm">Your conversation will not be saved to history.</p>
                     <TooltipProvider delay={200}>
                       <Tooltip>
-                        <TooltipTrigger asChild>
+                        <TooltipTrigger>
                           <span className="text-primary hover:underline ml-1 cursor-help inline-flex items-center gap-0.5"><HelpCircle className="h-3 w-3" /> Privacy Policy</span>
                         </TooltipTrigger>
                         <TooltipContent 

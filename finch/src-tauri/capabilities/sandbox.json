@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "sandbox",
+  "description": "Capability for the sandbox windows",
+  "windows": [
+    "sandbox-*"
+  ],
+  "permissions": [
+    "core:default",
+    "opener:allow-open-url",
+    "allow-eval-browser-js",
+    "allow-reload-browser"
+  ]
+}

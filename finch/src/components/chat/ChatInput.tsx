@@ -86,7 +86,7 @@ export const ChatInput = ({
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const c = await invoke('get_provider_config');
+        const c = await invoke('get_provider_config') as any;
         setConfig(c);
         setConfigLoaded(true);
         if (c?.active_search_provider) {
@@ -129,7 +129,8 @@ export const ChatInput = ({
 
     if (!isBlank) {
       // Append text WITHOUT triggering auto-send
-      setInput(prev => prev ? `${prev} ${trimmedText}` : trimmedText);
+      const currentInput = input;
+      setInput(currentInput ? `${currentInput} ${trimmedText}` : trimmedText);
       toast.success("Transcription added!");
     } else {
       // No audio detected guard
@@ -287,7 +288,7 @@ export const ChatInput = ({
                 
                 <div className="inline-flex relative">
                   <DropdownMenu open={isSearchMenuOpen} onOpenChange={setIsSearchMenuOpen}>
-                    <Popover open={showOnboarding && !hasSearchKey} onOpenChange={setShowOnboarding}>
+                    <Popover open={showOnboarding} onOpenChange={setShowOnboarding}>
                       <PopoverAnchor asChild>
                         <div className="inline-flex relative">
                           <Button                            
@@ -327,13 +328,9 @@ export const ChatInput = ({
                           <DropdownMenuItem 
                             className="text-xs rounded-lg gap-2 cursor-pointer"
                             onClick={() => {
-                              // Reset onboarding states to force a clean transition to step 3
-                              setShowOnboarding(false);
-                              setTimeout(() => {
-                                setOnboardingStep(3);
-                                setShowOnboarding(true);
-                                setIsSearchMenuOpen(false);
-                              }, 10);
+                              setOnboardingStep(3);
+                              setShowOnboarding(true);
+                              setIsSearchMenuOpen(false);
                             }}
                           >
                             <Edit2 className="h-3.5 w-3.5" />
@@ -487,7 +484,7 @@ export const ChatInput = ({
                       : (input.trim() ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed')
                     }`}
                   disabled={!isThinking && !input.trim()}
-                  onClick={isThinking ? onStop : handleSend}
+                  onClick={() => isThinking ? onStop?.() : handleSend()}
                 >
                   {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
                 </Button>

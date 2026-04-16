@@ -48,6 +48,7 @@ import {
 import { useInactivityEject } from '@/src/hooks/useInactivityEject';
 import { getImageLuminance } from '../../lib/luminance';
 import { ContextOverflowModal } from '@/src/components/modals/ContextOverflowModal';
+import { SandboxedBrowser } from '@/src/components/chat/SandboxedBrowser';
 
 const SidebarIncognitoController = ({ isIncognito, children }: { isIncognito: boolean, children: React.ReactNode }) => {
   const { setOpen } = useSidebar();
@@ -215,16 +216,10 @@ export function Dashboard() {
 
         console.log(`[POLL] Provider: ${selectedProvider} Model: ${selectedModel} Loaded: ${status}`);
 
-        setIsModelLoaded(prev => {
-          if (prev !== status) return status;
-          return prev;
-        });
+        setIsModelLoaded(status);
       } catch (e) {
         console.error('[POLL ERROR]', e);
-        setIsModelLoaded(prev => {
-          if (prev !== false) return false;
-          return prev;
-        });
+        setIsModelLoaded(false);
       }
     };
 
@@ -508,7 +503,7 @@ export function Dashboard() {
       setHeaderContrast(newContrast);
       setSidebarContrast(newContrast);
       setRightSidebarContrast(newContrast);
-      
+
       document.documentElement.style.setProperty('--selection-bg', checked ? 'oklch(0.7 0.2 300 / 30%)' : 'oklch(0.6 0.2 300 / 20%)');
       document.documentElement.style.setProperty('--selection-text', checked ? 'oklch(0.9 0.1 300)' : 'oklch(0.4 0.2 300)');
     }
@@ -968,10 +963,11 @@ export function Dashboard() {
           setIsOverflowModalOpen(false);
           handleSend(true);
         }}
-        hardwareSafeLimit={contextIntelligence?.hardware_safe_limit || 8192}
+        hardwareSafeLimit={contextIntelligence?.hardware_safe_limit || 4096}
         requestedTokens={useModelParams.getState().maxTokens}
       />
 
+      <SandboxedBrowser />
     </TooltipProvider>
   );
 }

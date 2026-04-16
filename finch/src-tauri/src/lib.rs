@@ -1361,7 +1361,29 @@ async fn list_downloaded_voice_models(handle: AppHandle) -> Result<Vec<String>, 
     Ok(models)
 }
 
+
+#[tauri::command]
+async fn eval_browser_js(handle: AppHandle, label: String, script: String) -> Result<(), String> {
+    if let Some(window) = handle.get_webview_window(&label) {
+        window.eval(&script).map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err(format!("Window with label '{}' not found", label))
+    }
+}
+
+#[tauri::command]
+async fn reload_browser(handle: AppHandle, label: String) -> Result<(), String> {
+    if let Some(window) = handle.get_webview_window(&label) {
+        window.reload().map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err(format!("Window with label '{}' not found", label))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState::default())
@@ -1420,7 +1442,9 @@ pub fn run() {
             list_audio_devices,
             set_audio_device,
             download_voice_model,
-            list_downloaded_voice_models
+            list_downloaded_voice_models,
+            eval_browser_js,
+            reload_browser
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

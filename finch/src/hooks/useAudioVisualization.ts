@@ -11,7 +11,18 @@ export const useAudioVisualization = (isActive: boolean, numberOfBars: number = 
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
+
+  const cleanup = () => {
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+    }
+    setLevels(new Array(numberOfBars).fill(0));
+  };
 
   useEffect(() => {
     if (!isActive) {
@@ -87,17 +98,6 @@ export const useAudioVisualization = (isActive: boolean, numberOfBars: number = 
       animationFrameRef.current = requestAnimationFrame(update);
     };
     animationFrameRef.current = requestAnimationFrame(update);
-  };
-
-  const cleanup = () => {
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
-    }
-    setLevels(new Array(numberOfBars).fill(0));
   };
 
   return levels;

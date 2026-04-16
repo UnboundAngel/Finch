@@ -8,7 +8,7 @@ interface MaxTokensSliderProps {
   isPinkMode?: boolean;
 }
 
-const PRESETS = [512, 2048, 4096, 8192, 16384, 32768, 'Max'];
+const PRESETS: (number | 'Max')[] = [512, 2048, 4096, 8192, 16384, 32768, 'Max'];
 
 export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) => {
   const maxTokens = useModelParams(state => state.maxTokens);

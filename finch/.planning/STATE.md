@@ -62,6 +62,9 @@ None. All currently planned phases for the v1.0 milestone are complete.
 | 026-min-window-width | Set minimum window width to 320px to preserve layout integrity | Completed | 2026-04-14 |
 | 027-voice-transcription-skeleton | Added visual transcription skeleton and microphone selection menu | Completed | 2026-04-14 |
 | 028-ui-crash-and-nesting-fixes | Fixed Dashboard crash and nested button errors in ChatInput | Completed | 2026-04-14 |
+| 029-functional-browser-navigation | Enabled address bar input and back/forward history navigation | Completed | 2026-04-15 |
+| 030-fix-browser-blank-load | Deferred style injection and added 3s fallback reload for hangs | Completed | 2026-04-15 |
+| 031-fix-browser-bots-and-capabilities | Fixed bot detection with custom UA and resolved sandbox IPC capabilities | Completed | 2026-04-15 |
 
 ## Decisions
 

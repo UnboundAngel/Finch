@@ -127,3 +127,13 @@ commands.allow = ["list_downloaded_voice_models"]
 identifier = "allow-update-search-config"
 description = "Allows updating search provider API keys and settings"
 commands.allow = ["update_search_config"]
+
+[[permission]]
+identifier = "allow-eval-browser-js"
+description = "Allows executing arbitrary JavaScript in a webview window"
+commands.allow = ["eval_browser_js"]
+
+[[permission]]
+identifier = "allow-reload-browser"
+description = "Allows triggering a native reload of a webview window"
+commands.allow = ["reload_browser"]
