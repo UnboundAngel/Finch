@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, Check, Loader2, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,7 +11,7 @@ export interface WhisperModel {
   sha256: string;
 }
 
-export const WHISPER_MODELS: WhisperModel[] = [
+const WHISPER_MODELS: WhisperModel[] = [
   {
     id: 'ggml-tiny',
     name: 'Tiny',
@@ -75,7 +74,7 @@ export const ModelMarketplace = ({
               "bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-white/20 dark:border-white/10"
             )}
           >
-            <div className="p-4 border-b border-white/10 dark:border-white/5 bg-primary/5">
+            <div className="p-3 border-b border-white/10 dark:border-white/5 bg-primary/5">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 Voice Model Marketplace
               </h3>
@@ -93,9 +92,9 @@ export const ModelMarketplace = ({
                 return (
                   <div 
                     key={model.id}
-                    className="group relative p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 dark:hover:border-white/5"
+                    className="group relative p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all border border-transparent hover:border-white/10 dark:hover:border-white/5 active:scale-[0.99]"
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2.5">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{model.name}</span>
@@ -143,7 +142,7 @@ export const ModelMarketplace = ({
               })}
             </div>
 
-            <div className="p-3 bg-muted/20 border-t border-white/5 flex items-start gap-2">
+            <div className="p-2.5 bg-muted/20 border-t border-white/5 flex items-start gap-2">
               <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
               <p className="text-[10px] text-muted-foreground leading-normal italic">
                 Models are stored locally in your app data folder and never leave your device.

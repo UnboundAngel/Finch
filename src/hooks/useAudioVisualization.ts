@@ -1,104 +1,70 @@
 import { useState, useEffect, useRef } from 'react';
+import { listen } from '@tauri-apps/api/event';
 
 /**
  * useAudioVisualization
- * Captures microphone input and provides real-time frequency data for a waveform.
- * @param isActive - Whether the audio capture should be running.
- * @param numberOfBars - How many frequency 'bins' to return.
+ * Listens for real-time volume events from the Rust backend.
+ * Resolve device conflicts by sharing the backend's audio stream.
+ * @param isActive - Whether the visualization should be active.
+ * @param numberOfBars - How many bars to return.
  */
 export const useAudioVisualization = (isActive: boolean, numberOfBars: number = 13) => {
-  const [levels, setLevels] = useState<number[]>(new Array(numberOfBars).fill(0));
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const animationFrameRef = useRef<number>();
+  const [levels, setLevels] = useState<number[]>(new Array(numberOfBars).fill(0.05));
+  const currentVolumeRef = useRef<number>(0);
+  const targetVolumeRef = useRef<number>(0);
+  const animationFrameRef = useRef<number>(0);
 
   useEffect(() => {
     if (!isActive) {
-      cleanup();
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      setLevels(new Array(numberOfBars).fill(0.05));
       return;
     }
 
-    const startAudio = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
+    // Listen for volume events from the Rust backend
+    const unlistenPromise = listen<number>('voice-volume', (event) => {
+      // The event data is a normalized volume (0.0 to 1.0)
+      targetVolumeRef.current = event.payload;
+    });
 
-        const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-        const ctx = new AudioContextClass();
-        audioContextRef.current = ctx;
-
-        const source = ctx.createMediaStreamSource(stream);
-        const analyser = ctx.createAnalyser();
-        // A smaller fftSize gives us enough bins for a smooth visualizer
-        analyser.fftSize = 64; 
-        analyser.smoothingTimeConstant = 0.8;
-        source.connect(analyser);
-        analyserRef.current = analyser;
-
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        const updateLevels = () => {
-          if (!analyserRef.current) return;
-          
-          analyserRef.current.getByteFrequencyData(dataArray);
-          
-          // Map frequency data to our desired number of bars
-          const normalizedLevels: number[] = [];
-          const stepSize = Math.floor(bufferLength / numberOfBars) || 1;
-          
-          for (let i = 0; i < numberOfBars; i++) {
-            // Sample frequency data and normalize (0 to 1)
-            // We use a slight shift to ignore very low frequencies (sub-bass/rumble)
-            const index = i * stepSize;
-            const value = dataArray[index] / 255.0;
-            
-            // Add a "minimum" height for a subtle floating look even when quiet
-            const clampedValue = Math.max(0.05, value);
-            normalizedLevels.push(clampedValue);
-          }
-          
-          setLevels(normalizedLevels);
-          animationFrameRef.current = requestAnimationFrame(updateLevels);
-        };
-
-        updateLevels();
-      } catch (err) {
-        console.error("Failed to access microphone:", err);
-        // Fallback breathing animation on error
-        startFallbackAnimation();
-      }
-    };
-
-    startAudio();
-
-    return cleanup;
-  }, [isActive, numberOfBars]);
-
-  const startFallbackAnimation = () => {
-    let t = 0;
+    // Animation loop for smooth decaying and "jitter"
+    // This creates an organic feel even if the event frequency is low
     const update = () => {
-      t += 0.05;
-      const breathing = new Array(numberOfBars).fill(0).map((_, i) => 
-        0.1 + Math.sin(t + i * 0.3) * 0.05
-      );
-      setLevels(breathing);
+      // Smoothly interpolate towards the target volume
+      // 0.2 factor for fast response, 0.1 for slow decay
+      const lerpFactor = targetVolumeRef.current > currentVolumeRef.current ? 0.3 : 0.15;
+      currentVolumeRef.current += (targetVolumeRef.current - currentVolumeRef.current) * lerpFactor;
+
+      // Decay the target volume constantly so it drops when no events arrive
+      targetVolumeRef.current *= 0.92;
+
+      // Generate the bars
+      const newLevels = new Array(numberOfBars).fill(0).map((_, i) => {
+        // Subtle Gaussian weight (higher in center)
+        const distFromCenter = Math.abs(i - Math.floor(numberOfBars / 2));
+        const centerWeight = Math.max(0.4, 1 - (distFromCenter / (numberOfBars / 1.5)));
+        
+        // Add a tiny bit of random jitter for that "live" look
+        const jitter = (Math.random() - 0.5) * 0.05;
+        
+        // Calculate final bar height
+        const height = (currentVolumeRef.current * centerWeight) + jitter;
+        
+        // Enforce the 'floor' requested so dots never delete
+        return Math.max(0.05, height);
+      });
+
+      setLevels(newLevels);
       animationFrameRef.current = requestAnimationFrame(update);
     };
-    animationFrameRef.current = requestAnimationFrame(update);
-  };
 
-  const cleanup = () => {
-    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-    }
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close();
-    }
-    setLevels(new Array(numberOfBars).fill(0));
-  };
+    animationFrameRef.current = requestAnimationFrame(update);
+
+    return () => {
+      unlistenPromise.then(unlisten => unlisten());
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [isActive, numberOfBars]);
 
   return levels;
 };

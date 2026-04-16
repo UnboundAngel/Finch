@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
 import { useKeyboardShortcuts } from '@/src/hooks/useKeyboardShortcuts';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { useModelParams, useChatStore } from '@/src/store';
 import { useInactivityEject } from '@/src/hooks/useInactivityEject';
 import { useModelPolling } from '@/src/hooks/useModelPolling';
@@ -15,18 +15,22 @@ import { ModalProvider, useModals } from '@/src/providers/ModalProvider';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardMain } from './DashboardMain';
 
-export function DashboardContent() {
-  const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
+function DashboardContent({
+  recentChats, setRecentChats,
+  profileName, setProfileName,
+  profileEmail, setProfileEmail,
+  customBgLight, setCustomBgLight,
+  customBgDark, setCustomBgDark,
+  enterToSend, setEnterToSend,
+  handleThemeChange
+}: any) {
   const isDark = useChatStore(state => state.isDark);
-  const setIsDark = useChatStore(state => state.setIsDark);
+  const setIsIncognito = useChatStore(state => state.setIsIncognito);
   const selectedProvider = useChatStore(state => state.selectedProvider);
   const setSelectedProvider = useChatStore(state => state.setSelectedProvider);
   const selectedModel = useChatStore(state => state.selectedModel);
   const setSelectedModel = useChatStore(state => state.setSelectedModel);
   const isIncognito = useChatStore(state => state.isIncognito);
-  const setIsIncognito = useChatStore(state => state.setIsIncognito);
-  const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
-  const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
   const isModelLoaded = useChatStore(state => state.isModelLoaded);
   const voiceStatus = useChatStore(state => state.voiceStatus);
 
@@ -35,12 +39,7 @@ export function DashboardContent() {
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
   const [researchEvents, setResearchEvents] = useState<any[]>([]);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [enterToSend, setEnterToSend] = useState(true);
-  const [profileName, setProfileName] = useState('Jane Doe');
-  const [profileEmail, setProfileEmail] = useState('jane.doe@example.com');
   const [searchQuery, setSearchQuery] = useState('');
-  const [customBgLight, setCustomBgLight] = useState('');
-  const [customBgDark, setCustomBgDark] = useState('');
   const [isListening, setIsListening] = useState(false);
 
   const { openOverflowModal, setIsProfileOpen, setIsSettingsOpen } = useModals();
@@ -49,16 +48,18 @@ export function DashboardContent() {
   const showPinkMode = !isDark && !customBgLight && !isIncognito;
 
   const { handleInputChange, handleInputFocus } = useModelPolling(selectedModel, selectedProvider);
-  const { headerContrast, sidebarContrast, rightSidebarContrast, analyzeBackground } = useDynamicBackground({
+  const { headerContrast, sidebarContrast, rightSidebarContrast } = useDynamicBackground({
     isDark, customBgLight, customBgDark, isIncognito, showPinkMode
   });
 
   const session = useChatSession({
-    recentChats, setRecentChats, isIncognito, setIsIncognito,
-    selectedModel, setSelectedModel, selectedProvider, setSelectedProvider
+    recentChats, setRecentChats
   });
 
-  const stableSetInput = useCallback((val: string) => setInput(val), []);
+  const stableSetInput = useCallback((val: string | ((prev: string) => string)) => {
+    setInput(val);
+    handleInputChange();
+  }, [handleInputChange]);
 
   const handleEject = useCallback(() => {
     setSelectedModel('');
@@ -76,16 +77,9 @@ export function DashboardContent() {
 
   useKeyboardShortcuts({
     onNewChat: session.handleNewChat,
-    onOpenSettings: () => (window as any).setIsSettingsOpen(true), // Fallback for provider
+    onOpenSettings: () => setIsSettingsOpen(true),
     onSearchFocus: () => document.getElementById('sidebar-search-input')?.focus()
   });
-
-  const handleThemeChange = (checked: boolean) => {
-    setIsDark(checked);
-    if (checked) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-    analyzeBackground();
-  };
 
   const handleChangeBackground = async () => {
     try {
@@ -106,7 +100,7 @@ export function DashboardContent() {
     const sessionToSave: ChatSession = {
       id: currentSessionId || '',
       title: existing?.title || updatedMessages[0].content.substring(0, 40),
-      messages: updatedMessages,
+      messages: updatedMessages as any,
       timestamp: Date.now(),
       created_at: existing?.created_at || Date.now(),
       updated_at: Date.now(),
@@ -126,13 +120,13 @@ export function DashboardContent() {
         session.activeSessionIdRef.current = savedId;
         sessionToSave.id = savedId;
       }
-      setRecentChats(prev => [sessionToSave, ...prev.filter(c => c.id !== savedId)].sort((a, b) => (a.pinned === b.pinned ? b.timestamp - a.timestamp : a.pinned ? -1 : 1)));
+      setRecentChats((prev: any) => [sessionToSave, ...prev.filter((c: any) => c.id !== savedId)].sort((a, b) => (a.pinned === b.pinned ? b.timestamp - a.timestamp : a.pinned ? -1 : 1)));
     } catch (err) { console.error('Failed to save chat:', err); }
   };
 
   const handleSend = async (bypassCheck = false) => {
     if (!input.trim() || isThinking || isStreaming) return;
-    const { systemPrompt, temperature, topP, maxTokens, stopStrings, contextIntelligence: ci } = useModelParams.getState();
+    const { systemPrompt, temperature, topP, maxTokens, contextIntelligence: ci } = useModelParams.getState();
     if (!bypassCheck && maxTokens > (ci?.hardware_safe_limit || 8192)) {
       openOverflowModal(ci?.hardware_safe_limit || 8192, maxTokens, () => handleSend(true));
       return;
@@ -170,27 +164,23 @@ export function DashboardContent() {
       });
       setIsThinking(false);
     }, (err) => { setIsThinking(false); toast.error(`Error: ${err}`); },
-    { systemPrompt, temperature, topP, maxTokens, stopStrings, enableWebSearch: isWebSearchActive }, updatedMessages);
+    { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive }, updatedMessages);
   };
 
   return (
-    <ModalProvider 
-      profileProps={{
-        profileName, setProfileName, profileEmail, setProfileEmail
-      }} 
-      settingsProps={{
-        isDark, onThemeChange: handleThemeChange, enterToSend, setEnterToSend,
-        setMessages: session.setMessages, setRecentChats, setActiveSessionId: session.setActiveSessionId
-      }} 
-    >
-      <div className={`flex flex-col h-screen w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito ? (isDark ? "bg-black" : "bg-neutral-100") : (!isIncognito && (isDark ? customBgDark : customBgLight)) ? 'bg-transparent text-foreground has-custom-bg' : showPinkMode ? 'bg-[#fff5f7] text-foreground is-pink-mode' : 'bg-background text-foreground'}`}
+    <div className={`flex flex-col h-screen w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
+      ? (isDark ? "bg-[#1a1a1a]" : "bg-[#fffcf0]") 
+      : (!isIncognito && (isDark ? customBgDark : customBgLight)) 
+        ? 'bg-transparent text-foreground has-custom-bg' 
+        : showPinkMode 
+          ? 'bg-[#fff5f7] text-foreground is-pink-mode' 
+          : 'bg-background text-foreground'}`}
       style={{
         ...(!isIncognito && (isDark ? customBgDark : customBgLight) ? { backgroundImage: `url(${convertFileSrc(isDark ? customBgDark : customBgLight)})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' } : {}),
         ...(showPinkMode ? { background: 'linear-gradient(to bottom, #fff5f7, #ffe4e8)' } : {})
       }}
     >
       <DashboardHeader
-        isLeftSidebarOpen={isLeftSidebarOpen} setIsLeftSidebarOpen={setIsLeftSidebarOpen}
         sidebarContrast={sidebarContrast} isIncognito={isIncognito}
         toggleIncognito={() => setIsIncognito(!isIncognito)} selectedProvider={selectedProvider}
         setSelectedProvider={setSelectedProvider} selectedModel={selectedModel}
@@ -199,7 +189,6 @@ export function DashboardContent() {
       />
       <DashboardMain
         {...session}
-        isLeftSidebarOpen={isLeftSidebarOpen} setIsLeftSidebarOpen={setIsLeftSidebarOpen}
         recentChats={recentChats} setRecentChats={setRecentChats}
         isIncognito={isIncognito} setIsIncognito={setIsIncognito}
         showPinkMode={showPinkMode} isDark={isDark}
@@ -223,14 +212,56 @@ export function DashboardContent() {
         setIsProfileOpen={setIsProfileOpen}
         setIsSettingsOpen={setIsSettingsOpen}
       />
-    </ModalProvider>
+    </div>
   );
 }
 
 export function Dashboard() {
+  const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
+  const [profileName, setProfileName] = useState('Jane Doe');
+  const [profileEmail, setProfileEmail] = useState('jane.doe@example.com');
+  const [customBgLight, setCustomBgLight] = useState('');
+  const [customBgDark, setCustomBgDark] = useState('');
+  const [enterToSend, setEnterToSend] = useState(true);
+  const isDark = useChatStore(state => state.isDark);
+  const setIsDark = useChatStore(state => state.setIsDark);
+
+  // Sync theme with document root on mount and state change
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
+  const handleThemeChange = (checked: boolean) => {
+    setIsDark(checked);
+    if (checked) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  };
+
   return (
     <TooltipProvider>
-      <DashboardContent />
+      <ModalProvider 
+        profileProps={{
+          profileName, setProfileName, profileEmail, setProfileEmail
+        }} 
+        settingsProps={{
+          isDark, onThemeChange: handleThemeChange, enterToSend, setEnterToSend,
+          setRecentChats
+        }} 
+      >
+        <DashboardContent 
+          recentChats={recentChats} setRecentChats={setRecentChats}
+          profileName={profileName} setProfileName={setProfileName}
+          profileEmail={profileEmail} setProfileEmail={setProfileEmail}
+          customBgLight={customBgLight} setCustomBgLight={setCustomBgLight}
+          customBgDark={customBgDark} setCustomBgDark={setCustomBgDark}
+          enterToSend={enterToSend} setEnterToSend={setEnterToSend}
+          handleThemeChange={handleThemeChange}
+        />
+      </ModalProvider>
     </TooltipProvider>
   );
 }

@@ -7,24 +7,17 @@ import { useChatStore } from '../store';
 interface UseChatSessionProps {
   recentChats: ChatSession[];
   setRecentChats: React.Dispatch<React.SetStateAction<ChatSession[]>>;
-  isIncognito: boolean;
-  setIsIncognito: (val: boolean) => void;
-  selectedModel: string;
-  setSelectedModel: (val: string) => void;
-  selectedProvider: string;
-  setSelectedProvider: (val: string) => void;
 }
 
 export function useChatSession({
   recentChats,
-  setRecentChats,
-  isIncognito,
-  setIsIncognito,
-  selectedModel,
-  setSelectedModel,
-  selectedProvider,
-  setSelectedProvider
+  setRecentChats
 }: UseChatSessionProps) {
+  const isIncognito = useChatStore(state => state.isIncognito);
+  const setIsIncognito = useChatStore(state => state.setIsIncognito);
+  const setSelectedModel = useChatStore(state => state.setSelectedModel);
+  const setSelectedProvider = useChatStore(state => state.setSelectedProvider);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const activeSessionIdRef = useRef<string | null>(null);
@@ -119,6 +112,14 @@ export function useChatSession({
     setEditingSessionId(null);
   }, [editingTitle, recentChats, setRecentChats]);
 
+  const handleRenameKeyDown = useCallback((e: React.KeyboardEvent, id: string) => {
+    if (e.key === 'Enter') {
+      handleRenameCommit(id);
+    } else if (e.key === 'Escape') {
+      setEditingSessionId(null);
+    }
+  }, [handleRenameCommit, setEditingSessionId]);
+
   const hasInitialized = useRef(false);
   useEffect(() => {
     if (!hasInitialized.current && recentChats.length > 0) {
@@ -145,6 +146,7 @@ export function useChatSession({
     handleNewChat,
     handleDeleteChat,
     handlePinChat,
-    handleRenameCommit
+    handleRenameCommit,
+    handleRenameKeyDown
   };
 }

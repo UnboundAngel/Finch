@@ -1,8 +1,7 @@
-import React, { useRef, useEffect, memo } from 'react';
+import { useRef, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Globe, Image as ImageIcon, Plus, Sparkles, HelpCircle } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, Plus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
 import { MessageBubble } from './MessageBubble';
 import { ThinkingBox } from './ThinkingBox';
 import { Message } from '../../types/chat';
@@ -22,17 +21,17 @@ interface ChatAreaProps {
   voiceStatus: 'idle' | 'recording' | 'transcribing';
 }
 
-export const ChatArea = memo(({ 
-  messages, 
-  isThinking, 
-  researchEvents, 
-  selectedModel, 
-  isDark, 
-  setInput, 
-  isIncognito, 
-  hasCustomBg, 
+export const ChatArea = memo(({
+  messages,
+  isThinking,
+  researchEvents,
+  selectedModel,
+  isDark,
+  setInput,
+  isIncognito,
+  hasCustomBg,
   isPinkMode,
-  voiceStatus 
+  voiceStatus
 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -50,26 +49,31 @@ export const ChatArea = memo(({
         <div className="flex-1 space-y-6">
           {messages.length === 0 && (
             isIncognito ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center space-y-6">
-                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <ShieldCheck className="h-8 w-8 text-primary" />
+              <div className="flex flex-col items-center justify-center py-24 text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="h-20 w-20 rounded-2xl flex items-center justify-center">
+                  <div className="relative">
+                    <Sparkles className="h-12 w-12 text-[#f97316] fill-[#f97316]/10" strokeWidth={1.5} />
+                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-[#f97316] rounded-full ring-4 ring-background" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-semibold tracking-tight">Incognito Mode Active</h2>
-                  <div className="flex items-center justify-center text-muted-foreground max-w-sm mx-auto">
-                    <p className="text-sm">Your conversation will not be saved to history.</p>
+                <div className="space-y-4 max-w-2xl mx-auto">
+                  <h2 className="text-5xl font-serif font-normal tracking-tight text-foreground">You're incognito</h2>
+                  <div className="flex flex-col items-center justify-center text-muted-foreground/80 leading-relaxed">
+                    <p className="text-lg">Incognito chats aren't saved or kept in memory</p>
                     <TooltipProvider delay={200}>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-primary hover:underline ml-1 cursor-help inline-flex items-center gap-0.5"><HelpCircle className="h-3 w-3" /> Privacy Policy</span>
+                        <TooltipTrigger>
+                          <button className="text-primary hover:underline font-medium mt-1 inline-flex items-center gap-1">
+                            Learn more.
+                          </button>
                         </TooltipTrigger>
-                        <TooltipContent 
-                          side="bottom" 
-                          className="w-72 p-4 space-y-3 text-xs leading-relaxed bg-popover/95 backdrop-blur-md border-white/10 shadow-2xl"
+                        <TooltipContent
+                          side="bottom"
+                          className="w-72 p-4 space-y-3 text-xs leading-relaxed bg-popover/95 backdrop-blur-md border-white/10 shadow-2xl z-[100]"
                         >
                           <p className="font-bold border-b border-white/10 pb-1.5 mb-2 text-foreground text-[13px]">Privacy Policy</p>
                           <div className="space-y-2">
-                            <p><span className="font-semibold text-primary">Local Privacy:</span> Finch does not save this conversation to your history or disk.</p>
+                            <p><span className="font-semibold text-primary">Local Privacy:</span> Finch does not save this conversation to your history or hardware.</p>
                             <p><span className="font-semibold text-primary">Model Training:</span> API providers (OpenAI, Anthropic, Gemini) generally do not use API data for training.</p>
                             <p><span className="font-semibold text-primary">Data Retention:</span> Cloud providers may keep logs for 15-30 days for safety reviews.</p>
                           </div>
@@ -81,14 +85,14 @@ export const ChatArea = memo(({
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-16 space-y-10">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-primary" />
+              <div className="flex flex-col items-center justify-center py-16 space-y-10 scrollbar-hide">
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="h-24 w-24 rounded-3xl bg-white shadow-xl shadow-black/5 border border-black/5 flex items-center justify-center p-0 overflow-hidden">
+                    <img src="/assets/finch.png" className="w-full h-full object-contain scale-[1.6]" alt="Finch" />
                   </div>
-                  <h2 className="text-xl font-medium tracking-tight text-center">How can I help you today?</h2>
+                  <h2 className="text-3xl font-semibold tracking-tight text-center text-foreground">How can I help you today?</h2>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mx-auto px-4 h-full min-h-[140px]">
                   <Button
                     variant="outline"
@@ -149,21 +153,3 @@ export const ChatArea = memo(({
     </div>
   );
 });
-
-const ShieldCheck = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
-    <path d="m9 12 2 2 4-4"/>
-  </svg>
-);

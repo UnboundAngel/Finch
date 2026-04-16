@@ -65,7 +65,7 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
     const progress = Math.max(0, Math.min(1, x / rect.width));
     const index = Math.floor(progress * visiblePresets.length);
     const clampedIndex = Math.min(index, visiblePresets.length - 1);
-    handlePresetClick(visiblePresets[clampedIndex]);
+    handlePresetClick(visiblePresets[clampedIndex] as number | 'Max');
   };
 
   return (
@@ -87,14 +87,14 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
         )}
       >
         {visiblePresets.map((preset, idx) => {
-            const zone = getZoneColor(preset);
+            const zone = getZoneColor(preset as number | 'Max');
             const isSelected = preset === 'Max' ? maxTokens === model_max : maxTokens === preset;
             
             return (
               <React.Fragment key={preset}>
                 <button
                 disabled={isDragging}
-                onClick={() => handlePresetClick(preset)}
+                onClick={() => handlePresetClick(preset as number | 'Max')}
                 className={cn(
                     "relative flex-1 py-1.5 px-1 rounded-md text-[9px] font-bold transition-all uppercase tracking-wide z-10",
                     isSelected ? "text-white" : mutedTextColor,

@@ -1,4 +1,4 @@
-import React from 'react';
+import 'react';
 import { Button } from '@/components/ui/button';
 import { Ghost } from 'lucide-react';
 import Switch from '@/components/ui/sky-toggle';
@@ -9,8 +9,6 @@ import { toast } from 'sonner';
 import { useChatStore } from '@/src/store';
 
 interface DashboardHeaderProps {
-  isLeftSidebarOpen: boolean;
-  setIsLeftSidebarOpen: (val: boolean | ((prev: boolean) => boolean)) => void;
   sidebarContrast: 'light' | 'dark';
   isIncognito: boolean;
   toggleIncognito: () => void;
@@ -45,8 +43,6 @@ const RightSidebarToggle = ({ headerContrast }: { headerContrast: 'light' | 'dar
 };
 
 export function DashboardHeader({
-  isLeftSidebarOpen,
-  setIsLeftSidebarOpen,
   sidebarContrast,
   isIncognito,
   toggleIncognito,
@@ -59,6 +55,10 @@ export function DashboardHeader({
   handleThemeChange,
   showPinkMode
 }: DashboardHeaderProps) {
+  const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
+  const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
+
+
   return (
     <header
       data-tauri-drag-region
@@ -70,19 +70,21 @@ export function DashboardHeader({
         }`}
     >
       <div className="flex-1 flex items-center justify-start gap-2 pointer-events-none">
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`h-9 w-9 rounded-lg transition-none no-drag pointer-events-auto ${sidebarContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
-            }`}
-          onClick={() => setIsLeftSidebarOpen(prev => !prev)}
-        >
-          <img
-            src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"}
-            className={`h-5 w-5 transition-none ${sidebarContrast === 'dark' ? 'brightness-0' : 'brightness-0 invert'}`}
-            alt="Toggle Left Sidebar"
-          />
-        </Button>
+        {!isIncognito && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 rounded-lg transition-none no-drag pointer-events-auto ${sidebarContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
+              }`}
+            onClick={() => setIsLeftSidebarOpen(prev => !prev)}
+          >
+            <img
+              src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"}
+              className={`h-5 w-5 transition-none ${sidebarContrast === 'dark' ? 'brightness-0' : 'brightness-0 invert'}`}
+              alt="Toggle Left Sidebar"
+            />
+          </Button>
+        )}
         {isIncognito && <span className="font-bold tracking-wider uppercase text-xs ml-2 pointer-events-none">Incognito</span>}
       </div>
 
@@ -140,7 +142,7 @@ export function DashboardHeader({
 
         <div className="flex items-center gap-4 no-drag pointer-events-auto">
           <Switch checked={isDark} onChange={handleThemeChange} />
-          <RightSidebarToggle headerContrast={headerContrast} />
+          {!isIncognito && <RightSidebarToggle headerContrast={headerContrast} />}
           <WindowControls isIncognito={isIncognito} contrast={headerContrast} />
         </div>
       </div>

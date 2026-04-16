@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState } from 'react';
 import { ProfileDialog } from '@/src/components/dashboard/ProfileDialog';
 import { SettingsDialog } from '@/src/components/dashboard/SettingsDialog';
 import { ContextOverflowModal } from '@/src/components/modals/ContextOverflowModal';
-import { Message, ChatSession } from '../types/chat';
 
 interface ModalContextType {
   setIsProfileOpen: (open: boolean) => void;

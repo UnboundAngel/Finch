@@ -1,34 +1,26 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Globe, Send, Square, Mic, MicOff, Edit2, ExternalLink, ListFilter, Check, Headphones } from 'lucide-react';
+import { Paperclip, Send, Square, Mic, MicOff, Headphones } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { VoiceIndicator } from './VoiceIndicator';
 import { ModelMarketplace } from './ModelMarketplace';
 import { useVoiceTranscription } from '@/src/hooks/useVoiceTranscription';
-import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuGroup
 } from '@/components/ui/dropdown-menu';
-import { SearchOnboarding } from './SearchOnboarding';
+import { WebSearchControl } from './WebSearchControl';
 import { invoke } from '@tauri-apps/api/core';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { useChatStore } from '@/src/store/index';
 
 interface ChatInputProps {
   input: string;
-  setInput: (val: string) => void;
+  setInput: (val: string | ((prev: string) => string)) => void;
   handleSend: (bypassCheck?: boolean) => void;
   onStop?: () => void;
   isThinking: boolean;
@@ -46,7 +38,7 @@ interface ChatInputProps {
   isListening?: boolean;
   setIsListening?: (val: boolean) => void;
 }
-
+ 
 export const ChatInput = ({
   input,
   setInput,
@@ -69,35 +61,13 @@ export const ChatInput = ({
 }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [config, setConfig] = useState<any>(null);
-  const [configLoaded, setConfigLoaded] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(0);
-  const [activeSearchProvider, setActiveSearchProvider] = useState('tavily');
   
   // Controlled Menu States
-  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
   const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
   
   // Mic Data
   const [audioDevices, setAudioDevices] = useState<string[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string>('Default');
-
-  useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const c = await invoke('get_provider_config');
-        setConfig(c);
-        setConfigLoaded(true);
-        if (c?.active_search_provider) {
-          setActiveSearchProvider(c.active_search_provider);
-        }
-      } catch (err) {
-        console.error("Failed to load config:", err);
-      }
-    };
-    loadConfig();
-  }, []);
 
   const fetchDevices = async () => {
     try {
@@ -108,8 +78,6 @@ export const ChatInput = ({
     }
   };
 
-  const hasSearchKey = !!(config?.tavily_api_key || config?.brave_api_key || config?.searxng_url);
-  
   const {
     installedModels,
     downloadingModels,
@@ -225,8 +193,8 @@ export const ChatInput = ({
                 ? 'border-blue-500/50 bg-background shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]'
                 : (isIncognito
                   ? (isDark
-                    ? 'bg-neutral-900 border-neutral-800 focus-within:border-neutral-700'
-                    : 'bg-white border-neutral-300 focus-within:border-neutral-400')
+                    ? 'bg-neutral-900/90 backdrop-blur-xl border-neutral-800 focus-within:border-neutral-700 shadow-2xl'
+                    : 'bg-white/80 backdrop-blur-xl border-neutral-200/50 shadow-lg focus-within:border-neutral-300/50')
                   : (isPinkMode 
                     ? 'bg-white/80 backdrop-blur-xl border-rose-200 focus-within:ring-1 focus-within:ring-rose-300 focus-within:border-rose-300 shadow-sm' 
                     : (hasCustomBg 
@@ -285,133 +253,12 @@ export const ChatInput = ({
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 
-                <div className="inline-flex relative">
-                  <DropdownMenu open={isSearchMenuOpen} onOpenChange={setIsSearchMenuOpen}>
-                    <Popover open={showOnboarding && !hasSearchKey} onOpenChange={setShowOnboarding}>
-                      <PopoverAnchor asChild>
-                        <div className="inline-flex relative">
-                          <Button                            
-                            variant="ghost"
-                            size="icon"
-                            className={`h-8 w-8 rounded-lg transition-colors ${isWebSearchActive ? 'text-blue-500 bg-blue-500/10 hover:bg-blue-500/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                            onClick={(e) => {
-                              if (!configLoaded) return;
-                              if (!hasSearchKey) {
-                                setOnboardingStep(0);
-                                setShowOnboarding(true);
-                              } else {
-                                setIsWebSearchActive(!isWebSearchActive);
-                                toast(isWebSearchActive ? 'Web Research disabled' : 'Web Research enabled');
-                              }
-                            }}
-                            onContextMenu={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (hasSearchKey) {
-                                setIsSearchMenuOpen(true);
-                              } else {
-                                setOnboardingStep(0);
-                                setShowOnboarding(true);
-                              }
-                            }}
-                          >
-                            <Globe className="h-4 w-4" />
-                          </Button>
-                          <DropdownMenuTrigger className="absolute inset-0 opacity-0 pointer-events-none" />
-                          <PopoverTrigger className="absolute inset-0 opacity-0 pointer-events-none" />
-                        </div>
-                      </PopoverAnchor>
-                      
-                      <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-48 bg-background/80 backdrop-blur-xl border-white/10 rounded-xl p-1 shadow-2xl">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem 
-                            className="text-xs rounded-lg gap-2 cursor-pointer"
-                            onClick={() => {
-                              // Reset onboarding states to force a clean transition to step 3
-                              setShowOnboarding(false);
-                              setTimeout(() => {
-                                setOnboardingStep(3);
-                                setShowOnboarding(true);
-                                setIsSearchMenuOpen(false);
-                              }, 10);
-                            }}
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            Edit API Keys
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-xs rounded-lg gap-2 cursor-pointer"
-                            onClick={async () => {
-                              try {
-                                await openUrl('https://tavily.com/');
-                              } catch (e) {
-                                window.open('https://tavily.com/', '_blank');
-                              }
-                            }}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            View Documentation
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        
-                        <DropdownMenuSeparator className="opacity-50" />
-                        
-                        <DropdownMenuGroup>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="text-xs rounded-lg gap-2 cursor-pointer focus:bg-blue-500/10 focus:text-blue-400">
-                              <ListFilter className="h-3.5 w-3.5" />
-                              Search Provider
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="bg-background/90 backdrop-blur-xl border-white/10 rounded-xl p-1 shadow-2xl">
-                              {(['tavily', 'brave', 'searxng'] as const).map((p) => (
-                                <DropdownMenuItem
-                                  key={p}
-                                  onClick={async () => {
-                                    try {
-                                      await invoke('update_search_config', { 
-                                        config: { active_search_provider: p } 
-                                      });
-                                      setActiveSearchProvider(p);
-                                      toast.success(`Search provider set to ${p}`);
-                                    } catch (e: any) {
-                                      toast.error(e.toString());
-                                    }
-                                  }}
-                                  className="text-xs rounded-lg flex items-center justify-between cursor-pointer"
-                                >
-                                  <span className="capitalize">{p}</span>
-                                  {activeSearchProvider === p && <Check className="h-3 w-3" />}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-
-                      <PopoverContent side="top" align="start" sideOffset={12} className="p-0 border-none bg-transparent shadow-none overflow-visible w-auto">
-                        <div className="p-4 bg-background border border-white/10 rounded-2xl shadow-2xl">
-                          <SearchOnboarding 
-                            initialStep={onboardingStep}
-                            onComplete={(key) => {
-                              const newConfig = { ...config };
-                              if (activeSearchProvider === 'tavily') newConfig.tavily_api_key = key;
-                              else if (activeSearchProvider === 'brave') newConfig.brave_api_key = key;
-                              else newConfig.searxng_url = key;
-                              
-                              setConfig(newConfig);
-                              setIsWebSearchActive(true);
-                              setShowOnboarding(false);
-                            }}
-                            onClose={() => {
-                              setShowOnboarding(false);
-                              setOnboardingStep(0);
-                            }}
-                          />
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </DropdownMenu>
-                </div>
+                <WebSearchControl
+                  isWebSearchActive={isWebSearchActive}
+                  setIsWebSearchActive={setIsWebSearchActive}
+                  isPinkMode={isPinkMode}
+                  isDark={isDark}
+                />
               </div>
               <div className="flex items-center gap-2">
                 <div className="inline-flex relative">
@@ -487,7 +334,7 @@ export const ChatInput = ({
                       : (input.trim() ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed')
                     }`}
                   disabled={!isThinking && !input.trim()}
-                  onClick={isThinking ? onStop : handleSend}
+                  onClick={isThinking ? onStop : () => handleSend()}
                 >
                   {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
                 </Button>

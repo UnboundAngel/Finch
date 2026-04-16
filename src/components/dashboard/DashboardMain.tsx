@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { BackgroundPlus } from '@/components/ui/background-plus';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
-import { convertFileSrc } from '@tauri-apps/api/core';
 import { ChatSidebar } from '@/src/components/sidebar/ChatSidebar';
 import { ChatArea } from '@/src/components/chat/ChatArea';
 import { ChatInput } from '@/src/components/chat/ChatInput';
@@ -11,8 +10,6 @@ import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
 import { useChatStore } from '@/src/store';
 
 interface DashboardMainProps {
-  isLeftSidebarOpen: boolean;
-  setIsLeftSidebarOpen: (val: boolean) => void;
   recentChats: any[];
   activeSessionId: string;
   handleSwitchSession: (id: string) => void;
@@ -99,9 +96,11 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
       }}
       className={`flex-shrink-0 relative z-30 overflow-hidden ${showPinkMode
         ? "bg-gradient-to-b from-fuchsia-50/80 to-pink-50/80 backdrop-blur-2xl border-l border-pink-200/50"
-        : !isIncognito && (isDark ? customBgDark : customBgLight)
-          ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5"
-          : isDark ? "bg-[#161616] border-l border-black/40" : "bg-white border-l"
+        : isIncognito
+          ? (isDark ? "bg-[#111] border-l border-[#222]" : "bg-[#fefaf0] border-l border-[#e5e5e5]")
+          : !isIncognito && (isDark ? customBgDark : customBgLight)
+            ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5"
+            : isDark ? "bg-[#161616] border-l border-black/40" : "bg-white border-l"
         }`}
     >
       <RightSidebar
@@ -115,15 +114,17 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
 };
 
 export function DashboardMain(props: DashboardMainProps) {
+  const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
+  const { setIsLeftSidebarOpen } = useChatStore();
   const {
-    isLeftSidebarOpen, setIsLeftSidebarOpen, recentChats, activeSessionId, handleSwitchSession,
+    recentChats, activeSessionId, handleSwitchSession,
     setActiveSessionId, setMessages, setRecentChats, handleNewChat, profileName, setProfileName,
     profileEmail, setProfileEmail, isIncognito, setIsIncognito, searchQuery, setSearchQuery,
     editingSessionId, setEditingSessionId, editingTitle, setEditingTitle, handleRenameKeyDown,
     handleRenameCommit, handlePinChat, handleDeleteChat, setIsProfileOpen, setIsSettingsOpen,
     showPinkMode, isDark, customBgDark, customBgLight, sidebarContrast, rightSidebarContrast,
     messages, isThinking, researchEvents, selectedModel, stableSetInput, hasCustomBgValue,
-    voiceStatus, input, handleInputChange, handleSend, abort, isStreaming, attachedFile,
+    voiceStatus, input, handleSend, abort, isStreaming, attachedFile,
     setAttachedFile, isWebSearchActive, setIsWebSearchActive, enterToSend, isModelLoaded,
     handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight
   } = props;
@@ -162,7 +163,9 @@ export function DashboardMain(props: DashboardMainProps) {
               ? "bg-gradient-to-b from-pink-100/80 to-rose-100/80 backdrop-blur-2xl border-r border-pink-200/50"
               : !isIncognito && (isDark ? customBgDark : customBgLight)
                 ? "bg-background/20 backdrop-blur-2xl border-r border-white/10 dark:border-white/5"
-                : ""
+                : isIncognito 
+                  ? (isDark ? "bg-[#111] border-r border-[#222]" : "bg-[#fefaf0] border-r border-[#e5e5e5]")
+                  : ""
           }
           contrast={sidebarContrast}
           isPinkMode={showPinkMode}
@@ -212,7 +215,7 @@ export function DashboardMain(props: DashboardMainProps) {
                     <div className="relative z-20">
                       <ChatInput
                         input={input}
-                        setInput={handleInputChange}
+                        setInput={stableSetInput}
                         handleSend={handleSend}
                         onStop={abort}
                         isThinking={isThinking || isStreaming}

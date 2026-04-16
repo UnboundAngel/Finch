@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Globe, ArrowRight, ShieldCheck, Zap, Info, X, ChevronLeft, ChevronRight, Key } from 'lucide-react';
+import { Globe, ShieldCheck, Zap, X, ChevronLeft, ChevronRight, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

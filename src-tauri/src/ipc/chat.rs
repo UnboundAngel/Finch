@@ -26,7 +26,7 @@ pub async fn send_message(
     let top_p = top_p.map(|p| if p <= 0.0 { 0.01 } else { p.min(1.0) });
     println!("Rust received (provider: {}, model: {}): {}", provider, model, prompt);
 
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: ProviderConfig = config_val.and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default();
 
@@ -91,7 +91,7 @@ pub async fn stream_message(
 
     state.abort_flag.store(false, Ordering::SeqCst);
 
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: ProviderConfig = config_val.and_then(|v| serde_json::from_value(v).ok()).unwrap_or_default();
 

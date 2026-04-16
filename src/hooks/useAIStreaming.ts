@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { invoke, Channel } from "@tauri-apps/api/core";
-import { isTauri } from '@/src/lib/tauri';
+import { isTauri } from '@/src/lib/tauri-utils';
 import { useChatStore } from '@/src/store/index';
 
 import { Message } from '../types/chat';

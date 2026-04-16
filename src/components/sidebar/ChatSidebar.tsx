@@ -268,19 +268,29 @@ export const ChatSidebar = ({
 
       <SidebarFooter className="p-4">
         <DropdownMenu>
-          <DropdownMenuTrigger className={buttonVariants({ variant: "ghost", className: "w-full justify-start gap-3 h-12 px-2 rounded-xl hover:bg-muted/50 transition-colors" })}>
-            <Avatar className="h-8 w-8 rounded-lg border border-muted-foreground/20">
-              <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" alt="User" />
-              <AvatarFallback className="rounded-lg bg-primary/10 text-primary">U</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col items-start flex-1 overflow-hidden">
-              <span className="text-sm font-medium truncate w-full text-left">{profileName}</span>
-              <span className="text-xs text-muted-foreground truncate w-full text-left">Pro Plan</span>
-            </div>
-            <div className="p-1.5 rounded-md hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60 transition-colors">
-              <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </DropdownMenuTrigger>
+          <DropdownMenuTrigger
+            render={(props) => (
+              <button
+                {...props}
+                className={buttonVariants({
+                  variant: "ghost",
+                  className: "w-full justify-start gap-3 h-12 px-2 rounded-xl hover:bg-muted/50 transition-colors"
+                })}
+              >
+                <Avatar className="h-8 w-8 rounded-lg border border-muted-foreground/20">
+                  <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" alt="User" />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary">U</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start flex-1 overflow-hidden">
+                  <span className="text-sm font-medium truncate w-full text-left">{profileName}</span>
+                  <span className="text-xs text-muted-foreground truncate w-full text-left">Pro Plan</span>
+                </div>
+                <div className="p-1.5 rounded-md hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60 transition-colors">
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </button>
+            )}
+          />
           <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-muted-foreground/20">
             <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => setIsProfileOpen(true)}>
               <User className="h-4 w-4 text-muted-foreground" />

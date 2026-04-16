@@ -32,7 +32,7 @@ pub async fn set_background_image(handle: AppHandle, mode: String) -> Result<Str
 
     let dest_path_str = dest_path.to_string_lossy().to_string();
 
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let mut config_val = store.get("provider_config").unwrap_or(serde_json::json!({}));
     
     if mode == "light" {
@@ -49,7 +49,7 @@ pub async fn set_background_image(handle: AppHandle, mode: String) -> Result<Str
 
 #[command]
 pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderConfig>, String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config = store.get("provider_config");
     
     if let Some(val) = config {
@@ -73,7 +73,7 @@ pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderCon
 
 #[command]
 pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> Result<(), String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     
     let mut current_config_val = store.get("provider_config").unwrap_or(serde_json::json!({}));
     let new_config_val = serde_json::to_value(config).map_err(|e| e.to_string())?;
@@ -95,7 +95,7 @@ pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> 
 
 #[command]
 pub async fn update_search_config(handle: AppHandle, config: serde_json::Value) -> Result<(), String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let mut current_config: ProviderConfig = config_val
         .and_then(|v| serde_json::from_value(v).ok())

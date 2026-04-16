@@ -29,6 +29,7 @@ export function useDynamicBackground({
       setHeaderContrast('dark');
       setSidebarContrast('dark');
       setRightSidebarContrast('dark');
+      // Susie's Signature Teal/Green Selection
       document.documentElement.style.setProperty('--selection-bg', 'oklch(0.6 0.16 165 / 25%)');
       document.documentElement.style.setProperty('--selection-text', 'oklch(0.3 0.12 165)');
       return;
@@ -38,7 +39,8 @@ export function useDynamicBackground({
       setHeaderContrast(isDarkCurrent ? 'light' : 'dark');
       setSidebarContrast(isDarkCurrent ? 'light' : 'dark');
       setRightSidebarContrast(isDarkCurrent ? 'light' : 'dark');
-      // Reset to modern defaults (Violet)
+      
+      // Original Incognito/Default Violet Selection
       document.documentElement.style.setProperty('--selection-bg', isDarkCurrent ? 'oklch(0.7 0.2 300 / 30%)' : 'oklch(0.6 0.2 300 / 20%)');
       document.documentElement.style.setProperty('--selection-text', isDarkCurrent ? 'oklch(0.9 0.1 300)' : 'oklch(0.4 0.2 300)');
       return;

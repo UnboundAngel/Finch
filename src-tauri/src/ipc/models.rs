@@ -43,7 +43,7 @@ pub async fn list_local_models(endpoint: String, provider: String) -> Result<Vec
 
 #[command]
 pub async fn list_anthropic_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
@@ -81,7 +81,7 @@ pub async fn list_anthropic_models(handle: AppHandle) -> Result<Vec<String>, Str
 
 #[command]
 pub async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
@@ -118,7 +118,7 @@ pub async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String
 
 #[command]
 pub async fn list_gemini_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
@@ -155,7 +155,7 @@ pub async fn list_gemini_models(handle: AppHandle) -> Result<Vec<String>, String
 
 #[command]
 pub async fn eject_model(handle: AppHandle, provider: String, model_id: String) -> Result<(), String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
@@ -201,7 +201,7 @@ pub async fn get_model_loaded_status(
     model_id: String
 ) -> Result<bool, String> {
     println!("[DEBUG] Rust: get_model_loaded_status called for {} / {}", provider, model_id);
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
@@ -280,7 +280,7 @@ pub async fn get_context_intelligence(
     provider: String,
     model_id: String,
 ) -> Result<ContextIntelligence, String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 

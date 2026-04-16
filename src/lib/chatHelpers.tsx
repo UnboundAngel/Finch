@@ -1,4 +1,4 @@
-import React from 'react';
+import 'react';
 import { MessageSquare, Globe, FileText } from 'lucide-react';
 
 export const getChatIcon = (type?: string) => {

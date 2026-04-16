@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const SketchX = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 6L6 18" strokeDasharray="100" />

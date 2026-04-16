@@ -5,8 +5,8 @@ use crate::download::{ModelManifest, download_model};
 use std::fs;
 
 #[command]
-pub async fn start_recording(state: State<'_, AppState>) -> Result<(), String> {
-    state.voice_manager.start_recording()
+pub async fn start_recording(handle: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    state.voice_manager.start_recording(handle)
 }
 
 #[command]

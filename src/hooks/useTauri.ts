@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { isTauri as checkIsTauri } from "@/src/lib/tauri";
+import { isTauri as checkIsTauri } from "@/src/lib/tauri-utils";
 
 /**
  * Hook to manage Tauri-specific window state.

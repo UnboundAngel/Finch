@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Manager, Runtime, Emitter};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use whisper_rs::{WhisperContext, WhisperContextParameters, FullParams, SamplingStrategy};
 
@@ -66,7 +66,7 @@ impl VoiceManager {
         *dev = Some(name);
     }
 
-    pub fn start_recording(&self) -> Result<(), String> {
+    pub fn start_recording<R: Runtime>(&self, app_handle: AppHandle<R>) -> Result<(), String> {
         let host = cpal::default_host();
         
         // Select device
@@ -104,6 +104,15 @@ impl VoiceManager {
                 device.build_input_stream(
                     &config.into(),
                     move |data: &[f32], _: &_| {
+                        // Calculate RMS amplitude for visualization
+                        if !data.is_empty() {
+                            let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
+                            let rms = (sum_sq / data.len() as f32).sqrt();
+                            // Normalize volume loosely - 0.5 is usually a very loud signal in RMS
+                            let normalized_volume = (rms * 4.0).clamp(0.0, 1.0);
+                            let _ = app_handle.emit("voice-volume", normalized_volume);
+                        }
+
                         let mut b = buffer.lock().unwrap();
                         
                         // Simple Resampling & Mono conversion

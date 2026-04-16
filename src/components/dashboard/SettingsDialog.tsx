@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { invoke } from '@tauri-apps/api/core';
 import { Cloud, Cpu, Sparkles, Zap, Key, Globe, RefreshCcw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 import {
   AlertDialog,
@@ -113,7 +113,7 @@ export const SettingsDialog = ({
                         className="rounded-xl flex-1 h-9 gap-2"
                         onClick={async () => {
                           try {
-                            const path = await invoke('set_background_image', { mode: 'light' });
+                            await invoke('set_background_image', { mode: 'light' });
                             toast.success('Light mode background updated');
                           } catch (e) {
                             if (e !== "No file selected") toast.error(`Error: ${e}`);
@@ -129,7 +129,7 @@ export const SettingsDialog = ({
                         className="rounded-xl flex-1 h-9 gap-2"
                         onClick={async () => {
                           try {
-                            const path = await invoke('set_background_image', { mode: 'dark' });
+                            await invoke('set_background_image', { mode: 'dark' });
                             toast.success('Dark mode background updated');
                           } catch (e) {
                             if (e !== "No file selected") toast.error(`Error: ${e}`);

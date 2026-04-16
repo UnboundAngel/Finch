@@ -152,29 +152,37 @@ export const ModelSelector = ({
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger className={cn(
-        "flex items-center h-9 px-3 gap-2 rounded-xl transition-all font-semibold text-lg border-0 bg-transparent cursor-pointer outline-none active:scale-95 group",
-        isPinkMode ? "hover:bg-rose-200/40" : "hover:bg-muted/50"
-      )}>
-        <div className={cn(
-          "p-1 rounded-md transition-colors",
-          isPinkMode ? "bg-rose-200/50 text-rose-600 group-hover:bg-rose-300/50" : "bg-primary/10 text-primary group-hover:bg-primary/20"
-        )}>
-          {currentProvider?.icon && <currentProvider.icon className="h-4 w-4" />}
-        </div>
-        <span className={cn(
-          "truncate max-w-[200px] transition-colors duration-300",
-          contrast === 'dark' ? "text-black" : "text-white"
-        )}>{selectedModel}</span>
-        <ChevronDown className={cn("h-4 w-4 transition-all duration-300", isOpen && "rotate-180", contrast === 'dark' ? "text-black/60" : "text-white/60")} />
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={(props) => (
+          <Button 
+            {...props}
+            variant="ghost"
+            className={cn(
+              "flex items-center h-9 px-3 gap-2 rounded-xl transition-all font-semibold text-lg border-0 bg-transparent cursor-pointer outline-none active:scale-95 group hover:no-underline",
+              isPinkMode ? "hover:bg-rose-200/40" : "hover:bg-muted/50"
+            )}
+          >
+            <div className={cn(
+              "p-1 rounded-md transition-colors",
+              isPinkMode ? "bg-rose-200/50 text-rose-600 group-hover:bg-rose-300/50" : "bg-primary/10 text-primary group-hover:bg-primary/20"
+            )}>
+              {currentProvider?.icon && <currentProvider.icon className="h-4 w-4" />}
+            </div>
+            <span className={cn(
+              "truncate max-w-[200px] transition-colors duration-300",
+              contrast === 'dark' ? "text-black" : "text-white"
+            )}>{selectedModel}</span>
+            <ChevronDown className={cn("h-4 w-4 transition-all duration-300", isOpen && "rotate-180", contrast === 'dark' ? "text-black/60" : "text-white/60")} />
+          </Button>
+        )}
+      />
 
       <DropdownMenuContent
         align="start"
         className={cn(
           "w-72 rounded-2xl shadow-2xl backdrop-blur-xl p-1.5 z-50 overflow-hidden",
-          isPinkMode 
-            ? "bg-rose-50/95 border-rose-200/50" 
+          isPinkMode
+            ? "bg-rose-50/95 border-rose-200/50"
             : "bg-popover/95 border-muted-foreground/10"
         )}
       >
@@ -190,14 +198,14 @@ export const ModelSelector = ({
               <div className="max-h-[400px] overflow-y-auto pr-1">
                 {/* Bookmarked Section */}
                 {bookmarkedModels.length > 0 && (
-                  <div className="mb-2">
-                    <div className={cn(
-                      "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none",
+                  <DropdownMenuGroup className="mb-2">
+                    <DropdownMenuLabel className={cn(
+                      "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none border-none bg-transparent",
                       isPinkMode ? "text-rose-500/80" : "text-blue-500/80"
                     )}>
                       <Bookmark className="h-3 w-3" />
                       Bookmarked
-                    </div>
+                    </DropdownMenuLabel>
                     <div className="space-y-0.5">
                       {bookmarkedModels.map((bm) => (
                         <DropdownMenuItem
@@ -241,7 +249,7 @@ export const ModelSelector = ({
                       ))}
                     </div>
                     <DropdownMenuSeparator className="my-1.5 opacity-40" />
-                  </div>
+                  </DropdownMenuGroup>
                 )}
 
                 {providers.map((provider) => {
@@ -253,14 +261,14 @@ export const ModelSelector = ({
 
                   return (
                     <div key={provider.id}>
-                      <div className="mb-2 last:mb-0">
-                        <div className={cn(
-                          "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none",
+                      <DropdownMenuGroup className="mb-2 last:mb-0">
+                        <DropdownMenuLabel className={cn(
+                          "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 select-none border-none bg-transparent",
                           isPinkMode ? "text-rose-400/60" : "text-muted-foreground/50"
                         )}>
                           <provider.icon className="h-3 w-3" />
                           {provider.name}
-                        </div>
+                        </DropdownMenuLabel>
                         <div className="space-y-0.5">
                           {visibleModels.map((modelId) => {
                             return (
@@ -299,7 +307,7 @@ export const ModelSelector = ({
                           })}
                         </div>
                         <DropdownMenuSeparator className="my-1.5 opacity-40" />
-                      </div>
+                      </DropdownMenuGroup>
                     </div>
                   );
                 })}

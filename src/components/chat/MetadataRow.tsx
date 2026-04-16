@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Bot, Timer, Gauge, Cpu, Clock, AlertTriangle, HelpCircle, Copy, Check } from 'lucide-react';
+import { Bot, Timer, Gauge, Cpu, Clock, HelpCircle, Copy, Check } from 'lucide-react';
 import { MessageMetadata } from '@/src/types/chat';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

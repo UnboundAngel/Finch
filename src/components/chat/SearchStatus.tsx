@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Binoculars, Check, Globe, Clock, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Binoculars, Check, Clock, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
