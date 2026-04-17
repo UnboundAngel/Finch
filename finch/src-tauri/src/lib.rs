@@ -1374,6 +1374,7 @@ async fn eval_browser_js(handle: AppHandle, label: String, script: String) -> Re
 
 #[tauri::command]
 async fn reload_browser(handle: AppHandle, label: String) -> Result<(), String> {
+    println!("[RUST] [IPC] reload_browser called for label: {}", label);
     if let Some(window) = handle.get_webview_window(&label) {
         window.reload().map_err(|e| e.to_string())?;
         Ok(())

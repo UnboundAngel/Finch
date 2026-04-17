@@ -568,6 +568,16 @@ export const SandboxedBrowser = () => {
     if (activeWebviewLabelRef.current) {
       try {
         setBrowserLoading(true);
+
+        // Add a one-time listener for navigation-finished to clear loading state
+        // Reloads don't trigger webview-load-finished, but they do trigger navigation-finished
+        if (webviewRef.current) {
+          webviewRef.current.once('tauri://navigation-finished', () => {
+            console.log(`[SANDBOX] [EVENT] Refresh Navigation Finished: ${activeWebviewLabelRef.current}`);
+            setBrowserLoading(false);
+          });
+        }
+
         // Use native Rust command for maximum reliability
         await invoke('reload_browser', { label: activeWebviewLabelRef.current });
       } catch (e) {
@@ -577,10 +587,9 @@ export const SandboxedBrowser = () => {
           await invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script });
         } catch (inner) {
           console.error("Deep refresh failure:", inner);
+          // If all reloads fail, ensure we clear loading
+          setBrowserLoading(false);
         }
-      } finally {
-        // Clear loading after a fallback timeout if no event fires
-        setTimeout(() => setBrowserLoading(false), 5000);
       }
     }
   };
