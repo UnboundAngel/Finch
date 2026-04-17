@@ -70,6 +70,7 @@ None. All currently planned phases for the v1.0 milestone are complete.
 | 034-fix-browser-loading-reset | Ignored non-navigation events (focus, hash) in sandbox browser loading state | Completed | 2026-04-16 |
 | 035-fix-browser-remount | Fixed sandbox browser remounting on every global store update | Completed | 2026-04-16 |
 | 036-fix-browser-toolbar-bugs | Fixed address bar revert, redundant teardown, and stale label IPC in sandbox browser | Completed | 2026-04-16 |
+| 037-fix-browser-lifecycle-destruction | Prevented webview destruction on URL updates by decoupling lifecycle from browserUrl | Completed | 2026-04-16 |
 
 ## Decisions
 

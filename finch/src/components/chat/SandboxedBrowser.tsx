@@ -92,7 +92,7 @@ export const SandboxedBrowser = () => {
 
   // Function to inject current theme and privacy guards
   const injectStyle = () => {
-    if (!webviewLabel) return;
+    if (!activeWebviewLabelRef.current) return;
     const cssContent = getDynamicCSS(isDarkMode);
     
     // Resilient script: injects shield immediately (no DOM required), and polls for DOM to inject CSS
@@ -127,7 +127,7 @@ export const SandboxedBrowser = () => {
         injectCss();
       })()
     `;
-    invoke('eval_browser_js', { label: webviewLabel, script }).catch(() => {});
+    invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script }).catch(() => {});
   };
 
   // Re-inject when theme changes - only if not currently loading a new page
@@ -188,6 +188,8 @@ export const SandboxedBrowser = () => {
       // Re-check conditions inside async
       if (!isBrowserOpen || !browserUrl || !contentRef.current) return;
 
+      const urlToLoad = prevUrlRef.current !== browserUrl ? browserUrl : (prevUrlRef.current ?? browserUrl);
+
       // Lock initialization globally to prevent collisions
       if (isInitializing) {
         console.log(`[SANDBOX] Already initializing, skipping (Mount: ${mountId})`);
@@ -219,7 +221,7 @@ export const SandboxedBrowser = () => {
         const width = Math.round(rect.width);
         const height = Math.round(rect.height);
 
-        console.log(`[SANDBOX] Initializing WebviewWindow: ${label} for URL: ${browserUrl} (Mount: ${mountId})`);
+        console.log(`[SANDBOX] Initializing WebviewWindow: ${label} for URL: ${urlToLoad} (Mount: ${mountId})`);
 
         if (width === 0 || height === 0) {
           setInitializing(false);
@@ -243,7 +245,7 @@ export const SandboxedBrowser = () => {
         const initialY = (pos.y / scale) + y;
 
         const webview = new WebviewWindow(label, {
-          url: browserUrl,
+          url: urlToLoad,
           decorations: false,
           transparent: true,
           skipTaskbar: true,
@@ -383,7 +385,7 @@ export const SandboxedBrowser = () => {
       // Clear loading state if unmounting
       setBrowserLoading(false);
     };
-  }, [isBrowserOpen, browserUrl]);
+  }, [isBrowserOpen]);
 
   // 2. Loading Safety Net: Force clear loading if it hangs
   useEffect(() => {
