@@ -21,33 +21,49 @@ import { toast } from 'sonner';
 export const SandboxedBrowser = () => {
   const isBrowserOpen = useChatStore(state => state.isBrowserOpen);
   const browserUrl = useChatStore(state => state.browserUrl);
+  const _closeBrowser = useChatStore(state => state.closeBrowser);
   const closeBrowser = () => {
     console.log(`[DIAG:STATE] closeBrowser called`);
-    useChatStore.getState().closeBrowser();
+    _closeBrowser();
   };
   const isBrowserLoading = useChatStore(state => state.isBrowserLoading);
+  const _setBrowserLoading = useChatStore(state => state.setBrowserLoading);
   const setBrowserLoading = (val: boolean) => {
     console.log(`[DIAG:STATE] setBrowserLoading(${val})`);
-    useChatStore.getState().setBrowserLoading(val);
+    _setBrowserLoading(val);
   };
   const isInitializing = useChatStore(state => state.isInitializing);
+  const _setInitializing = useChatStore(state => state.setInitializing);
   const setInitializing = (val: boolean) => {
     console.log(`[DIAG:STATE] setInitializing(${val})`);
-    useChatStore.getState().setInitializing(val);
+    _setInitializing(val);
   };
   const webviewLabel = useChatStore(state => state.webviewLabel);
+  const _setWebviewLabel = useChatStore(state => state.setWebviewLabel);
   const setWebviewLabel = (val: string | null) => {
     console.log(`[DIAG:STATE] setWebviewLabel(${val})`);
-    useChatStore.getState().setWebviewLabel(val);
+    _setWebviewLabel(val);
   };
 
   const [webviewCreated, _setWebviewCreated] = useState(false);
-  console.log(`[DIAG:RENDER] Component re-rendered. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, isBrowserLoading=${isBrowserLoading}, webviewLabel=${webviewLabel}, isInitializing=${isInitializing}, webviewCreated=${webviewCreated}`);
   
+  // 1. RENDER LOG
+  console.log(`[DIAG:RENDER] Component re-rendered. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, isBrowserLoading=${isBrowserLoading}, webviewLabel=${webviewLabel}, isInitializing=${isInitializing}, webviewCreated=${webviewCreated}`);
+
   const setWebviewCreated = (val: boolean) => {
     console.log(`[DIAG:STATE] setWebviewCreated(${val})`);
     _setWebviewCreated(val);
   };
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const webviewRef = useRef<WebviewWindow | null>(null);
+  const unlistenersRef = useRef<(() => void)[]>([]);
+  const prevUrlRef = useRef<string | null>(null);
+  const prevOpenRef = useRef<boolean>(false);
+  const activeWebviewLabelRef = useRef<string | null>(null);
+  const isNavigatingRef = useRef<boolean>(false);
+  
   const [title, _setTitle] = useState('Loading...');
   const setTitle = (val: string) => {
     console.log(`[DIAG:STATE] setTitle(${val})`);
@@ -369,11 +385,11 @@ export const SandboxedBrowser = () => {
                 setInputValue(url);
               } else {
                 setHistory(prev => {
-                  const newHistory = prev.slice(0, historyIndexRef.current + 1);
+                  const newHistory = Array.isArray(prev) ? prev.slice(0, historyIndexRef.current + 1) : [];
                   newHistory.push(url);
                   return newHistory;
                 });
-                setHistoryIndex(prev => prev + 1);
+                setHistoryIndex(prev => (typeof prev === 'number' ? prev + 1 : 0));
                 setCurrentUrl(url);
                 setInputValue(url);
               }
@@ -575,7 +591,7 @@ export const SandboxedBrowser = () => {
       console.log(`[DIAG] handleBack called. historyIndex=${historyIndex}, activeWebviewLabelRef=${activeWebviewLabelRef.current}`);
       console.log(`[DIAG:REF] isNavigatingHistoryRef.current = true`);
       isNavigatingHistoryRef.current = true;
-      setHistoryIndex(prev => prev - 1);
+      setHistoryIndex(prev => (typeof prev === 'number' ? prev - 1 : 0));
       invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.back()` }).catch(() => {});
     }
   };
@@ -585,7 +601,7 @@ export const SandboxedBrowser = () => {
     if (historyIndex < history.length - 1 && activeWebviewLabelRef.current) {
       console.log(`[DIAG:REF] isNavigatingHistoryRef.current = true`);
       isNavigatingHistoryRef.current = true;
-      setHistoryIndex(prev => prev - 1);
+      setHistoryIndex(prev => (typeof prev === 'number' ? prev + 1 : 0));
       invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.forward()` }).catch(() => {});
     }
   };
