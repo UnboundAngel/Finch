@@ -21,31 +21,65 @@ import { toast } from 'sonner';
 export const SandboxedBrowser = () => {
   const isBrowserOpen = useChatStore(state => state.isBrowserOpen);
   const browserUrl = useChatStore(state => state.browserUrl);
-  const closeBrowser = useChatStore(state => state.closeBrowser);
+  const closeBrowser = () => {
+    console.log(`[DIAG:STATE] closeBrowser called`);
+    useChatStore.getState().closeBrowser();
+  };
   const isBrowserLoading = useChatStore(state => state.isBrowserLoading);
-  const setBrowserLoading = useChatStore(state => state.setBrowserLoading);
+  const setBrowserLoading = (val: boolean) => {
+    console.log(`[DIAG:STATE] setBrowserLoading(${val})`);
+    useChatStore.getState().setBrowserLoading(val);
+  };
   const isInitializing = useChatStore(state => state.isInitializing);
-  const setInitializing = useChatStore(state => state.setInitializing);
+  const setInitializing = (val: boolean) => {
+    console.log(`[DIAG:STATE] setInitializing(${val})`);
+    useChatStore.getState().setInitializing(val);
+  };
   const webviewLabel = useChatStore(state => state.webviewLabel);
-  const setWebviewLabel = useChatStore(state => state.setWebviewLabel);
+  const setWebviewLabel = (val: string | null) => {
+    console.log(`[DIAG:STATE] setWebviewLabel(${val})`);
+    useChatStore.getState().setWebviewLabel(val);
+  };
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const webviewRef = useRef<WebviewWindow | null>(null);
-  const unlistenersRef = useRef<(() => void)[]>([]);
-  const prevUrlRef = useRef<string | null>(null);
-  const prevOpenRef = useRef<boolean>(false);
-  const activeWebviewLabelRef = useRef<string | null>(null);
-  const isNavigatingRef = useRef<boolean>(false);
-  const [webviewCreated, setWebviewCreated] = useState(false);
-  const [title, setTitle] = useState('Loading...');
-  const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+  const [webviewCreated, _setWebviewCreated] = useState(false);
+  console.log(`[DIAG:RENDER] Component re-rendered. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, isBrowserLoading=${isBrowserLoading}, webviewLabel=${webviewLabel}, isInitializing=${isInitializing}, webviewCreated=${webviewCreated}`);
+  
+  const setWebviewCreated = (val: boolean) => {
+    console.log(`[DIAG:STATE] setWebviewCreated(${val})`);
+    _setWebviewCreated(val);
+  };
+  const [title, _setTitle] = useState('Loading...');
+  const setTitle = (val: string) => {
+    console.log(`[DIAG:STATE] setTitle(${val})`);
+    _setTitle(val);
+  };
+  const [isDarkMode, _setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+  const setIsDarkMode = (val: boolean | ((prev: boolean) => boolean)) => {
+    console.log(`[DIAG:STATE] setIsDarkMode(called)`);
+    _setIsDarkMode(val);
+  };
 
   // --- Local Navigation State ---
-  const [currentUrl, setCurrentUrl] = useState(browserUrl);
-  const [inputValue, setInputValue] = useState(browserUrl);
-  const [history, setHistory] = useState<string[]>([browserUrl]);
-  const [historyIndex, setHistoryIndex] = useState(0);
+  const [currentUrl, _setCurrentUrl] = useState(browserUrl);
+  const setCurrentUrl = (val: string) => {
+    console.log(`[DIAG:STATE] setCurrentUrl(${val})`);
+    _setCurrentUrl(val);
+  };
+  const [inputValue, _setInputValue] = useState(browserUrl);
+  const setInputValue = (val: string) => {
+    console.log(`[DIAG:STATE] setInputValue(${val})`);
+    _setInputValue(val);
+  };
+  const [history, _setHistory] = useState<string[]>([browserUrl]);
+  const setHistory = (val: string[] | ((prev: string[]) => string[])) => {
+    console.log(`[DIAG:STATE] setHistory(called)`);
+    _setHistory(val);
+  };
+  const [historyIndex, _setHistoryIndex] = useState(0);
+  const setHistoryIndex = (val: number | ((prev: number) => number)) => {
+    console.log(`[DIAG:STATE] setHistoryIndex(called)`);
+    _setHistoryIndex(val);
+  };
 
   const historyRef = useRef<string[]>([browserUrl]);
   const historyIndexRef = useRef(0);
@@ -53,18 +87,24 @@ export const SandboxedBrowser = () => {
 
   // Keep refs in sync for the navigation listener closure
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] History sync effect fired`);
+    console.log(`[DIAG:REF] historyRef.current = (called)`);
     historyRef.current = history;
+    console.log(`[DIAG:REF] historyIndexRef.current = ${historyIndex}`);
     historyIndexRef.current = historyIndex;
   }, [history, historyIndex]);
 
   // Update when browser opens with a new initial URL
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Browser open/URL init effect fired. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}`);
     if (isBrowserOpen && browserUrl) {
       setCurrentUrl(browserUrl);
       setInputValue(browserUrl);
       setHistory([browserUrl]);
       setHistoryIndex(0);
+      console.log(`[DIAG:REF] historyRef.current = (called)`);
       historyRef.current = [browserUrl];
+      console.log(`[DIAG:REF] historyIndexRef.current = 0`);
       historyIndexRef.current = 0;
     }
   }, [isBrowserOpen, browserUrl]);
@@ -72,6 +112,7 @@ export const SandboxedBrowser = () => {
 
   // 0. Theme Observation
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Theme observer effect fired`);
     const observer = new MutationObserver(() => {
       setIsDarkMode(document.documentElement.classList.contains('dark'));
     });
@@ -132,6 +173,7 @@ export const SandboxedBrowser = () => {
 
   // Re-inject when theme changes - only if not currently loading a new page
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] injectStyle theme effect fired. webviewCreated=${webviewCreated}, webviewLabel=${webviewLabel}, isBrowserLoading=${isBrowserLoading}`);
     if (webviewCreated && webviewLabel && !isBrowserLoading) {
       injectStyle();
     }
@@ -139,6 +181,7 @@ export const SandboxedBrowser = () => {
 
   // Loading Fallback: If webview is created but still loading after 5s, assume it's an SPA or streaming site and clear the loading state to allow interaction.
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Fallback timeout effect fired. webviewCreated=${webviewCreated}, isBrowserLoading=${isBrowserLoading}`);
     let fallbackTimeout: NodeJS.Timeout;
     
     if (webviewCreated && isBrowserLoading) {
@@ -156,6 +199,7 @@ export const SandboxedBrowser = () => {
 
   // 1. Webview Lifecycle Management
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Main lifecycle effect fired. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}`);
     console.log(`[DIAG] Lifecycle effect fired. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, prevUrlRef=${prevUrlRef.current}, prevOpenRef=${prevOpenRef.current}, webviewRef.current exists=${!!webviewRef.current}`);
 
     // Instruction 1: useRef guard to prevent remounts if the URL hasn't actually changed
@@ -169,14 +213,18 @@ export const SandboxedBrowser = () => {
       console.log(`[DIAG] Early return: already closed guard`);
       return;
     }
+    console.log(`[DIAG:REF] prevUrlRef.current = ${browserUrl}`);
     prevUrlRef.current = browserUrl;
+    console.log(`[DIAG:REF] prevOpenRef.current = ${isBrowserOpen}`);
     prevOpenRef.current = isBrowserOpen;
 
     if (!isBrowserOpen || !browserUrl || !contentRef.current) {
       if (webviewRef.current) {
         console.log("[SANDBOX] Closing webview due to browser closed or missing URL/Ref");
         const current = webviewRef.current;
+        console.log(`[DIAG:REF] webviewRef.current = null`);
         webviewRef.current = null;
+        console.log(`[DIAG:REF] activeWebviewLabelRef.current = null`);
         activeWebviewLabelRef.current = null;
         setWebviewCreated(false);
         current.close().catch(() => {});
@@ -206,7 +254,9 @@ export const SandboxedBrowser = () => {
       if (webviewRef.current) {
         try {
           const old = webviewRef.current;
+          console.log(`[DIAG:REF] webviewRef.current = null`);
           webviewRef.current = null;
+          console.log(`[DIAG:REF] activeWebviewLabelRef.current = null`);
           activeWebviewLabelRef.current = null;
           await old.close();
           // Give the OS 100ms to release the HWND
@@ -265,16 +315,19 @@ export const SandboxedBrowser = () => {
         // Attach listeners immediately
         const listeners = [
           webview.listen('tauri://window-created', () => {
+            console.log(`[DIAG:EVENT] tauri://window-created received. label=${label}, isMounted=${isMounted}`);
             console.log(`[SANDBOX] [EVENT] Window Created: ${label} (Mount: ${mountId})`);
             if (!isMounted) return;
           }),
           webview.listen('tauri://webview-created', () => {
+            console.log(`[DIAG:EVENT] tauri://webview-created received. label=${label}, isMounted=${isMounted}`);
             console.log(`[SANDBOX] [EVENT] Webview Created: ${label} (Mount: ${mountId})`);
             if (!isMounted) return;
             setWebviewCreated(true);
             setBrowserLoading(true);
           }),
           webview.listen('tauri://webview-load-finished', () => {
+            console.log(`[DIAG:EVENT] tauri://webview-load-finished received. label=${label}, isMounted=${isMounted}`);
             console.log(`[SANDBOX] [EVENT] Load Finished: ${label} (Mount: ${mountId})`);
             if (isMounted) {
               setBrowserLoading(false);
@@ -282,6 +335,7 @@ export const SandboxedBrowser = () => {
             }
           }),
           webview.listen('tauri://navigation-finished', () => {
+            console.log(`[DIAG:EVENT] tauri://navigation-finished received. label=${label}, isMounted=${isMounted}`);
             console.log(`[SANDBOX] [EVENT] Navigation Finished: ${label} (Mount: ${mountId})`);
             if (isMounted) {
               setBrowserLoading(false);
@@ -289,14 +343,17 @@ export const SandboxedBrowser = () => {
             }
           }),
           webview.listen('tauri://navigation-error', (e) => {
+            console.log(`[DIAG:EVENT] tauri://navigation-error received. label=${label}, isMounted=${isMounted}`);
             console.error(`[SANDBOX] [EVENT] Navigation Error: ${label} (Mount: ${mountId})`, e);
             if (isMounted) setBrowserLoading(false);
           }),
           webview.listen('tauri://navigation', (event) => {
+            console.log(`[DIAG:EVENT] tauri://navigation received. label=${label}, isMounted=${isMounted}, payload=${JSON.stringify(event.payload)}`);
             console.log(`[SANDBOX] [EVENT] Navigation Started: ${label} (Mount: ${mountId})`);
             const url = (event.payload as any)?.url || (typeof event.payload === 'string' ? event.payload : null);
             
             if (url && typeof url === 'string' && isMounted) {
+              console.log(`[DIAG:REF] isNavigatingRef.current = false`);
               isNavigatingRef.current = false;
               const cleanUrl = url.split('#')[0];
               const currentCleanUrl = (historyRef.current[historyIndexRef.current] || '').split('#')[0];
@@ -306,6 +363,7 @@ export const SandboxedBrowser = () => {
               if (!isMeaningfullyDifferent) return;
 
               if (isNavigatingHistoryRef.current) {
+                console.log(`[DIAG:REF] isNavigatingHistoryRef.current = false`);
                 isNavigatingHistoryRef.current = false;
                 setCurrentUrl(url);
                 setInputValue(url);
@@ -326,24 +384,31 @@ export const SandboxedBrowser = () => {
             }
           }),
           webview.listen('tauri://window-move', () => {
+            console.log(`[DIAG:EVENT] tauri://window-move received. label=${label}`);
             console.log(`[SANDBOX] [EVENT] Window Move: ${label} (Mount: ${mountId})`);
             syncGeometry();
           }),
           webview.listen('tauri://window-resize', () => {
+            console.log(`[DIAG:EVENT] tauri://window-resize received. label=${label}`);
             console.log(`[SANDBOX] [EVENT] Window Resize: ${label} (Mount: ${mountId})`);
             syncGeometry();
           }),
         ];
 
+        console.log(`[DIAG:REF] webviewRef.current = WebviewWindow`);
         webviewRef.current = webview;
         setWebviewLabel(label);
+        console.log(`[DIAG:REF] activeWebviewLabelRef.current = ${label}`);
         activeWebviewLabelRef.current = label;
+        console.log(`[DIAG:REF] unlistenersRef.current = (called)`);
         unlistenersRef.current = await Promise.all(listeners);
 
         if (!isMounted) {
+          console.log(`[DIAG:REF] unlistenersRef.current = []`);
           unlistenersRef.current.forEach(u => u());
           unlistenersRef.current = [];
           await webview.close().catch(() => {});
+          console.log(`[DIAG:REF] activeWebviewLabelRef.current = null`);
           activeWebviewLabelRef.current = null;
           setInitializing(false);
           return;
@@ -369,12 +434,15 @@ export const SandboxedBrowser = () => {
       setInitializing(false);
       
       // Cleanup all listeners
+      console.log(`[DIAG:REF] unlistenersRef.current = []`);
       unlistenersRef.current.forEach(unlisten => unlisten());
       unlistenersRef.current = [];
       
       if (webviewRef.current) {
         const current = webviewRef.current;
+        console.log(`[DIAG:REF] webviewRef.current = null`);
         webviewRef.current = null;
+        console.log(`[DIAG:REF] activeWebviewLabelRef.current = null`);
         activeWebviewLabelRef.current = null;
         console.log(`[SANDBOX] Closing webview: ${current.label}`);
         
@@ -394,11 +462,13 @@ export const SandboxedBrowser = () => {
   }, [isBrowserOpen]);
 
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Store Values observer fired`);
     console.log(`[DIAG] Store values changed: isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, isBrowserLoading=${isBrowserLoading}, webviewLabel=${webviewLabel}, isInitializing=${isInitializing}`);
   }, [isBrowserOpen, browserUrl, isBrowserLoading, webviewLabel, isInitializing]);
 
   // 2. Loading Safety Net: Force clear loading if it hangs
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Loading safety net effect fired`);
     let timeout: NodeJS.Timeout;
     if (isBrowserOpen && isBrowserLoading) {
       timeout = setTimeout(() => {
@@ -438,6 +508,7 @@ export const SandboxedBrowser = () => {
 
   // Effect to sync geometry on resize/move
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Geometry sync effect fired. isBrowserOpen=${isBrowserOpen}`);
     if (!isBrowserOpen || !webviewRef.current) return;
 
     // Listen to main window resize/move
@@ -470,11 +541,13 @@ export const SandboxedBrowser = () => {
   }, [isBrowserOpen]);
 
   const handleClose = () => {
+    console.log(`[DIAG:CLICK] Close button clicked`);
     console.log(`[DIAG] handleClose called`);
     closeBrowser();
   };
 
   const handleRefresh = async () => {
+    console.log(`[DIAG:CLICK] Refresh button clicked`);
     console.log(`[DIAG] handleRefresh called. activeWebviewLabelRef=${activeWebviewLabelRef.current}`);
     if (activeWebviewLabelRef.current) {
       try {
@@ -497,8 +570,10 @@ export const SandboxedBrowser = () => {
   };
 
   const handleBack = () => {
+    console.log(`[DIAG:CLICK] Back button clicked. historyIndex=${historyIndex}`);
     if (historyIndex > 0 && activeWebviewLabelRef.current) {
       console.log(`[DIAG] handleBack called. historyIndex=${historyIndex}, activeWebviewLabelRef=${activeWebviewLabelRef.current}`);
+      console.log(`[DIAG:REF] isNavigatingHistoryRef.current = true`);
       isNavigatingHistoryRef.current = true;
       setHistoryIndex(prev => prev - 1);
       invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.back()` }).catch(() => {});
@@ -506,14 +581,17 @@ export const SandboxedBrowser = () => {
   };
 
   const handleForward = () => {
+    console.log(`[DIAG:CLICK] Forward button clicked. historyIndex=${historyIndex}`);
     if (historyIndex < history.length - 1 && activeWebviewLabelRef.current) {
+      console.log(`[DIAG:REF] isNavigatingHistoryRef.current = true`);
       isNavigatingHistoryRef.current = true;
-      setHistoryIndex(prev => prev + 1);
+      setHistoryIndex(prev => prev - 1);
       invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.forward()` }).catch(() => {});
     }
   };
 
   const handleOpenExternal = async () => {
+    console.log(`[DIAG:CLICK] External link button clicked`);
     try {
       await openUrl(currentUrl);
     } catch (e) {
@@ -523,11 +601,14 @@ export const SandboxedBrowser = () => {
 
   // Keyboard shortcuts wrapper to keep useEffect dependencies stable
   const refreshRef = useRef(handleRefresh);
+  console.log(`[DIAG:REF] refreshRef.current = (called)`);
   refreshRef.current = handleRefresh;
   const closeRef = useRef(handleClose);
+  console.log(`[DIAG:REF] closeRef.current = (called)`);
   closeRef.current = handleClose;
 
   useEffect(() => {
+    console.log(`[DIAG:EFFECT] Keyboard shortcuts effect fired`);
     const handleKeys = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeRef.current();
       if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
@@ -555,7 +636,10 @@ export const SandboxedBrowser = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
-            onClick={handleClose}
+            onClick={() => {
+              console.log(`[DIAG:CLICK] Backdrop clicked`);
+              handleClose();
+            }}
           />
 
           {/* Browser Container */}
@@ -621,8 +705,12 @@ export const SandboxedBrowser = () => {
                 <input
                   type="text"
                   value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
+                  onChange={(e) => {
+                    console.log(`[DIAG:CLICK] Address bar change: value=${e.target.value}`);
+                    setInputValue(e.target.value);
+                  }}
                   onKeyDown={(e) => {
+                    console.log(`[DIAG:CLICK] Address bar keydown: key=${e.key}, value=${inputValue}`);
                     if (e.key === 'Enter') {
                       let url = inputValue.trim();
                       if (url) {
@@ -630,6 +718,7 @@ export const SandboxedBrowser = () => {
                           url = `https://${url}`;
                         }
                         if (activeWebviewLabelRef.current) {
+                          console.log(`[DIAG:REF] isNavigatingRef.current = true`);
                           isNavigatingRef.current = true;
                           invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.location.href = ${JSON.stringify(url)}` });
                         }
@@ -638,6 +727,7 @@ export const SandboxedBrowser = () => {
                     }
                   }}
                   onBlur={() => {
+                    console.log(`[DIAG:CLICK] Address bar blur. isNavigatingRef=${isNavigatingRef.current}, currentUrl=${currentUrl}`);
                     if (!isNavigatingRef.current) {
                       setInputValue(currentUrl);
                     }

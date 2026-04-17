@@ -72,6 +72,7 @@ None. All currently planned phases for the v1.0 milestone are complete.
 | 036-fix-browser-toolbar-bugs | Fixed address bar revert, redundant teardown, and stale label IPC in sandbox browser | Completed | 2026-04-16 |
 | 037-fix-browser-lifecycle-destruction | Prevented webview destruction on URL updates by decoupling lifecycle from browserUrl | Completed | 2026-04-16 |
 | 038-add-browser-diagnostics | Added comprehensive diagnostic logging to SandboxedBrowser for lifecycle and interactions | Completed | 2026-04-16 |
+| 039-add-nuclear-diagnostics | Added nuclear-level diagnostic logging to SandboxedBrowser (every state, ref, click, event) | Completed | 2026-04-16 |
 
 ## Decisions
 
