@@ -156,13 +156,17 @@ export const SandboxedBrowser = () => {
 
   // 1. Webview Lifecycle Management
   useEffect(() => {
+    console.log(`[DIAG] Lifecycle effect fired. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, prevUrlRef=${prevUrlRef.current}, prevOpenRef=${prevOpenRef.current}, webviewRef.current exists=${!!webviewRef.current}`);
+
     // Instruction 1: useRef guard to prevent remounts if the URL hasn't actually changed
     // Only return early if we are already open and the URL is the same
     if (isBrowserOpen && browserUrl === prevUrlRef.current && webviewRef.current) {
+      console.log(`[DIAG] Early return: URL unchanged guard`);
       return;
     }
     // Only return early if we are already closed and the browser open state hasn't changed
     if (!isBrowserOpen && isBrowserOpen === prevOpenRef.current && !webviewRef.current) {
+      console.log(`[DIAG] Early return: already closed guard`);
       return;
     }
     prevUrlRef.current = browserUrl;
@@ -185,6 +189,7 @@ export const SandboxedBrowser = () => {
     let cleanupRun = false;
 
     const initWebview = async () => {
+      console.log(`[DIAG] initWebview called. isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, isInitializing=${isInitializing}, mountId=${mountId}`);
       // Re-check conditions inside async
       if (!isBrowserOpen || !browserUrl || !contentRef.current) return;
 
@@ -356,6 +361,7 @@ export const SandboxedBrowser = () => {
     initWebview();
 
     return () => {
+      console.log(`[DIAG] Cleanup function called. cleanupRun=${cleanupRun}, webviewRef.current exists=${!!webviewRef.current}, browserUrl=${browserUrl}`);
       if (cleanupRun) return;
       cleanupRun = true;
       console.log(`[SANDBOX] Cleanup Triggered for URL: ${browserUrl}`);
@@ -386,6 +392,10 @@ export const SandboxedBrowser = () => {
       setBrowserLoading(false);
     };
   }, [isBrowserOpen]);
+
+  useEffect(() => {
+    console.log(`[DIAG] Store values changed: isBrowserOpen=${isBrowserOpen}, browserUrl=${browserUrl}, isBrowserLoading=${isBrowserLoading}, webviewLabel=${webviewLabel}, isInitializing=${isInitializing}`);
+  }, [isBrowserOpen, browserUrl, isBrowserLoading, webviewLabel, isInitializing]);
 
   // 2. Loading Safety Net: Force clear loading if it hangs
   useEffect(() => {
@@ -460,10 +470,12 @@ export const SandboxedBrowser = () => {
   }, [isBrowserOpen]);
 
   const handleClose = () => {
+    console.log(`[DIAG] handleClose called`);
     closeBrowser();
   };
 
   const handleRefresh = async () => {
+    console.log(`[DIAG] handleRefresh called. activeWebviewLabelRef=${activeWebviewLabelRef.current}`);
     if (activeWebviewLabelRef.current) {
       try {
         setBrowserLoading(true);
@@ -486,6 +498,7 @@ export const SandboxedBrowser = () => {
 
   const handleBack = () => {
     if (historyIndex > 0 && activeWebviewLabelRef.current) {
+      console.log(`[DIAG] handleBack called. historyIndex=${historyIndex}, activeWebviewLabelRef=${activeWebviewLabelRef.current}`);
       isNavigatingHistoryRef.current = true;
       setHistoryIndex(prev => prev - 1);
       invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.back()` }).catch(() => {});
