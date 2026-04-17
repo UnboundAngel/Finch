@@ -250,8 +250,6 @@ export const SandboxedBrowser = () => {
             if (!isMounted) return;
             setWebviewCreated(true);
             setBrowserLoading(true);
-            // Inject resilient bot shields and style immediately
-            injectStyle();
           }),
           webview.listen('tauri://webview-load-finished', () => {
             console.log(`[SANDBOX] [EVENT] Load Finished: ${label} (Mount: ${mountId})`);
@@ -294,8 +292,6 @@ export const SandboxedBrowser = () => {
 
             if (isMounted) {
               setBrowserLoading(true);
-              // Re-inject shields as early as possible on new navigation
-              injectStyle();
             }
           }),
           webview.listen('tauri://window-move', () => {
