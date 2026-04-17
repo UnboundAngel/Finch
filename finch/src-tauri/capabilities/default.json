@@ -13,6 +13,15 @@
     "core:webview:allow-create-webview-window",
     "core:webview:allow-webview-close",
     "core:webview:allow-set-webview-position",
+    {
+      "identifier": "core:webview:allow-navigate",
+      "scope": {
+        "allow": [
+          "http://**",
+          "https://**"
+        ]
+      }
+    },
     "allow-eval-browser-js",
     "allow-reload-browser",
     "core:webview:default",

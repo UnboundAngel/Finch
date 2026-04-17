@@ -9,6 +9,16 @@
     "core:default",
     "opener:allow-open-url",
     "allow-eval-browser-js",
-    "allow-reload-browser"
+    "allow-reload-browser",
+    "core:webview:allow-eval-js",
+    {
+      "identifier": "core:webview:allow-navigate",
+      "scope": {
+        "allow": [
+          "http://**",
+          "https://**"
+        ]
+      }
+    }
   ]
 }
