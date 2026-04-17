@@ -19,22 +19,21 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { toast } from 'sonner';
 
 export const SandboxedBrowser = () => {
-  const { 
-    isBrowserOpen, 
-    browserUrl, 
-    closeBrowser, 
-    isBrowserLoading, 
-    setBrowserLoading,
-    isInitializing,
-    setInitializing,
-    webviewLabel,
-    setWebviewLabel 
-  } = useChatStore();
+  const isBrowserOpen = useChatStore(state => state.isBrowserOpen);
+  const browserUrl = useChatStore(state => state.browserUrl);
+  const closeBrowser = useChatStore(state => state.closeBrowser);
+  const isBrowserLoading = useChatStore(state => state.isBrowserLoading);
+  const setBrowserLoading = useChatStore(state => state.setBrowserLoading);
+  const isInitializing = useChatStore(state => state.isInitializing);
+  const setInitializing = useChatStore(state => state.setInitializing);
+  const webviewLabel = useChatStore(state => state.webviewLabel);
+  const setWebviewLabel = useChatStore(state => state.setWebviewLabel);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const webviewRef = useRef<WebviewWindow | null>(null);
   const unlistenersRef = useRef<(() => void)[]>([]);
+  const prevUrlRef = useRef<string | null>(null);
   const [webviewCreated, setWebviewCreated] = useState(false);
   const [title, setTitle] = useState('Loading...');
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
@@ -154,6 +153,13 @@ export const SandboxedBrowser = () => {
 
   // 1. Webview Lifecycle Management
   useEffect(() => {
+    // Instruction 1: useRef guard to prevent remounts if the URL hasn't actually changed
+    // Only return early if we are already open and the URL is the same
+    if (isBrowserOpen && browserUrl === prevUrlRef.current && webviewRef.current) {
+      return;
+    }
+    prevUrlRef.current = browserUrl;
+
     if (!isBrowserOpen || !browserUrl || !contentRef.current) {
       if (webviewRef.current) {
         console.log("[SANDBOX] Closing webview due to browser closed or missing URL/Ref");
