@@ -274,6 +274,13 @@ export const SandboxedBrowser = () => {
             const url = (event.payload as any)?.url || (typeof event.payload === 'string' ? event.payload : null);
             
             if (url && typeof url === 'string' && isMounted) {
+              const cleanUrl = url.split('#')[0];
+              const currentCleanUrl = (historyRef.current[historyIndexRef.current] || '').split('#')[0];
+              const isMeaningfullyDifferent = cleanUrl !== currentCleanUrl;
+
+              // If the URL hasn't changed (ignoring hash), ignore the event entirely (prevents false loading on focus/hash changes)
+              if (!isMeaningfullyDifferent) return;
+
               if (isNavigatingHistoryRef.current) {
                 isNavigatingHistoryRef.current = false;
                 setCurrentUrl(url);
@@ -288,10 +295,10 @@ export const SandboxedBrowser = () => {
                 setCurrentUrl(url);
                 setInputValue(url);
               }
-            }
 
-            if (isMounted) {
-              setBrowserLoading(true);
+              if (isMounted) {
+                setBrowserLoading(true);
+              }
             }
           }),
           webview.listen('tauri://window-move', () => {

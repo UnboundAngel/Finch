@@ -67,6 +67,7 @@ None. All currently planned phases for the v1.0 milestone are complete.
 | 031-fix-browser-bots-and-capabilities | Fixed bot detection with custom UA and resolved sandbox IPC capabilities | Completed | 2026-04-15 |
 | 032-fix-indefinite-loading-stale-pages | Made bot-shield injection resilient and early, fixed 5s interaction fallback | Completed | 2026-04-15 |
 | 033-fix-webview-navigation-crash | Removed eval calls during navigation to prevent WebView2 hard crashes | Completed | 2026-04-15 |
+| 034-fix-browser-loading-reset | Ignored non-navigation events (focus, hash) in sandbox browser loading state | Completed | 2026-04-16 |
 
 ## Decisions
 
