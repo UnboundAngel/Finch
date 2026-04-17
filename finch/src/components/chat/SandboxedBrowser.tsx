@@ -317,14 +317,11 @@ export const SandboxedBrowser = () => {
 
         const webview = new WebviewWindow(label, {
           url: urlToLoad,
-          decorations: false,
-          transparent: true,
-          skipTaskbar: true,
           x: initialX,
           y: initialY,
           width,
           height,
-          shadow: false,
+          skipTaskbar: true,
           userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         });
 
