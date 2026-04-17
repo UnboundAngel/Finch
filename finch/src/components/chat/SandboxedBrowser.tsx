@@ -34,6 +34,9 @@ export const SandboxedBrowser = () => {
   const webviewRef = useRef<WebviewWindow | null>(null);
   const unlistenersRef = useRef<(() => void)[]>([]);
   const prevUrlRef = useRef<string | null>(null);
+  const prevOpenRef = useRef<boolean>(false);
+  const activeWebviewLabelRef = useRef<string | null>(null);
+  const isNavigatingRef = useRef<boolean>(false);
   const [webviewCreated, setWebviewCreated] = useState(false);
   const [title, setTitle] = useState('Loading...');
   const [isDarkMode, setIsDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
@@ -158,13 +161,19 @@ export const SandboxedBrowser = () => {
     if (isBrowserOpen && browserUrl === prevUrlRef.current && webviewRef.current) {
       return;
     }
+    // Only return early if we are already closed and the browser open state hasn't changed
+    if (!isBrowserOpen && isBrowserOpen === prevOpenRef.current && !webviewRef.current) {
+      return;
+    }
     prevUrlRef.current = browserUrl;
+    prevOpenRef.current = isBrowserOpen;
 
     if (!isBrowserOpen || !browserUrl || !contentRef.current) {
       if (webviewRef.current) {
         console.log("[SANDBOX] Closing webview due to browser closed or missing URL/Ref");
         const current = webviewRef.current;
         webviewRef.current = null;
+        activeWebviewLabelRef.current = null;
         setWebviewCreated(false);
         current.close().catch(() => {});
       }
@@ -191,6 +200,7 @@ export const SandboxedBrowser = () => {
         try {
           const old = webviewRef.current;
           webviewRef.current = null;
+          activeWebviewLabelRef.current = null;
           await old.close();
           // Give the OS 100ms to release the HWND
           await new Promise(r => setTimeout(r, 100));
@@ -280,6 +290,7 @@ export const SandboxedBrowser = () => {
             const url = (event.payload as any)?.url || (typeof event.payload === 'string' ? event.payload : null);
             
             if (url && typeof url === 'string' && isMounted) {
+              isNavigatingRef.current = false;
               const cleanUrl = url.split('#')[0];
               const currentCleanUrl = (historyRef.current[historyIndexRef.current] || '').split('#')[0];
               const isMeaningfullyDifferent = cleanUrl !== currentCleanUrl;
@@ -319,12 +330,14 @@ export const SandboxedBrowser = () => {
 
         webviewRef.current = webview;
         setWebviewLabel(label);
+        activeWebviewLabelRef.current = label;
         unlistenersRef.current = await Promise.all(listeners);
 
         if (!isMounted) {
           unlistenersRef.current.forEach(u => u());
           unlistenersRef.current = [];
           await webview.close().catch(() => {});
+          activeWebviewLabelRef.current = null;
           setInitializing(false);
           return;
         }
@@ -354,6 +367,7 @@ export const SandboxedBrowser = () => {
       if (webviewRef.current) {
         const current = webviewRef.current;
         webviewRef.current = null;
+        activeWebviewLabelRef.current = null;
         console.log(`[SANDBOX] Closing webview: ${current.label}`);
         
         // Use a slight timeout to avoid HWND creation/deletion collisions in fast double-mounts
@@ -448,16 +462,16 @@ export const SandboxedBrowser = () => {
   };
 
   const handleRefresh = async () => {
-    if (webviewLabel) {
+    if (activeWebviewLabelRef.current) {
       try {
         setBrowserLoading(true);
         // Use native Rust command for maximum reliability
-        await invoke('reload_browser', { label: webviewLabel });
+        await invoke('reload_browser', { label: activeWebviewLabelRef.current });
       } catch (e) {
         console.warn("Native reload failed, falling back to script injection:", e);
         try {
           const script = `window.location.reload();`;
-          await invoke('eval_browser_js', { label: webviewLabel, script });
+          await invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script });
         } catch (inner) {
           console.error("Deep refresh failure:", inner);
         }
@@ -469,18 +483,18 @@ export const SandboxedBrowser = () => {
   };
 
   const handleBack = () => {
-    if (historyIndex > 0 && webviewLabel) {
+    if (historyIndex > 0 && activeWebviewLabelRef.current) {
       isNavigatingHistoryRef.current = true;
       setHistoryIndex(prev => prev - 1);
-      invoke('eval_browser_js', { label: webviewLabel, script: `window.history.back()` }).catch(() => {});
+      invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.back()` }).catch(() => {});
     }
   };
 
   const handleForward = () => {
-    if (historyIndex < history.length - 1 && webviewLabel) {
+    if (historyIndex < history.length - 1 && activeWebviewLabelRef.current) {
       isNavigatingHistoryRef.current = true;
       setHistoryIndex(prev => prev + 1);
-      invoke('eval_browser_js', { label: webviewLabel, script: `window.history.forward()` }).catch(() => {});
+      invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.history.forward()` }).catch(() => {});
     }
   };
 
@@ -600,14 +614,19 @@ export const SandboxedBrowser = () => {
                         if (!url.startsWith('http://') && !url.startsWith('https://')) {
                           url = `https://${url}`;
                         }
-                        if (webviewLabel) {
-                          invoke('eval_browser_js', { label: webviewLabel, script: `window.location.href = ${JSON.stringify(url)}` });
+                        if (activeWebviewLabelRef.current) {
+                          isNavigatingRef.current = true;
+                          invoke('eval_browser_js', { label: activeWebviewLabelRef.current, script: `window.location.href = ${JSON.stringify(url)}` });
                         }
                       }
                       e.currentTarget.blur();
                     }
                   }}
-                  onBlur={() => setInputValue(currentUrl)}
+                  onBlur={() => {
+                    if (!isNavigatingRef.current) {
+                      setInputValue(currentUrl);
+                    }
+                  }}
                   className="bg-transparent border-none outline-none truncate text-muted-foreground flex-1 font-mono focus:text-foreground placeholder:text-muted-foreground/50 transition-colors"
                   spellCheck={false}
                 />
