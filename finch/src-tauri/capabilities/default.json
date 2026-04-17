@@ -21,6 +21,7 @@
     "core:webview:allow-set-webview-position",
     "allow-eval-browser-js",
     "allow-reload-browser",
+    "allow-debug-get-webview-url",
     "core:webview:default",
     "core:window:allow-close",
     "core:window:allow-minimize",

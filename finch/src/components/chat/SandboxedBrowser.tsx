@@ -419,6 +419,30 @@ export const SandboxedBrowser = () => {
         console.log(`[DIAG:REF] unlistenersRef.current = (called)`);
         unlistenersRef.current = await Promise.all(listeners);
 
+        // --- TEMPORARY: Navigation Probe (Phase 2) ---
+        // Determines whether the webview is actually navigating even if events aren't firing.
+        const startTime = Date.now();
+        let pollCount = 0;
+        const probeInterval = setInterval(async () => {
+          if (!isMounted || !activeWebviewLabelRef.current) {
+            clearInterval(probeInterval);
+            return;
+          }
+          pollCount++;
+          if (pollCount > 20) {
+            clearInterval(probeInterval);
+            console.log(`[NAV-PROBE] Finished 10s probe.`);
+            return;
+          }
+          try {
+            const currentProbeUrl = await invoke('debug_get_webview_url', { label: activeWebviewLabelRef.current });
+            console.log(`[NAV-PROBE t=${Date.now() - startTime}ms] url=${currentProbeUrl}`);
+          } catch (e) {
+            console.error(`[NAV-PROBE] Probe failed:`, e);
+          }
+        }, 500); // 500ms requested
+        // --- END TEMPORARY ---
+
         if (!isMounted) {
           console.log(`[DIAG:REF] unlistenersRef.current = []`);
           unlistenersRef.current.forEach(u => u());

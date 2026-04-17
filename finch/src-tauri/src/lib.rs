@@ -1383,6 +1383,15 @@ async fn reload_browser(handle: AppHandle, label: String) -> Result<(), String> 
     }
 }
 
+#[tauri::command]
+async fn debug_get_webview_url(handle: AppHandle, label: String) -> Result<String, String> {
+    if let Some(window) = handle.get_webview_window(&label) {
+        Ok(window.url().map_err(|e| e.to_string())?.to_string())
+    } else {
+        Err(format!("Window '{}' not found", label))
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 
 pub fn run() {
@@ -1445,7 +1454,8 @@ pub fn run() {
             download_voice_model,
             list_downloaded_voice_models,
             eval_browser_js,
-            reload_browser
+            reload_browser,
+            debug_get_webview_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

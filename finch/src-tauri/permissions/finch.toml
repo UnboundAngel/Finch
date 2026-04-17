@@ -137,3 +137,8 @@ commands.allow = ["eval_browser_js"]
 identifier = "allow-reload-browser"
 description = "Allows triggering a native reload of a webview window"
 commands.allow = ["reload_browser"]
+
+[[permission]]
+identifier = "allow-debug-get-webview-url"
+description = "Allows getting the current URL of a webview window for diagnostic purposes"
+commands.allow = ["debug_get_webview_url"]
