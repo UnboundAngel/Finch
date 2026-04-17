@@ -75,6 +75,7 @@ None. All currently planned phases for the v1.0 milestone are complete.
 | 039-add-nuclear-diagnostics | Added nuclear-level diagnostic logging to SandboxedBrowser (every state, ref, click, event) | Completed | 2026-04-16 |
 | 040-restore-refs-nuclear-diagnostics | Restored missing refs and finalized nuclear-level diagnostic logging in SandboxedBrowser | Completed | 2026-04-16 |
 | 041-fix-browser-reload | Fixed sandbox browser refresh by adding a one-time navigation-finished listener | Completed | 2026-04-16 |
+| 042-fix-browser-external-load | Fixed blank sandbox browser by explicitly allowing external URL navigation in capabilities | Completed | 2026-04-16 |
 
 ## Decisions
 

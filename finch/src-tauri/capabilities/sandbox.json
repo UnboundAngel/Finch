@@ -10,15 +10,12 @@
     "opener:allow-open-url",
     "allow-eval-browser-js",
     "allow-reload-browser",
-    "core:webview:allow-eval-js",
     {
-      "identifier": "core:webview:allow-navigate",
-      "scope": {
-        "allow": [
-          "http://**",
-          "https://**"
-        ]
-      }
+      "identifier": "core:webview:allow-create-webview-window",
+      "allow": [
+        { "url": "https://**" },
+        { "url": "http://**" }
+      ]
     }
   ]
 }
