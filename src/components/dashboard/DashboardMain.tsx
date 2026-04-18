@@ -183,17 +183,18 @@ export function DashboardMain(props: DashboardMainProps) {
                   : (!isIncognito && (isDark ? customBgDark : customBgLight) ? "bg-transparent shadow-none" : "bg-background")
                 } text-foreground`}
             >
-              <ContextMenu>
+                  <ContextMenu>
                 <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
                   {!isIncognito && (
                     <div className="absolute inset-0 pointer-events-none z-[1]">
+                      {/* Atmospheric Overlays */}
                       <div className={`absolute inset-0 transition-opacity duration-500 ${(isDark ? customBgDark : customBgLight) ? 'opacity-20 bg-black' : 'opacity-0'}`} />
                     </div>
                   )}
 
                   <BackgroundPlus
-                    plusColor={showPinkMode ? "#db2777" : "#888888"}
-                    className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.08]" : "opacity-[0.05] dark:opacity-[0.1]"}`}
+                    plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
+                    className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.2]" : "opacity-[0.12] dark:opacity-[0.15]"}`}
                     fade={true}
                     plusSize={40}
                   />

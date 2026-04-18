@@ -14,6 +14,7 @@ import { useChatSession } from '@/src/hooks/useChatSession';
 import { ModalProvider, useModals } from '@/src/providers/ModalProvider';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardMain } from './DashboardMain';
+import { BackgroundPlus } from '@/components/ui/background-plus';
 
 function DashboardContent({
   recentChats, setRecentChats,
@@ -180,6 +181,14 @@ function DashboardContent({
         ...(showPinkMode ? { background: 'linear-gradient(to bottom, #fff5f7, #ffe4e8)' } : {})
       }}
     >
+      {!isIncognito && !(isDark ? customBgDark : customBgLight) && (
+        <BackgroundPlus 
+          plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
+          plusSize={40} 
+          fade={true}
+          className={showPinkMode ? "opacity-[0.18]" : "opacity-[0.12] dark:opacity-[0.15]"}
+        />
+      )}
       <DashboardHeader
         sidebarContrast={sidebarContrast} isIncognito={isIncognito}
         toggleIncognito={() => setIsIncognito(!isIncognito)} selectedProvider={selectedProvider}

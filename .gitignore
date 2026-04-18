@@ -6,9 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
-src-tauri/gen/
-src-tauri/target/
-src-tauri/resources/*.bin
-src-tauri/resources/ggml-base.bin
+src-tauri/
+profile_screen.zip
 Old_references/
 # .planning/ # Don't ignore the whole thing if we want STATE.md
+# docs/ 

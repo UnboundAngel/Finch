@@ -10,6 +10,7 @@ import { Message } from '../../types/chat';
 import { ThinkingBox } from './ThinkingBox';
 import { MetadataRow } from './MetadataRow';
 import { CodeBlock } from './CodeBlock';
+import { ExternalLink } from '@/src/components/ui/ExternalLink';
 
 interface MessageBubbleProps {
   msg: Message;
@@ -76,6 +77,11 @@ export const MessageBubble = ({ msg, selectedModel, isDark, isLatest, isIncognit
                 thead: ({ node, ...props }) => <thead className="bg-muted/50" {...props} />,
                 th: ({ node, ...props }) => <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider" {...props} />,
                 td: ({ node, ...props }) => <td className="px-4 py-2 text-sm border-t border-muted-foreground/10" {...props} />,
+                a: ({ node, href, children, ...props }) => (
+                  <ExternalLink href={href || ''} {...props}>
+                    {children}
+                  </ExternalLink>
+                ),
                 code(props) {
                   const { children, className, node, ...rest } = props
                   const match = /language-(\w+)/.exec(className || '')

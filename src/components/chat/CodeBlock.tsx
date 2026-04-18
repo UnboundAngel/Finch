@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
 import { Check, Copy } from 'lucide-react';
 import { createHighlighter, type Highlighter } from 'shiki';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface CodeBlockProps {
   children: string;
@@ -32,10 +33,7 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
     
     const highlight = async () => {
       const h = highlighterInstance || (await highlighterPromise);
-      
-      // Ensure we only update if this is still the current request
       if (currentRenderId !== renderId.current) return;
-      
       if (!isLoaded) setIsLoaded(true);
 
       try {
@@ -70,35 +68,67 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
   };
 
   return (
-    <div className="relative group/code my-4 rounded-xl overflow-hidden border border-muted-foreground/10 bg-muted/20 max-w-full min-w-0">
-      <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
-        <span className="text-[10px] uppercase font-bold text-muted-foreground/50 px-2 py-1 rounded bg-muted/30 border border-muted-foreground/5 backdrop-blur-sm opacity-0 group-hover/code:opacity-100 transition-all">
-          {language}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 bg-background/50 hover:bg-background/80 backdrop-blur-sm opacity-0 group-hover/code:opacity-100 transition-all rounded-lg border border-muted-foreground/10"
-          onClick={handleCopy}
-        >
-          {copied ? (
-            <Check className="h-4 w-4 text-green-500 transition-all scale-110" />
-          ) : (
-            <Copy className="h-4 w-4 text-muted-foreground transition-all" />
-          )}
-        </Button>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="relative group/code my-8 overflow-visible max-w-full min-w-0"
+    >
+      {/* Sticky Controls Container */}
+      <div className="sticky top-20 z-30 h-0 w-full flex justify-end items-start pointer-events-none">
+        <div className="pt-4 pr-5 flex items-center gap-4 opacity-0 group-hover/code:opacity-100 transition-opacity duration-200 pointer-events-auto bg-transparent">
+          <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground select-none pb-0.5">
+            {language || 'text'}
+          </span>
+          
+          <button
+            className="transition-colors duration-100 hover:text-foreground active:opacity-50 text-muted-foreground"
+            onClick={handleCopy}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {copied ? (
+                <motion.div
+                  key="check"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.05 }}
+                >
+                  <Check className="h-4 w-4" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="copy"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.05 }}
+                >
+                  <Copy className="h-4 w-4" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
+        </div>
       </div>
       
-      {!isLoaded || !highlightedHtml ? (
-        <pre className="p-6 text-sm font-mono whitespace-pre overflow-x-auto min-h-[1.5rem]">
-          <code>{children}</code>
-        </pre>
-      ) : (
-        <div 
-          className="shiki-container p-6 text-sm overflow-x-auto"
-          dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-        />
-      )}
+      {/* Internal Clipping Wrapper */}
+      <div className="relative rounded-2xl overflow-hidden border border-muted-foreground/10 bg-muted/5 backdrop-blur-2xl">
+        {/* Top Edge Gradient Accent */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent pointer-events-none" />
+
+        <div className="relative">
+          {!isLoaded || !highlightedHtml ? (
+            <pre className="p-8 text-sm font-mono whitespace-pre overflow-x-auto min-h-[1.5rem] selection:bg-primary/20">
+              <code>{children}</code>
+            </pre>
+          ) : (
+            <div 
+              className="shiki-container p-8 text-[13px] leading-relaxed overflow-x-auto selection:bg-primary/20"
+              dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+            />
+          )}
+        </div>
+      </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
         .shiki-container pre {
@@ -112,6 +142,11 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
           border-radius: 0 !important;
         }
       `}} />
-    </div>
+    </motion.div>
   );
 };
+
+
+
+
+

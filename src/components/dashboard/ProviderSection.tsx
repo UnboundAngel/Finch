@@ -61,7 +61,7 @@ export const ProviderSection = ({ title, icon: Icon, description, storeKey, type
       // Remove masked keys from the config we send back to save
       // so we don't overwrite real keys with dots
       const cleanConfig = { ...updatedConfig };
-      ['anthropic_api_key', 'openai_api_key', 'gemini_api_key'].forEach(k => {
+      ['anthropic_api_key', 'openai_api_key', 'gemini_api_key', 'tavily_api_key', 'brave_api_key'].forEach(k => {
         if (cleanConfig[k] === "••••••••") {
           delete cleanConfig[k];
         }

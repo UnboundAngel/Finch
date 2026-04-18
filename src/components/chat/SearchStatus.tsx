@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Binoculars, Check, Clock, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Binoculars, Check, Clock, ChevronDown, ChevronUp, ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { ExternalLink } from '@/src/components/ui/ExternalLink';
 
 export interface SearchEvent {
   type: 'search_start' | 'search_source' | 'search_done';
@@ -117,14 +118,12 @@ export const SearchStatus = ({ events, isThinking }: SearchStatusProps) => {
                           <span className="text-[12px] text-foreground/80 truncate">
                             {source.title}
                           </span>
-                          <a 
+                          <ExternalLink 
                             href={source.url} 
-                            target="_blank" 
-                            rel="noreferrer"
                             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-blue-400"
                           >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
+                            <ExternalLinkIcon className="h-3 w-3" />
+                          </ExternalLink>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 pl-2">
                           <Clock className="h-3 w-3 text-muted-foreground/60" />
