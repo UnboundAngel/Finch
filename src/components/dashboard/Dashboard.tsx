@@ -111,7 +111,7 @@ function DashboardContent({
       incognito: false,
       systemPrompt: existing?.systemPrompt || '',
       generationParams: existing?.generationParams || { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
-      stats: { totalTokens: 0, totalMessages: updatedMessages.length, averageSpeed: 0 }
+      stats: { totalTokens: useChatStore.getState().tokensUsed, totalMessages: updatedMessages.length, averageSpeed: 0 }
     };
 
     try {

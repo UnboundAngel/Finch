@@ -231,7 +231,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/components/dashboard/Dashboard.tsx:114`
 - **Fix Direction**: Populate `stats.totalTokens` from the running token count accumulated via `useChatStore.getState().tokensUsed` at save time, or carry it forward from the last `AIStats` object received in `onComplete`.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 
