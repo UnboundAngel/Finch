@@ -185,7 +185,7 @@ export function useAIStreaming() {
       setIsStreaming(false);
       onComplete?.(finalStats);
     } catch (err: any) {
-      const errorMsg = err.toString();
+      const errorMsg = typeof err === 'string' ? err : (err?.message ?? JSON.stringify(err));
       setError(errorMsg);
       setIsStreaming(false);
       onError?.(errorMsg);

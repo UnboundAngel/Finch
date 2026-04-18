@@ -221,7 +221,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useAIStreaming.ts:183-188`
 - **Fix Direction**: Replace `err.toString()` with `typeof err === 'string' ? err : (err?.message ?? JSON.stringify(err))` to extract a human-readable error string.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 
