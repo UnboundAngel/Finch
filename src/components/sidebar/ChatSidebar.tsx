@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
-import { getChatIcon } from '../../lib/chatHelpers';
+import { getChatIcon, isAiNamed } from '../../lib/chatHelpers';
 import { useProfileStore } from '@/src/store';
 
 interface ChatSidebarProps {
@@ -100,6 +100,7 @@ export const ChatSidebar = ({
 }: ChatSidebarProps) => {
   const setActiveProfile = useProfileStore(state => state.setActiveProfile);
   const activeProfile = useProfileStore(state => state.activeProfile);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to switch profiles? This will end your current session.')) {

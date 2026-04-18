@@ -15,3 +15,7 @@ export const getChatIcon = (type?: string) => {
       return <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />;
   }
 };
+
+export const isAiNamed = (title: string) => {
+  return title === 'New Chat';
+};
