@@ -29,7 +29,7 @@ These issues break the core value proposition of large context models and cause 
 - **File**: `src-tauri/src/search.rs` (lines 85-89)
 - **Problem**: The SearXNG provider injects the user's raw `query` directly into the GET URL: `format!("{}/search?format=json&q={}", base_url, query)`. If the query contains spaces, ampersands (`&`), or hashes (`#`), the HTTP request becomes malformed or query parameters get hijacked, breaking web search silently.
 - **Fix Direction**: Use `urlencoding::encode(query)` or `reqwest::Url::parse` to properly encode the query string before appending it to the base URL.
-- **Status**: open
+- **Status**: done
 
 ### W8-3 — Hardcoded Cloud Context Limits
 - **Severity**: Medium
