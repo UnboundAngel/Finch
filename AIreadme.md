@@ -1,3 +1,22 @@
+# Finch AI Instructions
+
+## 🚨 DUAL-REPOSITORY SAFETY PROTOCOL (CRITICAL)
+This project exists in two states: **Public** (Frontend only) and **Private** (Full code). To prevent accidental leaking of the backend source code, follow these steps BEFORE any git operation:
+
+1. **Verify Remote**: Check `git remote -v` to see where you are pushing.
+   - `origin`: Public (`Finch`) -> **MUST** use `.gitignore.public`.
+   - `full-repo`: Private (`Finch_full`) -> **MAY** use `.gitignore.private`.
+
+2. **Sync .gitignore**:
+   - For Public pushes: `cp .gitignore.public .gitignore`
+   - For Private pushes: `cp .gitignore.private .gitignore`
+
+3. **Validation**: Always run `git status` after switching the ignore file to ensure `src-tauri/` is correctly ignored (public) or tracked (private).
+
+**NEVER push to `origin` if `src-tauri/` appears in `git status` or `git add .`.**
+
+---
+
 ## 1. What This Project Is
 Finch is a high-performance desktop AI chat application built with Tauri v2 and React 19. It provides a local-first, extensible interface for interacting with various LLM providers (Anthropic, OpenAI, Gemini, LM Studio, Ollama) and real-time Web Search (Tavily, Brave, SearXNG), while maintaining strict security by routing all model communication through a secure Rust IPC bridge.
 
