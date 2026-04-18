@@ -29,8 +29,15 @@ export function useAIStreaming() {
 
   const tokenCount = useRef(0);
   const startTime = useRef(0);
+  const channelRef = useRef<Channel<string> | null>(null);
+  const abortedRef = useRef(false);
 
   const abort = useCallback(async () => {
+    abortedRef.current = true;
+    if (channelRef.current) {
+      channelRef.current.onmessage = null as any;
+      channelRef.current = null;
+    }
     if (isTauri()) {
       try {
         await invoke("abort_generation");
@@ -93,11 +100,14 @@ export function useAIStreaming() {
       return;
     }
 
+    abortedRef.current = false;
     try {
       const channel = new Channel<string>();
+      channelRef.current = channel;
       let finalStats: AIStats | undefined;
 
       channel.onmessage = (eventJson) => {
+        if (abortedRef.current) return;
         try {
           const event = JSON.parse(eventJson);
 
@@ -172,6 +182,7 @@ export function useAIStreaming() {
         };
       }
 
+      channelRef.current = null;
       setIsStreaming(false);
       onComplete?.(finalStats);
     } catch (err: any) {

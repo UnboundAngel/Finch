@@ -65,7 +65,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useAIStreaming.ts:96-97` (channel declaration site) and `src/hooks/useAIStreaming.ts:33-43` (abort function)
 - **Fix Direction**: Hold a ref to the channel object; on abort, null out `channel.onmessage` before invoking `abort_generation`, and set a local `aborted` flag checked in the handler.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 
