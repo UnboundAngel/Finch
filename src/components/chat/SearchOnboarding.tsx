@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
 import { cn } from '@/lib/utils';
+import { unmaskKey } from '@/src/lib/tauri-utils';
 
 interface SearchOnboardingProps {
-  onComplete: (apiKey: string) => void;
+  onComplete: (activeProvider: string) => void;
   onClose: () => void;
   initialStep?: number;
 }
@@ -28,8 +29,8 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
       try {
         const config: any = await invoke('get_provider_config');
         if (config) {
-          if (config.tavily_api_key) setApiKey(config.tavily_api_key === "••••••••" ? "" : config.tavily_api_key);
-          if (config.brave_api_key) setBraveKey(config.brave_api_key === "••••••••" ? "" : config.brave_api_key);
+          if (config.tavily_api_key) setApiKey(unmaskKey(config.tavily_api_key));
+          if (config.brave_api_key) setBraveKey(unmaskKey(config.brave_api_key));
           if (config.searxng_url) setSearxUrl(config.searxng_url);
           if (config.active_search_provider) setActiveSearchProvider(config.active_search_provider);
         }
@@ -90,7 +91,7 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
         }
       });
       toast.success(`Web Research (${activeProvider}) activated!`);
-      onComplete(activeProvider === 'tavily' ? trimmedKey : (activeProvider === 'brave' ? trimmedBrave : trimmedSearx));
+      onComplete(activeProvider);
     } catch (err: any) {
       toast.error(err.toString());
     } finally {

@@ -90,7 +90,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/components/chat/SearchOnboarding.tsx:31-32`
 - **Fix Direction**: Extract the mask-sentinel guard into a shared `unmaskKey(val: string): string` utility in `src/lib/tauri-utils.ts` and call it from both `ProviderSection` and `SearchOnboarding`; do not pass raw keys through `onComplete` — pass only a boolean or the active provider name.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

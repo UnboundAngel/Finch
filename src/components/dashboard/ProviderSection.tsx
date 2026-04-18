@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { invoke } from '@tauri-apps/api/core';
+import { unmaskKey } from '@/src/lib/tauri-utils';
 import { Key, Globe, RefreshCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -33,7 +34,7 @@ export const ProviderSection = ({ title, icon: Icon, description, storeKey, type
       try {
         const config: any = await invoke('get_provider_config');
         if (config && config[storeKey]) {
-          setValue(config[storeKey] === "••••••••" ? "" : config[storeKey]);
+          setValue(unmaskKey(config[storeKey]));
         }
       } catch (e) {
         console.error(`Failed to load ${title} config:`, e);
