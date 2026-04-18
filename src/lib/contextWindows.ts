@@ -56,3 +56,11 @@ export function getContextWindowSize(modelId: string): number | null {
 
   return null;
 }
+
+/**
+ * Safe fallback context window for local models with unknown IDs.
+ * Intentionally conservative (32k) per AIreadme architecture rules.
+ */
+export function getLocalModelFallback(): number {
+  return 32768;
+}

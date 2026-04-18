@@ -171,7 +171,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/lib/contextWindows.ts:56-57`
 - **Fix Direction**: For local model IDs (detected by checking the provider context or a parameter), return `32768` instead of `null`; or add a separate exported `getLocalModelFallback(): number` that returns `32768` for callers to use explicitly.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 
