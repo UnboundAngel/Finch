@@ -34,7 +34,8 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src-tauri/capabilities/default.json` (full file, lines 1–53) + `src-tauri/permissions/` directory
 - **Fix Direction**: Run `grep -r 'invoke(' src/` and extract all command names; for each, verify a matching `allow-<command-name>` entry exists in `default.json` AND a corresponding `.toml` file exists in `src-tauri/permissions/`. Add any that are missing.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
+- **Result**: Full cross-reference completed. All 26 `invoke()` call sites (hooks, components, store) are covered by matching `allow-<command>` entries in `default.json` and corresponding `.toml` files in `src-tauri/permissions/`. No gaps found; no changes to the manifest were required.
 
 ---
 
