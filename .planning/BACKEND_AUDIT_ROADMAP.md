@@ -22,7 +22,7 @@ These issues break the core value proposition of large context models and cause 
 - **File**: `src-tauri/src/providers/mod.rs` (lines 43-44)
 - **Problem**: `prepare_messages` calculates the history retention budget using `max_tokens` (which defines the *output* limit, defaulting to 4096). It sets `budget = max_tokens * 0.75` (3072 tokens). This means regardless of whether the user selects a 200k or 1M context model, their conversation history is aggressively truncated to 3072 tokens.
 - **Fix Direction**: Update `prepare_messages` to derive the context window entirely in Rust — do NOT accept a context window value from the frontend. The Rust backend already receives `provider` and `model` on every chat command; add a `get_context_window(provider, model) -> u32` lookup table in `mod.rs` (or a new `context_windows.rs` module) covering all known models, with a 32768 fallback for unknowns. Compute the history budget as `context_window - max_tokens.unwrap_or(4096)` inside `prepare_messages`. Never accept `context_window` as a parameter from the IPC layer.
-- **Status**: open
+- **Status**: done
 
 ### W8-2 — Unsafe URL Construction in SearXNG
 - **Severity**: High
