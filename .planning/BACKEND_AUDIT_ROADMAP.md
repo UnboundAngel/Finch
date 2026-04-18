@@ -36,7 +36,7 @@ These issues break the core value proposition of large context models and cause 
 - **File**: `src-tauri/src/ipc/models.rs` (lines 381-385)
 - **Problem**: In `get_context_intelligence`, the fallback for cloud providers (Anthropic, Gemini, OpenAI) hardcodes `model_max = 128000; hardware_safe_limit = 128000;`. This caps models like `gemini-2.5-pro` (1M tokens) and `claude-opus-4-5` (200k tokens) at 128k, artificially limiting the user.
 - **Fix Direction**: Expand the `match provider.as_str()` logic to return accurate static limits for known cloud providers. (e.g., Gemini = 1M/2M, Anthropic = 200k, OpenAI = 128k/200k).
-- **Status**: open
+- **Status**: done
 
 ---
 
