@@ -1,19 +1,25 @@
 # Finch AI Instructions
 
-## 🚨 DUAL-REPOSITORY SAFETY PROTOCOL (CRITICAL)
-This project exists in two states: **Public** (Frontend only) and **Private** (Full code). To prevent accidental leaking of the backend source code, follow these steps BEFORE any git operation:
+## 🚨 DUAL-REPOSITORY SAFETY PROTOCOL (STRICT)
+This project exists in two states: **Public** (Frontend only) and **Private** (Full code).
+**NEVER USE `git add .` OR `git commit -a` IN THIS PROJECT.**
 
-1. **Verify Remote**: Check `git remote -v` to see where you are pushing.
+1. **Verify Remote**: Run `git remote -v`.
    - `origin`: Public (`Finch`) -> **MUST** use `.gitignore.public`.
    - `full-repo`: Private (`Finch_full`) -> **MAY** use `.gitignore.private`.
 
-2. **Sync .gitignore**:
-   - For Public pushes: `cp .gitignore.public .gitignore`
-   - For Private pushes: `cp .gitignore.private .gitignore`
+2. **Verify Ignore State**:
+   - For Public: `cp .gitignore.public .gitignore`
+   - For Private: `cp .gitignore.private .gitignore`
 
-3. **Validation**: Always run `git status` after switching the ignore file to ensure `src-tauri/` is correctly ignored (public) or tracked (private).
+3. **Explicit Staging ONLY**:
+   - Use `git status` to see what is changed.
+   - Stage files individually: `git add src/components/...`
+   - **NEVER** stage `src-tauri/` when pushing to `origin`.
 
-**NEVER push to `origin` if `src-tauri/` appears in `git status` or `git add .`.**
+4. **Public Push Sanity Check**:
+   - Before `git push origin`, run `git ls-files src-tauri/`.
+   - If it returns ANY files, you are about to leak the backend. Stop and run `git rm -r --cached src-tauri/`.
 
 ---
 
