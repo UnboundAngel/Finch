@@ -125,7 +125,8 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/store/index.ts` (persist config for `useChatStore`, line 18–27)
 - **Fix Direction**: Add a `partialize` option to the `useChatStore` persist config that explicitly excludes `tokensUsed` (and `isStreaming`/`voiceStatus`) from the persisted snapshot.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
+- **Note**: `isStreaming` does not exist in `ChatState`; excluded `tokensUsed` and `voiceStatus` as specified.
 
 ---
 

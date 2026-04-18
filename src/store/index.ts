@@ -22,6 +22,10 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'finch-chat-state',
+      partialize: (state) => {
+        const { tokensUsed, voiceStatus, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
