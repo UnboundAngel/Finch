@@ -55,7 +55,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useAIStreaming.ts:150-157`
 - **Fix Direction**: Remove the non-JSON fallback `onToken(eventJson)` call entirely; log the error and do nothing — the backend protocol is strictly JSON and the fallback is a legacy artifact.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

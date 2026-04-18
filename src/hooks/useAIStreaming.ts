@@ -149,11 +149,6 @@ export function useAIStreaming() {
           }
         } catch (e) {
           console.error("Failed to parse event JSON:", eventJson, e);
-          // Fallback: if it's not valid JSON and doesn't look like our protocol, 
-          // treat it as a raw token (for legacy reasons if any)
-          if (!eventJson.startsWith("{")) {
-            onToken(eventJson);
-          }
         }
       };
 
