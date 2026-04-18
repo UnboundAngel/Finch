@@ -141,7 +141,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useAIStreaming.ts:106`
 - **Fix Direction**: Remove `tokenCount.current++` from the `"text"` case entirely; rely solely on the `stats` event's `total_tokens` field (already done at line 121) — the chunk counter is redundant and inaccurate.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

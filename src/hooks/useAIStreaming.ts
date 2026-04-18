@@ -113,7 +113,6 @@ export function useAIStreaming() {
 
           switch (event.type) {
             case "text":
-              tokenCount.current++;
               onToken(event.data);
               break;
 
