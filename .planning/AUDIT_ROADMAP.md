@@ -161,7 +161,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/store/modelParamsSlice.ts:38-43` and `src/store/modelParamsSlice.ts:76-83`
 - **Fix Direction**: Set the initial state to `null` (matching the type annotation `ContextIntelligence | null`) and guard UI display with a null check; only populate values from `fetchContextIntelligence` or from `getContextWindowSize`.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

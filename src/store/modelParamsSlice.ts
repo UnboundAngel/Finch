@@ -35,11 +35,7 @@ export const createModelParamsSlice: StateCreator<ModelParamsState, [], [], Mode
   topP: 0.9,
   maxTokens: 2048,
   stopStrings: ['</think>'],
-  contextIntelligence: {
-    hardware_safe_limit: 8192,
-    model_max: 8192,
-    server_num_ctx: 8192,
-  },
+  contextIntelligence: null,
   contextIntelligenceStatus: 'idle',
 
   setSystemPrompt: (prompt) => set({ systemPrompt: prompt }),
@@ -73,12 +69,8 @@ export const createModelParamsSlice: StateCreator<ModelParamsState, [], [], Mode
       set({ contextIntelligenceStatus: 'error' });
     }
   },
-  resetContextIntelligence: () => set({ 
-    contextIntelligence: {
-      hardware_safe_limit: 8192,
-      model_max: 8192,
-      server_num_ctx: 8192,
-    },
-    contextIntelligenceStatus: 'idle' 
+  resetContextIntelligence: () => set({
+    contextIntelligence: null,
+    contextIntelligenceStatus: 'idle'
   }),
 });
