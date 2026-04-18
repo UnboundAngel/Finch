@@ -80,7 +80,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/components/dashboard/ProviderSection.tsx:34-37`
 - **Fix Direction**: After loading config, check if the returned value equals the mask sentinel `"••••••••"` and if so, set state to empty string `""` so the field shows placeholder text, not the mask — consistent with `SearchOnboarding`'s own handling.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

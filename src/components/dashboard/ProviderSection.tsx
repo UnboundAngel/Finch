@@ -33,7 +33,7 @@ export const ProviderSection = ({ title, icon: Icon, description, storeKey, type
       try {
         const config: any = await invoke('get_provider_config');
         if (config && config[storeKey]) {
-          setValue(config[storeKey]);
+          setValue(config[storeKey] === "••••••••" ? "" : config[storeKey]);
         }
       } catch (e) {
         console.error(`Failed to load ${title} config:`, e);
