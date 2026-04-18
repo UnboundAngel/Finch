@@ -241,7 +241,8 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/components/chat/ChatArea.tsx:129`
 - **Fix Direction**: Use a stable unique ID as the key — add an `id` field (UUID or timestamp-based) to the `Message` type and generate it at message creation time in `handleSend`.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
+- **Note**: Fix required three files — `src/types/chat.ts` (added `id?: string` to Message), `src/components/dashboard/Dashboard.tsx` (generate `crypto.randomUUID()` for user and AI messages in `handleSend`), and `ChatArea.tsx` (use `msg.id ?? index` as key). All are in scope per the fix direction.
 
 ---
 

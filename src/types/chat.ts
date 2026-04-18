@@ -11,6 +11,7 @@ export type MessageMetadata = {
 };
 
 export type Message = {
+  id?: string;
   role: 'user' | 'ai';
   content: string;
   reasoning?: string;

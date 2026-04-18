@@ -126,7 +126,7 @@ export const ChatArea = memo(({
           {/* Messages */}
           {messages.map((msg, index) => (
             <MessageBubble
-              key={index}
+              key={msg.id ?? index}
               msg={msg}
               selectedModel={selectedModel}
               isDark={isDark}

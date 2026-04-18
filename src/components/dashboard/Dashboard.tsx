@@ -135,17 +135,18 @@ function DashboardContent({
     const userMessage = input.trim();
     setInput('');
     setResearchEvents([]);
-    const updatedMessages: Message[] = [...session.messages, { role: 'user', content: userMessage }];
+    const updatedMessages: Message[] = [...session.messages, { id: crypto.randomUUID(), role: 'user', content: userMessage }];
     session.setMessages(updatedMessages);
     await updateActiveSessionInList(updatedMessages);
     setIsThinking(true);
 
     let isFirstToken = true;
+    const aiMessageId = crypto.randomUUID();
     streamMessage(userMessage, selectedModel, selectedProvider, (token) => {
       if (isFirstToken) {
         setIsThinking(false);
         isFirstToken = false;
-        session.setMessages(prev => [...prev, { role: 'ai', content: token, streaming: true, metadata: { timestamp: new Date(), model: selectedModel } }]);
+        session.setMessages(prev => [...prev, { id: aiMessageId, role: 'ai', content: token, streaming: true, metadata: { timestamp: new Date(), model: selectedModel } }]);
       } else {
         session.setMessages(prev => {
           const last = prev[prev.length - 1];
