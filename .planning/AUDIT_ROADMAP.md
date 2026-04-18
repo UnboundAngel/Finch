@@ -105,7 +105,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useChatPersistence.ts:115-133`
 - **Fix Direction**: Trim the effect's dependency array to exactly the values it actually persists: `[enterToSend, selectedModel, selectedProvider]`; move profile and background saves to their own dedicated effects with correct deps.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

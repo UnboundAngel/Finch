@@ -130,5 +130,5 @@ export const useChatPersistence = ({
     };
 
     saveSettings();
-  }, [profileName, profileEmail, enterToSend, selectedModel, selectedProvider, customBgLight, customBgDark]);
+  }, [enterToSend, selectedModel, selectedProvider]);
 };
