@@ -45,7 +45,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useAIStreaming.ts:160-168`
 - **Fix Direction**: Remove the explicit `enable_web_search: params?.enableWebSearch` key from the invoke payload; let Tauri's camelCase→snake_case auto-conversion handle `enableWebSearch` from `...params` alone.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

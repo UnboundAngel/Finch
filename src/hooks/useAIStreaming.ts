@@ -163,7 +163,6 @@ export function useAIStreaming() {
         provider,
         conversationHistory: conversationHistory,
         channel,
-        enable_web_search: params?.enableWebSearch,
         ...params
       });
 
