@@ -35,6 +35,7 @@ import {
 import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
 import { getChatIcon } from '../../lib/chatHelpers';
+import { useProfileStore } from '@/src/store';
 
 interface ChatSidebarProps {
   recentChats: ChatSession[];
@@ -97,11 +98,15 @@ export const ChatSidebar = ({
   contrast,
   isPinkMode,
 }: ChatSidebarProps) => {
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const setActiveProfile = useProfileStore(state => state.setActiveProfile);
+  const activeProfile = useProfileStore(state => state.activeProfile);
 
-  const isAiNamed = (title: string) => {
-    const aiNames = ['Claude', 'GPT', 'Gemini', 'Llama', 'DeepSeek', 'Mistral'];
-    return aiNames.some(name => title.toLowerCase().includes(name.toLowerCase()));
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to switch profiles? This will end your current session.')) {
+      localStorage.removeItem('finch_remembered_profile');
+      setActiveProfile(null);
+      toast.success('Switched profile');
+    }
   };
 
   return (
@@ -278,8 +283,8 @@ export const ChatSidebar = ({
                 })}
               >
                 <Avatar className="h-8 w-8 rounded-lg border border-muted-foreground/20">
-                  <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" alt="User" />
-                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary">U</AvatarFallback>
+                  <AvatarImage src={activeProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces"} alt="User" />
+                  <AvatarFallback className="rounded-lg bg-primary/10 text-primary">{profileName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start flex-1 overflow-hidden">
                   <span className="text-sm font-medium truncate w-full text-left">{profileName}</span>
@@ -294,21 +299,15 @@ export const ChatSidebar = ({
           <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-muted-foreground/20">
             <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => setIsProfileOpen(true)}>
               <User className="h-4 w-4 text-muted-foreground" />
-              <span>Profile</span>
+              <span>Profile Settings</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => setIsSettingsOpen(true)}>
               <Settings className="h-4 w-4 text-muted-foreground" />
-              <span>Settings</span>
+              <span>App Settings</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
-              setRecentChats([]);
-              setMessages([]);
-              setProfileName('Jane Doe');
-              setProfileEmail('jane.doe@example.com');
-              toast.success('Logged out');
-            }}>
+            <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg text-destructive focus:text-destructive focus:bg-destructive/10" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
-              <span>Log out</span>
+              <span>Switch Profile</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

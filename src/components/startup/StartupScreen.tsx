@@ -41,11 +41,20 @@ export default function StartupScreen() {
 
   const handleDeleteProfile = async (id: string) => {
     await deleteProfile(id);
+    const rememberedId = localStorage.getItem('finch_remembered_profile');
+    if (rememberedId === id) {
+      localStorage.removeItem('finch_remembered_profile');
+    }
     // State logic for activeProfile is handled in slice
   };
 
-  const handleSelectProfile = (profile: Profile) => {
+  const handleSelectProfile = (profile: Profile, remember: boolean) => {
     resetChat();
+    if (remember) {
+      localStorage.setItem('finch_remembered_profile', profile.id);
+    } else {
+      localStorage.removeItem('finch_remembered_profile');
+    }
     setActiveProfile(profile);
   };
 

@@ -23,7 +23,7 @@ function ProfileCard({
   profile: Profile, 
   isManaging: boolean, 
   onEditProfile: (profile: Profile) => void,
-  onSelectProfile: (profile: Profile) => void
+  onSelectProfile: (profile: Profile, remember: boolean) => void
 }) {
   const [remember, setRemember] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -35,7 +35,7 @@ function ProfileCard({
     <motion.div 
       whileHover={{ scale: 1.05 }}
       className="flex flex-col items-center group cursor-pointer relative"
-      onClick={() => isManaging ? onEditProfile(profile) : onSelectProfile(profile)}
+      onClick={() => isManaging ? onEditProfile(profile) : onSelectProfile(profile, remember)}
       style={{
         willChange: 'transform',
         transformStyle: 'preserve-3d',

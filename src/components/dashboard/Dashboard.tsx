@@ -229,6 +229,7 @@ export function Dashboard() {
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
   const activeProfile = useProfileStore(state => state.activeProfile);
   const saveProfile = useProfileStore(state => state.saveProfile);
+  const setActiveProfile = useProfileStore(state => state.setActiveProfile);
 
   const profileName = activeProfile?.name || 'Jane Doe';
   const profileEmail = activeProfile?.email || '';
@@ -239,6 +240,14 @@ export function Dashboard() {
   const setProfileEmail = (email: string) => activeProfile && saveProfile({ ...activeProfile, email });
   const setCustomBgLight = (path: string) => activeProfile && saveProfile({ ...activeProfile, customBgLight: path });
   const setCustomBgDark = (path: string) => activeProfile && saveProfile({ ...activeProfile, customBgDark: path });
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to switch profiles? This will end your current session.')) {
+      localStorage.removeItem('finch_remembered_profile');
+      setActiveProfile(null);
+      toast.success('Switched profile');
+    }
+  };
 
   const [enterToSend, setEnterToSend] = useState(true);
   const isDark = useChatStore(state => state.isDark);
@@ -263,7 +272,7 @@ export function Dashboard() {
     <TooltipProvider>
       <ModalProvider 
         profileProps={{
-          profileName, setProfileName, profileEmail, setProfileEmail
+          profileName, setProfileName, profileEmail, setProfileEmail, onLogout: handleLogout
         }} 
         settingsProps={{
           isDark, onThemeChange: handleThemeChange, enterToSend, setEnterToSend,

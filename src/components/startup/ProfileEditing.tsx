@@ -114,7 +114,11 @@ export default function ProfileEditing({
 
           <div className="flex gap-4 w-full mt-auto">
             <button 
-              onClick={() => onDelete(profile.id)}
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete "${profile.name}"? This action cannot be undone.`)) {
+                  onDelete(profile.id);
+                }
+              }}
               className="flex-1 py-3 rounded-full border border-destructive/50 text-destructive font-medium hover:bg-destructive/10 transition-colors flex items-center justify-center gap-2"
             >
               <Trash2 className="w-4 h-4" /> Delete

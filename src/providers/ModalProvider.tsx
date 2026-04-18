@@ -46,6 +46,7 @@ export function ModalProvider({
       <ProfileDialog
         isOpen={isProfileOpen}
         onOpenChange={setIsProfileOpen}
+        onLogout={profileProps.onLogout}
         {...profileProps}
       />
       <SettingsDialog
