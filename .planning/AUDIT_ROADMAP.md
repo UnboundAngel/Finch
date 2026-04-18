@@ -186,7 +186,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useModelPolling.ts:26-29`
 - **Fix Direction**: Check the actual provider string values emitted by the backend; replace the `startsWith('local_')` prefix check with an explicit set check: `['lmstudio', 'ollama'].includes(selectedProvider)`.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 

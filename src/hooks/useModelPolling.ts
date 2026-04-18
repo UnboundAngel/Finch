@@ -24,7 +24,7 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
   }, []);
 
   useEffect(() => {
-    if (!selectedModel || !selectedProvider.startsWith('local_')) {
+    if (!selectedModel || !['lmstudio', 'ollama'].includes(selectedProvider)) {
       setIsModelLoaded(true);
       return;
     }
