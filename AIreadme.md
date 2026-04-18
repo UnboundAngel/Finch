@@ -1,25 +1,24 @@
 # Finch AI Instructions
 
-## 🚨 DUAL-REPOSITORY SAFETY PROTOCOL (STRICT)
-This project exists in two states: **Public** (Frontend only) and **Private** (Full code).
-**NEVER USE `git add .` OR `git commit -a` IN THIS PROJECT.**
+## 🚨 DUAL-REPOSITORY SAFETY PROTOCOL (CRITICAL)
+This project exists in two states: **Public** (Frontend only) and **Private** (Full code). To prevent accidental leaking of the backend source code, follow these steps BEFORE any git operation:
 
-1. **Verify Remote**: Run `git remote -v`.
-   - `origin`: Public (`Finch`) -> **MUST** use `.gitignore.public`.
-   - `full-repo`: Private (`Finch_full`) -> **MAY** use `.gitignore.private`.
+> **⛔ PUBLIC REPO PUSHES SUSPENDED**
+> Pushing to `origin` (public) is **disabled for the current development cycle**.
+> All commits go to `full-repo` (private) only: `git push full-repo linux:main`.
+> Do not push to `origin` under any circumstances until this notice is removed.
 
-2. **Verify Ignore State**:
-   - For Public: `cp .gitignore.public .gitignore`
-   - For Private: `cp .gitignore.private .gitignore`
+1. **Verify Remote**: Check `git remote -v` to see where you are pushing.
+   - `origin`: Public (`Finch`) -> **SUSPENDED. DO NOT PUSH.**
+   - `full-repo`: Private (`Finch_full`) -> **ALL pushes go here.**
 
-3. **Explicit Staging ONLY**:
-   - Use `git status` to see what is changed.
-   - Stage files individually: `git add src/components/...`
-   - **NEVER** stage `src-tauri/` when pushing to `origin`.
+2. **Sync .gitignore** (for private pushes only):
+   - `cp .gitignore.private .gitignore` before staging.
+   - Restore with `cp .gitignore.public .gitignore` after pushing (default safe state).
 
-4. **Public Push Sanity Check**:
-   - Before `git push origin`, run `git ls-files src-tauri/`.
-   - If it returns ANY files, you are about to leak the backend. Stop and run `git rm -r --cached src-tauri/`.
+3. **Validation**: Always run `git status` before staging. Confirm `src-tauri/` is visible (private) or hidden (public). Currently always expect private.
+
+**NEVER push to `origin` while this notice is present.**
 
 ---
 
@@ -102,6 +101,6 @@ Current Focus: **Phase 13: Voice Transcription (Local-First)**. Implementation o
 - Read STATE.md before starting any task.
 - Surgical edits only. Never output full file contents. Use str_replace or equivalent targeted edits.
 - Never rewrite a file that wasn't explicitly scoped.
-- Push to GitHub after every completed task.
+- **Push to `full-repo` (private) only**: `git push full-repo linux:main`. Public repo pushes are suspended — see Section 1.
 - The GSD planning system (get-shit-done-cc) is installed globally. STATE.md is the source of truth.
 - When uncertain about a file's role, read it — do not assume.
