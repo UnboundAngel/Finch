@@ -101,10 +101,9 @@ export const useChatPersistence = ({
         }
 
         setRecentChats(chats);
+        isLoaded.current = true;
       } catch (e) {
         console.error('Failed to load persisted data:', e);
-      } finally {
-        isLoaded.current = true;
       }
     };
 

@@ -115,7 +115,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useChatPersistence.ts:107`
 - **Fix Direction**: Move `isLoaded.current = true` into the `try` block, after `setRecentChats(chats)` succeeds; keep it out of `finally` so a failed load leaves `isLoaded` false and blocks reactive saves.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 
