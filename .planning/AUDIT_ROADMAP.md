@@ -12,7 +12,7 @@ roadmap_version: 1.0
 ## HOW TO USE
 
 ### For Agents
-Read this file at the start of every session before touching any code. The fix waves are ordered by dependency; do not begin a wave until all findings in prior waves are marked `done`. For each finding, check the `status` field: only proceed if `status: open`. When you complete a finding, update its `status` field to `done` in this file and commit the change alongside your code edit. Do not begin a fix if `status` is anything other than `open`. After completing an entire wave, push to GitHub before starting the next wave. Scope each edit surgically to the exact file and line range listed — do not refactor surrounding code unless it is the explicit fix direction. If a finding's fix requires touching a file not listed under that finding, stop and flag it to the human before proceeding.
+Read this file at the start of every session before touching any code. The fix waves are ordered by dependency; do not begin a wave until all findings in prior waves are marked `done`. For each finding, check the `status` field: only proceed if `status: open`. When you complete a finding, update its `status` field to `done` in this file and commit the change alongside your code edit. Do not begin a fix if `status` is anything other than `open`. After completing an entire wave, run `cp .gitignore.private .gitignore && git push full-repo linux:main` before starting the next wave — public repo pushes are suspended (see AIreadme.md Section 1). Scope each edit surgically to the exact file and line range listed — do not refactor surrounding code unless it is the explicit fix direction. If a finding's fix requires touching a file not listed under that finding, stop and flag it to the human before proceeding.
 
 ### For Humans
 This document tracks 20 specific bugs and data-integrity issues found during a cross-layer audit of the Finch codebase (frontend hooks, Zustand store, capability manifest, and component state). Findings are grouped into dependency-ordered waves so that lower-level bugs (capability gaps, IPC contract issues) are fixed before higher-level consumer bugs (token counting, stats display) that depend on them. Each entry includes the exact file and line so you can review changes in context. Deferred items and future phase flags are at the bottom.
@@ -30,9 +30,9 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 
 #### Finding #10
 - **Severity**: Critical
-- **Problem**: Capability manifest is missing permissions for `update_search_config`, `get_transcription_status`, and any commands added after Phase 12, causing silent runtime failures when those commands are invoked.
-- **File**: `src-tauri/capabilities/default.json` (full file, lines 1–53)
-- **Fix Direction**: Audit every `invoke()` call in the frontend against the permissions list; add any missing `allow-*` entries and mirror them in `finch.toml`.
+- **Problem**: The capability manifest has not been audited against the full set of `invoke()` calls in the frontend. Tauri v2 silently denies unlisted commands at runtime with no console error visible to the user — any command added after Phase 12 that is not in `default.json` AND `finch.toml` fails invisibly. The specific commands to check are every `invoke()` in `src/hooks/`, `src/components/`, and `src/store/` — cross-reference each one against the permissions list.
+- **File**: `src-tauri/capabilities/default.json` (full file, lines 1–53) + `src-tauri/permissions/` directory
+- **Fix Direction**: Run `grep -r 'invoke(' src/` and extract all command names; for each, verify a matching `allow-<command-name>` entry exists in `default.json` AND a corresponding `.toml` file exists in `src-tauri/permissions/`. Add any that are missing.
 - **Agent**: Antigravity
 - **Status**: open
 
@@ -287,7 +287,7 @@ The following issues surfaced during this audit that point to necessary future w
 
 - **Surgical edits only.** Do not rewrite a file. Do not touch lines outside the finding's listed range unless the fix explicitly requires it.
 - **One finding per commit.** Each commit message must reference the finding number: `fix: #N — <one-line description>`.
-- **Push to GitHub after each complete wave**, not after individual findings. Exception: if a finding in a wave is marked `blocked`, push the completed findings and note the block in this file before stopping.
+- **Push to private repo after each complete wave**: `cp .gitignore.private .gitignore && git push full-repo linux:main`. Do NOT push to `origin`. Exception: if a finding in a wave is marked `blocked`, push completed findings and note the block in this file before stopping.
 - **Update this file's status field** (`status: open` → `status: done`) in the same commit as the code fix.
 - **Do not start a fix if `status` is not `open`.** If it is `done`, skip. If it is `blocked`, read the block note and assess before proceeding.
 - **Do not touch files outside the listed location.** If a fix requires changes to a second file, add a note to the finding and stop for human review.
