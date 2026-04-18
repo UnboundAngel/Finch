@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ export interface DownloadProgressEvent {
 }
 
 export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) => void) => {
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const status = useChatStore(state => state.voiceStatus);
   const setStatus = useChatStore(state => state.setVoiceStatus);
@@ -35,10 +36,8 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
 
   // Polling for transcription result
   useEffect(() => {
-    let pollInterval: NodeJS.Timeout | null = null;
-
     if (status === 'transcribing') {
-      pollInterval = setInterval(async () => {
+      pollIntervalRef.current = setInterval(async () => {
         try {
           const currentStatus = await invoke<any>('get_transcription_status');
           if (currentStatus.status === 'Completed') {
@@ -47,11 +46,13 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
               onTranscriptionComplete(text);
             }
             setStatus('idle');
-            if (pollInterval) clearInterval(pollInterval);
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
           } else if (currentStatus.status === 'Error') {
             toast.error(`Transcription failed: ${currentStatus.data}`);
             setStatus('idle');
-            if (pollInterval) clearInterval(pollInterval);
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
           }
         } catch (err) {
           console.error("Failed to poll transcription status:", err);
@@ -60,7 +61,8 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
     }
 
     return () => {
-      if (pollInterval) clearInterval(pollInterval);
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     };
   }, [status, onTranscriptionComplete]);
 

@@ -196,7 +196,7 @@ This document tracks 20 specific bugs and data-integrity issues found during a c
 - **File**: `src/hooks/useVoiceTranscription.ts:36-64`
 - **Fix Direction**: Move `pollInterval` into a `useRef<NodeJS.Timeout | null>` so it persists across re-renders; clear the ref in the cleanup function.
 - **Agent**: Antigravity
-- **Status**: open
+- **Status**: done
 
 ---
 
