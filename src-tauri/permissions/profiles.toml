@@ -1,0 +1,14 @@
+[[permission]]
+identifier = "allow-get-profiles"
+description = "Allows the get_profiles command"
+commands.allow = ["get_profiles"]
+
+[[permission]]
+identifier = "allow-save-profile"
+description = "Allows the save_profile command"
+commands.allow = ["save_profile"]
+
+[[permission]]
+identifier = "allow-delete-profile"
+description = "Allows the delete_profile command"
+commands.allow = ["delete_profile"]
