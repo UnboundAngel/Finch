@@ -54,7 +54,7 @@ These issues break the core value proposition of large context models and cause 
 - **File**: `src-tauri/src/session.rs` (lines 79-82)
 - **Problem**: `save_chat` uses `std::fs::write` to save the chat JSON payload. For massive 100k+ token conversations, `serde_json::to_string_pretty` and synchronous disk I/O will block the Tokio worker thread, causing the Tauri backend to freeze during saves.
 - **Fix Direction**: Switch to `tokio::fs::write` and wrap the serialization in `tokio::task::spawn_blocking` to keep the async executor responsive.
-- **Status**: open
+- **Status**: done
 
 ### W9-3 — Missing Checksum Validation for Models
 - **Severity**: Low

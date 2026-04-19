@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use std::fs;
+use tokio::fs as tokio_fs;
 use uuid::Uuid;
 use chrono::Utc;
 
@@ -90,8 +91,11 @@ pub async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<Strin
     let id = chat.id.clone();
     let chat_path = chats_dir.join(format!("{}.json", id));
     
-    let json = serde_json::to_string_pretty(&chat).map_err(|e| e.to_string())?;
-    fs::write(&chat_path, json).map_err(|e| format!("Failed to write chat file to {:?}: {}", chat_path, e))?;
+    let json = tokio::task::spawn_blocking(move || serde_json::to_string_pretty(&chat))
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    tokio_fs::write(&chat_path, json).await.map_err(|e| format!("Failed to write chat file to {:?}: {}", chat_path, e))?;
 
     Ok(id)
 }
