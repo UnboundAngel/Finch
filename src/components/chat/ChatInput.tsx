@@ -129,13 +129,17 @@ export const ChatInput = ({
 
   const handleAttachClick = async () => {
     if (isTauri()) {
-      const result = await openFilePicker({
-        multiple: false,
-        filters: [{ name: 'Images & Documents', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'] }],
-      });
-      if (result && typeof result === 'string') {
-        const parts = result.replace(/\\/g, '/').split('/');
-        setAttachedFile({ name: parts[parts.length - 1], path: result });
+      try {
+        const result = await openFilePicker({
+          multiple: false,
+          filters: [{ name: 'Images & Documents', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'] }],
+        });
+        if (result && typeof result === 'string') {
+          const parts = result.replace(/\\/g, '/').split('/');
+          setAttachedFile({ name: parts[parts.length - 1], path: result });
+        }
+      } catch {
+        // Dialog system error — silently ignore
       }
     }
   };
