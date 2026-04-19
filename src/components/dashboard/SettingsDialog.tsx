@@ -13,7 +13,6 @@ import { Message, ChatSession } from '../../types/chat';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { invoke } from '@tauri-apps/api/core';
 import { Cloud, Cpu, Sparkles, Zap, Key, Globe, RefreshCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ProviderSection } from './ProviderSection';
@@ -37,9 +36,11 @@ interface SettingsDialogProps {
   onThemeChange: (checked: boolean) => void;
   enterToSend: boolean;
   setEnterToSend: (enter: boolean) => void;
-  setMessages: (messages: Message[]) => void;
+  setMessages?: (messages: Message[]) => void;
   setRecentChats: (chats: ChatSession[]) => void;
-  setActiveSessionId: (id: string | null) => void;
+  setActiveSessionId?: (id: string | null) => void;
+  onOpenWallpaperPicker?: (mode: 'light' | 'dark') => void;
+  onClearWallpapers?: () => void | Promise<void>;
 }
 
 export const SettingsDialog = ({
@@ -52,6 +53,8 @@ export const SettingsDialog = ({
   setMessages,
   setRecentChats,
   setActiveSessionId,
+  onOpenWallpaperPicker,
+  onClearWallpapers,
 }: SettingsDialogProps) => {
   const [activeTab, setActiveTab] = React.useState('general');
 
@@ -112,14 +115,7 @@ export const SettingsDialog = ({
                         variant="outline" 
                         size="sm" 
                         className="rounded-xl flex-1 h-9 gap-2"
-                        onClick={async () => {
-                          try {
-                            await invoke('set_background_image', { mode: 'light' });
-                            toast.success('Light mode background updated');
-                          } catch (e) {
-                            if (e !== "No file selected") toast.error(`Error: ${e}`);
-                          }
-                        }}
+                        onClick={() => onOpenWallpaperPicker?.('light')}
                       >
                         <Sparkles className="h-4 w-4 text-amber-500" />
                         Set Light BG
@@ -128,14 +124,7 @@ export const SettingsDialog = ({
                         variant="outline" 
                         size="sm" 
                         className="rounded-xl flex-1 h-9 gap-2"
-                        onClick={async () => {
-                          try {
-                            await invoke('set_background_image', { mode: 'dark' });
-                            toast.success('Dark mode background updated');
-                          } catch (e) {
-                            if (e !== "No file selected") toast.error(`Error: ${e}`);
-                          }
-                        }}
+                        onClick={() => onOpenWallpaperPicker?.('dark')}
                       >
                         <Zap className="h-4 w-4 text-primary" />
                         Set Dark BG
@@ -144,16 +133,7 @@ export const SettingsDialog = ({
                         variant="ghost" 
                         size="sm" 
                         className="rounded-xl h-9 px-3 text-muted-foreground hover:text-destructive transition-colors"
-                        onClick={async () => {
-                          try {
-                            const config: any = await invoke('get_provider_config');
-                            const cleanConfig = { ...config, custom_bg_light: null, custom_bg_dark: null };
-                            await invoke('save_provider_config', { config: cleanConfig });
-                            toast.success('Backgrounds cleared');
-                          } catch (e) {
-                            toast.error(`Error: ${e}`);
-                          }
-                        }}
+                        onClick={() => void onClearWallpapers?.()}
                       >
                         Clear
                       </Button>
@@ -204,9 +184,9 @@ export const SettingsDialog = ({
                           <AlertDialogAction 
                             className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => {
-                              setMessages([]);
+                              setMessages?.([]);
                               setRecentChats([]);
-                              setActiveSessionId(null);
+                              setActiveSessionId?.(null);
                               toast.error('All chat history cleared');
                               onOpenChange(false);
                             }}

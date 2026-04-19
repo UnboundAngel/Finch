@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { Message, ChatSession } from '../../types/chat';
+import type { Message, ChatSession } from '../../types/chat';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
 import { useKeyboardShortcuts } from '@/src/hooks/useKeyboardShortcuts';
-import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core';
 import { useModelParams, useChatStore, useProfileStore } from '@/src/store';
 import { useInactivityEject } from '@/src/hooks/useInactivityEject';
 import { useModelPolling } from '@/src/hooks/useModelPolling';
@@ -16,7 +16,8 @@ import { DashboardHeader } from './DashboardHeader';
 import { DashboardMain } from './DashboardMain';
 import { BackgroundPlus } from '@/components/ui/background-plus';
 import { fetchModelsMap, inferProviderForModel } from '@/src/lib/availableModels';
-
+import { WallpaperPickerDialog } from '@/src/components/profile/WallpaperPickerDialog';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 function DashboardContent({
   recentChats, setRecentChats,
   profileName, setProfileName,
@@ -24,7 +25,9 @@ function DashboardContent({
   customBgLight, setCustomBgLight,
   customBgDark, setCustomBgDark,
   enterToSend, setEnterToSend,
-  handleThemeChange
+  handleThemeChange,
+  openWallpaperPicker,
+  chatSessionActionsRef,
 }: any) {
   const isDark = useChatStore(state => state.isDark);
   const setIsIncognito = useChatStore(state => state.setIsIncognito);
@@ -112,6 +115,13 @@ function DashboardContent({
     recentChats, setRecentChats
   });
 
+  useEffect(() => {
+    chatSessionActionsRef.current = {
+      setMessages: session.setMessages,
+      setActiveSessionId: session.setActiveSessionId,
+    };
+  }, [chatSessionActionsRef, session.setMessages, session.setActiveSessionId]);
+
   const stableSetInput = useCallback((val: string | ((prev: string) => string)) => {
     setInput(val);
     handleInputChange();
@@ -137,16 +147,8 @@ function DashboardContent({
     onSearchFocus: () => document.getElementById('sidebar-search-input')?.focus()
   });
 
-  const handleChangeBackground = async () => {
-    try {
-      const mode = isDark ? 'dark' : 'light';
-      const path = await invoke<string>('set_background_image', { mode });
-      if (mode === 'light') setCustomBgLight(path);
-      else setCustomBgDark(path);
-      toast.success('Background updated');
-    } catch (err) {
-      if (err !== 'No file selected') toast.error('Failed to set background');
-    }
+  const handleChangeBackground = () => {
+    openWallpaperPicker(isDark ? 'dark' : 'light');
   };
 
   const updateActiveSessionInList = async (updatedMessages: Message[]) => {
@@ -233,7 +235,15 @@ function DashboardContent({
           ? 'bg-[#fff5f7] text-foreground is-pink-mode' 
           : 'bg-background text-foreground'}`}
       style={{
-        ...(!isIncognito && (isDark ? customBgDark : customBgLight) ? { backgroundImage: `url(${convertFileSrc(isDark ? customBgDark : customBgLight)})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' } : {}),
+        ...(!isIncognito && (isDark ? customBgDark : customBgLight)
+          ? {
+              backgroundImage: `url(${resolveMediaSrc(isDark ? customBgDark : customBgLight)})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundAttachment: 'fixed',
+            }
+          : {}),
         ...(showPinkMode ? { background: 'linear-gradient(to bottom, #fff5f7, #ffe4e8)' } : {})
       }}
     >
@@ -283,6 +293,13 @@ function DashboardContent({
 
 export function Dashboard() {
   const [recentChats, setRecentChats] = useState<ChatSession[]>([]);
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [wallpaperMode, setWallpaperMode] = useState<'light' | 'dark'>('dark');
+  const chatSessionActionsRef = useRef<{
+    setMessages: (messages: Message[]) => void;
+    setActiveSessionId: (id: string | null) => void;
+  } | null>(null);
+
   const activeProfile = useProfileStore(state => state.activeProfile);
   const saveProfile = useProfileStore(state => state.saveProfile);
   const setActiveProfile = useProfileStore(state => state.setActiveProfile);
@@ -296,6 +313,25 @@ export function Dashboard() {
   const setProfileEmail = (email: string) => activeProfile && saveProfile({ ...activeProfile, email });
   const setCustomBgLight = (path: string) => activeProfile && saveProfile({ ...activeProfile, customBgLight: path });
   const setCustomBgDark = (path: string) => activeProfile && saveProfile({ ...activeProfile, customBgDark: path });
+
+  const openWallpaperPicker = (mode: 'light' | 'dark') => {
+    setWallpaperMode(mode);
+    setWallpaperOpen(true);
+  };
+
+  const handleClearWallpapers = async () => {
+    if (!activeProfile) return;
+    try {
+      await saveProfile({
+        ...activeProfile,
+        customBgLight: undefined,
+        customBgDark: undefined,
+      });
+      toast.success('Backgrounds cleared');
+    } catch (e) {
+      toast.error(`Error: ${e}`);
+    }
+  };
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to switch profiles? This will end your current session.')) {
@@ -332,9 +368,24 @@ export function Dashboard() {
         }} 
         settingsProps={{
           isDark, onThemeChange: handleThemeChange, enterToSend, setEnterToSend,
-          setRecentChats
+          setRecentChats,
+          setMessages: (messages: Message[]) =>
+            chatSessionActionsRef.current?.setMessages(messages),
+          setActiveSessionId: (id: string | null) =>
+            chatSessionActionsRef.current?.setActiveSessionId(id),
+          onOpenWallpaperPicker: openWallpaperPicker,
+          onClearWallpapers: handleClearWallpapers,
         }} 
       >
+        <WallpaperPickerDialog
+          open={wallpaperOpen}
+          onOpenChange={setWallpaperOpen}
+          mode={wallpaperMode}
+          onApply={(path) => {
+            if (wallpaperMode === 'light') setCustomBgLight(path);
+            else setCustomBgDark(path);
+          }}
+        />
         <DashboardContent 
           recentChats={recentChats} setRecentChats={setRecentChats}
           profileName={profileName} setProfileName={setProfileName}
@@ -343,6 +394,8 @@ export function Dashboard() {
           customBgDark={customBgDark} setCustomBgDark={setCustomBgDark}
           enterToSend={enterToSend} setEnterToSend={setEnterToSend}
           handleThemeChange={handleThemeChange}
+          openWallpaperPicker={openWallpaperPicker}
+          chatSessionActionsRef={chatSessionActionsRef}
         />
       </ModalProvider>
     </TooltipProvider>

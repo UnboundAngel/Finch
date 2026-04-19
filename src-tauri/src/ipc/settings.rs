@@ -2,15 +2,22 @@ use tauri::{AppHandle, command, Manager};
 use crate::types::{ProviderConfig, HardwareInfo};
 use tauri_plugin_store::StoreExt;
 use std::fs;
+use std::path::{Component, PathBuf};
 use sysinfo::System;
+use uuid::Uuid;
 
-#[command]
-pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<String, String> {
+fn pick_and_copy_to_subdir(
+    handle: &AppHandle,
+    subdir: &str,
+    filter_label: &str,
+    extensions: &[&str],
+) -> Result<String, String> {
     use tauri_plugin_dialog::DialogExt;
-    
-    let file_path_enum = handle.dialog()
+
+    let file_path_enum = handle
+        .dialog()
         .file()
-        .add_filter("Images", &["png", "jpg", "jpeg", "gif", "webp"])
+        .add_filter(filter_label, extensions)
         .blocking_pick_file()
         .ok_or("No file selected")?;
 
@@ -20,19 +27,74 @@ pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<St
     };
 
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
-    let bg_dir = app_dir.join("backgrounds");
-    if !bg_dir.exists() {
-        fs::create_dir_all(&bg_dir).map_err(|e| e.to_string())?;
+    let dir = app_dir.join(subdir);
+    if !dir.exists() {
+        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     }
 
-    let file_name = file_path.file_name().ok_or("Invalid file name")?;
-    let dest_path = bg_dir.join(file_name);
-    
+    let ext = file_path
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("bin");
+    let dest_name = format!("{}.{}", Uuid::new_v4(), ext);
+    let dest_path = dir.join(dest_name);
+
     fs::copy(&file_path, &dest_path).map_err(|e| e.to_string())?;
 
-    let dest_path_str = dest_path.to_string_lossy().to_string();
+    Ok(dest_path.to_string_lossy().to_string())
+}
 
-    Ok(dest_path_str)
+#[command]
+pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<String, String> {
+    pick_and_copy_to_subdir(
+        &handle,
+        "backgrounds",
+        "Images",
+        &["png", "jpg", "jpeg", "gif", "webp"],
+    )
+}
+
+/// kind: `avatar_static` | `avatar_gif` | `background`
+#[command]
+pub async fn import_user_media(handle: AppHandle, kind: String) -> Result<String, String> {
+    match kind.as_str() {
+        "avatar_static" => pick_and_copy_to_subdir(&handle, "avatars", "Images", &["png", "jpg", "jpeg", "webp"]),
+        "avatar_gif" => pick_and_copy_to_subdir(&handle, "avatars", "GIF", &["gif"]),
+        "background" => pick_and_copy_to_subdir(
+            &handle,
+            "backgrounds",
+            "Images",
+            &["png", "jpg", "jpeg", "gif", "webp"],
+        ),
+        _ => Err("Invalid import kind".into()),
+    }
+}
+
+#[command]
+pub async fn remove_imported_media(handle: AppHandle, path: String) -> Result<(), String> {
+    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    let target = PathBuf::from(&path);
+    let target_canon = target
+        .canonicalize()
+        .map_err(|_| "File not found or inaccessible".to_string())?;
+    let app_canon = app_dir
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
+    if !target_canon.starts_with(&app_canon) {
+        return Err("Path outside app data directory".into());
+    }
+    let rel = target_canon
+        .strip_prefix(&app_canon)
+        .map_err(|_| "Invalid path".to_string())?;
+    let ok_dir = match rel.components().next() {
+        Some(Component::Normal(s)) => s == "backgrounds" || s == "avatars",
+        _ => false,
+    };
+    if !ok_dir {
+        return Err("Only backgrounds and avatars can be removed".into());
+    }
+    let _ = fs::remove_file(&target_canon);
+    Ok(())
 }
 
 #[command]

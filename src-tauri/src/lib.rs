@@ -27,6 +27,7 @@ pub fn run() {
             let dirs = [
                 app_dir.join("chats"),
                 app_dir.join("backgrounds"),
+                app_dir.join("avatars"),
                 app_dir.join("models").join("whisper"),
             ];
 
@@ -49,6 +50,8 @@ pub fn run() {
             ipc::settings::save_provider_config,
             ipc::settings::get_provider_config,
             ipc::settings::set_background_image,
+            ipc::settings::import_user_media,
+            ipc::settings::remove_imported_media,
             ipc::settings::update_search_config,
             ipc::settings::get_hardware_info,
             ipc::models::list_local_models,

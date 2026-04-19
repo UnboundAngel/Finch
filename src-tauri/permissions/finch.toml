@@ -74,6 +74,16 @@ description = "Allows the set_background_image command"
 commands.allow = ["set_background_image"]
 
 [[permission]]
+identifier = "allow-import-user-media"
+description = "Allows importing avatar and background media from disk"
+commands.allow = ["import_user_media"]
+
+[[permission]]
+identifier = "allow-remove-imported-media"
+description = "Allows removing an imported avatar or background file under app data"
+commands.allow = ["remove_imported_media"]
+
+[[permission]]
 identifier = "allow-get-model-loaded-status"
 description = "Allows the get_model_loaded_status command"
 commands.allow = ["get_model_loaded_status"]

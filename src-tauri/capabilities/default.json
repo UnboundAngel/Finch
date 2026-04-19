@@ -33,6 +33,8 @@
     "allow-delete-chat",
     "allow-eject-model",
     "allow-set-background-image",
+    "allow-import-user-media",
+    "allow-remove-imported-media",
     "allow-get-model-loaded-status",
     "allow-get-hardware-info",
     "allow-get-context-intelligence",

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { getImageLuminance } from '../lib/luminance';
 
 interface UseDynamicBackgroundProps {
@@ -47,7 +47,7 @@ export function useDynamicBackground({
     }
 
     try {
-      const imageUrl = convertFileSrc(activeBg);
+      const imageUrl = resolveMediaSrc(activeBg);
       const [headerLum, sidebarLum, mainAreaLum, rightSidebarLum] = await Promise.all([
         getImageLuminance(imageUrl, 'top-right'),
         getImageLuminance(imageUrl, 'left-edge'),

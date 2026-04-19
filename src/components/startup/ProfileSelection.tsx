@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PlusCircle, Pencil, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Profile } from '../../types/chat';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 
 function Tooltip({ children, text }: { children: React.ReactNode, text: string }) {
   return (
@@ -44,7 +45,7 @@ function ProfileCard({
     >
       <div className="relative w-24 h-24 md:w-36 md:h-36 rounded-full overflow-hidden border-2 border-transparent group-hover:border-border transition-all duration-300">
         <img 
-          src={profile.avatarUrl} 
+          src={resolveMediaSrc(profile.avatarUrl)} 
           alt={profile.name} 
           className={`w-full h-full object-cover ${isManaging ? 'opacity-50' : ''}`}
           referrerPolicy="no-referrer"

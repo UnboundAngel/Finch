@@ -38,9 +38,12 @@ export const createProfileSlice: StateCreator<ProfileState, [], [], ProfileState
   saveProfile: async (profile) => {
     try {
       await invoke('save_profile', { profile });
-      // Reload profiles to keep state in sync
       const profiles = await invoke<Profile[]>('get_profiles');
-      set({ profiles });
+      const { activeProfile } = get();
+      const merged = profiles.find((p) => p.id === profile.id) ?? profile;
+      const nextActive =
+        activeProfile?.id === profile.id ? merged : activeProfile;
+      set({ profiles, activeProfile: nextActive });
     } catch (err) {
       console.error('Failed to save profile:', err);
       throw err;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProfileStore, useChatStore } from '../../store';
 import ProfileSelection from './ProfileSelection';
-import ProfileCreation from './ProfileCreation';
+import ProfileCreation, { type ProfileCreationPayload } from './ProfileCreation';
 import ProfileEditing from './ProfileEditing';
 import { Profile } from '../../types/chat';
 
@@ -33,11 +33,12 @@ export default function StartupScreen() {
     }
   }, [isLoading, profiles.length]);
 
-  const handleAddProfile = async (profileData: Omit<Profile, 'id' | 'avatarUrl'>) => {
+  const handleAddProfile = async (profileData: ProfileCreationPayload) => {
+    const dicebear = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(profileData.name || 'New')}&backgroundColor=transparent`;
     const newProfile: Profile = {
       id: crypto.randomUUID(),
-      avatarUrl: `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${profileData.name}&backgroundColor=transparent`,
-      ...profileData
+      ...profileData,
+      avatarUrl: profileData.avatarUrl?.trim() ? profileData.avatarUrl.trim() : dicebear,
     };
     await saveProfile(newProfile);
     setView('selection');

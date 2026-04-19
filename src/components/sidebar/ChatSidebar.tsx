@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { useDebounce } from '../../hooks/useDebounce';
 import {
   Sidebar,
@@ -284,7 +285,7 @@ export const ChatSidebar = ({
                 })}
               >
                 <Avatar className="h-8 w-8 rounded-lg border border-muted-foreground/20">
-                  <AvatarImage src={activeProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces"} alt="User" />
+                  <AvatarImage src={resolveMediaSrc(activeProfile?.avatarUrl) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces"} alt="User" />
                   <AvatarFallback className="rounded-lg bg-primary/10 text-primary">{profileName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start flex-1 overflow-hidden">

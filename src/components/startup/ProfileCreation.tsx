@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { AvatarPickerDialog } from '@/src/components/profile/AvatarPickerDialog';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 
 export type ProfileCreationPayload = {
   name: string;
@@ -26,6 +28,8 @@ export type ProfileCreationPayload = {
   provider: string;
   passiveLearning: boolean;
   webSearch: boolean;
+  /** Absolute path to copied avatar file under app data, if the user uploaded one. */
+  avatarUrl?: string;
 };
 
 export default function ProfileCreation({
@@ -50,6 +54,8 @@ export default function ProfileCreation({
   const [passiveLearning, setPassiveLearning] = useState(true);
   const [webSearch, setWebSearch] = useState(false);
   const [searchOnboardingOpen, setSearchOnboardingOpen] = useState(false);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatarLocalPath, setAvatarLocalPath] = useState<string | null>(null);
 
   const [activeStep, setActiveStep] = useState(1);
   const [highestStep, setHighestStep] = useState(1);
@@ -77,6 +83,9 @@ export default function ProfileCreation({
   }, [loadModels]);
 
   const hasAnyModel = Object.values(modelsMap).some((m) => m.length > 0);
+
+  const dicebearPreview = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(name || 'New')}&backgroundColor=transparent`;
+  const avatarPreviewSrc = avatarLocalPath ? resolveMediaSrc(avatarLocalPath) : dicebearPreview;
 
   const hasSearchCredentials = (c: Record<string, unknown> | null) =>
     !!(c?.tavily_api_key || c?.brave_api_key || c?.searxng_url);
@@ -183,15 +192,23 @@ export default function ProfileCreation({
         >
           <div className="relative group mb-10">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-background border-2 border-border transition-transform duration-300 group-hover:scale-105">
-              <img 
-                src={`https://api.dicebear.com/9.x/fun-emoji/svg?seed=${name || 'New'}&backgroundColor=transparent`} 
+              <img
+                src={avatarPreviewSrc}
                 alt="Avatar preview"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute inset-0 bg-background/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+            <button
+              type="button"
+              className="no-drag absolute inset-0 bg-background/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer border-0 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAvatarPickerOpen(true);
+              }}
+              aria-label="Change profile picture"
+            >
               <Camera className="w-8 h-8 text-primary" />
-            </div>
+            </button>
           </div>
           
           <input 
@@ -420,6 +437,7 @@ export default function ProfileCreation({
                       provider: selectedProvider || '',
                       passiveLearning,
                       webSearch,
+                      avatarUrl: avatarLocalPath || undefined,
                     });
                   }}
                   disabled={!name.trim() || (hasAnyModel && (!selectedModel || !selectedProvider))}
@@ -432,6 +450,12 @@ export default function ProfileCreation({
           </div>
         </motion.div>
       </div>
+
+      <AvatarPickerDialog
+        open={avatarPickerOpen}
+        onOpenChange={setAvatarPickerOpen}
+        onChoose={(path) => setAvatarLocalPath(path)}
+      />
 
       <Dialog open={searchOnboardingOpen} onOpenChange={setSearchOnboardingOpen}>
         <DialogContent className="no-drag max-w-lg max-h-[90vh] overflow-y-auto">
