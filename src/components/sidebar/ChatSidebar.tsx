@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
 import { getChatIcon, isAiNamed } from '../../lib/chatHelpers';
 import { useProfileStore } from '@/src/store';
+import { PinIconButton } from '@/components/ui/pin-icon-button';
 
 interface ChatSidebarProps {
   recentChats: ChatSession[];
@@ -196,9 +197,7 @@ export const ChatSidebar = ({
                             )}
                             {!isIncognito && (
                               <div className="hidden group-hover:flex items-center gap-1 ml-auto">
-                                <div role="button" className="h-6 w-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors" onClick={(e) => handlePinChat(chat.id, e)}>
-                                  <Pin className="h-3.5 w-3.5 fill-current" />
-                                </div>
+                                <PinIconButton isPinned={true} onToggle={(e) => handlePinChat(chat.id, e)} />
                                 <div role="button" className="h-6 w-6 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors" onClick={(e) => handleDeleteChat(chat.id, e)}>
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </div>
@@ -253,9 +252,7 @@ export const ChatSidebar = ({
                             )}
                             {!isIncognito && (
                               <div className="hidden group-hover:flex items-center gap-1 ml-auto">
-                                <div role="button" className="h-6 w-6 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors" onClick={(e) => handlePinChat(chat.id, e)}>
-                                  <Pin className="h-3.5 w-3.5" />
-                                </div>
+                                <PinIconButton isPinned={false} onToggle={(e) => handlePinChat(chat.id, e)} />
                                 <div role="button" className="h-6 w-6 text-muted-foreground hover:text-destructive flex items-center justify-center transition-colors" onClick={(e) => handleDeleteChat(chat.id, e)}>
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </div>
