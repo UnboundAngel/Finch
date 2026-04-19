@@ -55,8 +55,8 @@ interface DashboardMainProps {
   handleSend: () => void;
   abort: () => void;
   isStreaming: boolean;
-  attachedFile: File | null;
-  setAttachedFile: (val: File | null) => void;
+  attachedFile: { name: string; path: string } | null;
+  setAttachedFile: (val: { name: string; path: string } | null) => void;
   isWebSearchActive: boolean;
   setIsWebSearchActive: (val: boolean) => void;
   enterToSend: boolean;

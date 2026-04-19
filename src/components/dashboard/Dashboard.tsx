@@ -49,7 +49,7 @@ function DashboardContent({
   const [isThinking, setIsThinking] = useState(false);
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
   const [researchEvents, setResearchEvents] = useState<any[]>([]);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; path: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
 
@@ -210,6 +210,7 @@ function DashboardContent({
   const invokeStream = useCallback((
     userMessage: string,
     historyWithUserMsg: Message[],
+    attachmentPath?: string,
   ) => {
     const { systemPrompt, temperature, topP, maxTokens } = useModelParams.getState();
     setIsThinking(true);
@@ -255,6 +256,7 @@ function DashboardContent({
       (err) => { setIsThinking(false); toast.error(`Error: ${err}`); },
       { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive },
       historyWithUserMsg,
+      attachmentPath ? [{ path: attachmentPath }] : undefined,
     );
   }, [selectedModel, selectedProvider, isWebSearchActive, streamMessage, session, wasAbortedRef]);
 
@@ -275,7 +277,9 @@ function DashboardContent({
     if (isFirstMessage) {
       void autoNameChat(userMessage);
     }
-    invokeStream(userMessage, updatedMessages);
+    const attachmentPath = attachedFile?.path;
+    setAttachedFile(null);
+    invokeStream(userMessage, updatedMessages, attachmentPath);
   };
 
   const handleRegenerate = useCallback(async () => {

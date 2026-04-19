@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils';
 import { VoiceIndicator } from './VoiceIndicator';
 import { ModelMarketplace } from './ModelMarketplace';
 import { useVoiceTranscription } from '@/src/hooks/useVoiceTranscription';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -17,6 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { WebSearchControl } from '@/src/components/chat/WebSearchControl';
 import { invoke } from '@tauri-apps/api/core';
+import { open as openFilePicker } from '@tauri-apps/plugin-dialog';
+import { isTauri } from '@/src/lib/tauri-utils';
 
 interface ChatInputProps {
   input: string;
@@ -24,8 +26,8 @@ interface ChatInputProps {
   handleSend: (bypassCheck?: boolean) => void;
   onStop?: () => void;
   isThinking: boolean;
-  attachedFile: File | null;
-  setAttachedFile: (file: File | null) => void;
+  attachedFile: { name: string; path: string } | null;
+  setAttachedFile: (file: { name: string; path: string } | null) => void;
   isWebSearchActive: boolean;
   setIsWebSearchActive: (val: boolean) => void;
   enterToSend: boolean;
@@ -60,7 +62,6 @@ export const ChatInput = ({
   setIsListening,
 }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Controlled Menu States
   const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
@@ -126,12 +127,16 @@ export const ChatInput = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachedFile(e.target.files[0]);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleAttachClick = async () => {
+    if (isTauri()) {
+      const result = await openFilePicker({
+        multiple: false,
+        filters: [{ name: 'Images & Documents', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'] }],
+      });
+      if (result && typeof result === 'string') {
+        const parts = result.replace(/\\/g, '/').split('/');
+        setAttachedFile({ name: parts[parts.length - 1], path: result });
+      }
     }
   };
 
@@ -238,17 +243,11 @@ export const ChatInput = ({
 
             <div className="flex items-center justify-between px-3 pb-3 pt-1">
               <div className="flex items-center gap-1">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
                 <Button
                   variant="ghost"
                   size="icon"
                   className={`h-8 w-8 rounded-lg transition-colors ${attachedFile ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={handleAttachClick}
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>

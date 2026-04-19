@@ -58,7 +58,8 @@ export function useAIStreaming() {
     onComplete?: (finalStats?: AIStats) => void,
     onError?: (error: string) => void,
     params?: GenerationParams & { enableWebSearch?: boolean },
-    history: Message[] = []
+    history: Message[] = [],
+    attachments?: { path: string }[]
   ) => {
     setIsStreaming(true);
     setError(null);
@@ -167,7 +168,8 @@ export function useAIStreaming() {
         provider,
         conversationHistory: conversationHistory,
         channel,
-        ...params
+        ...params,
+        ...(attachments && attachments.length > 0 ? { attachments } : {}),
       });
 
       // Ensure we have final duration if it hasn't been set by stats sentinel yet
