@@ -4,6 +4,7 @@ import ProfileSelection from './ProfileSelection';
 import ProfileCreation, { type ProfileCreationPayload } from './ProfileCreation';
 import ProfileEditing from './ProfileEditing';
 import { Profile } from '../../types/chat';
+import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
 
 export default function StartupScreen() {
   const { profiles, loadProfiles, saveProfile, deleteProfile, setActiveProfile, isLoading } = useProfileStore();
@@ -11,6 +12,8 @@ export default function StartupScreen() {
   
   const [view, setView] = useState<'selection' | 'creation' | 'editing'>('selection');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  /** When true, empty profile list shows selection (Add Profile) instead of forcing creation — set when user cancels first-run creation. */
+  const [emptyCreationDismissed, setEmptyCreationDismissed] = useState(false);
 
   useEffect(() => {
     loadProfiles();
@@ -26,15 +29,23 @@ export default function StartupScreen() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && profiles.length === 0) {
+    if (profiles.length > 0) {
+      setEmptyCreationDismissed(false);
+    }
+  }, [profiles.length]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (profiles.length === 0 && !emptyCreationDismissed) {
       setView('creation');
-    } else if (!isLoading && profiles.length > 0 && view !== 'editing') {
+    } else if (profiles.length > 0 && view !== 'editing') {
       setView('selection');
     }
-  }, [isLoading, profiles.length]);
+    // Intentionally omit `view` from deps: including it sends users back to selection as soon as they open "Add profile" while already having profiles.
+  }, [isLoading, profiles.length, emptyCreationDismissed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddProfile = async (profileData: ProfileCreationPayload) => {
-    const dicebear = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(profileData.name || 'New')}&backgroundColor=transparent`;
+    const dicebear = funEmojiAvatarUrl(profileData.name || 'New');
     const newProfile: Profile = {
       id: crypto.randomUUID(),
       ...profileData,
@@ -94,7 +105,10 @@ export default function StartupScreen() {
       {view === 'selection' && (
         <ProfileSelection 
           profiles={profiles} 
-          onAddProfile={() => setView('creation')} 
+          onAddProfile={() => {
+            setEmptyCreationDismissed(false);
+            setView('creation');
+          }}
           onEditProfile={(profile) => {
             setEditingProfile(profile);
             setView('editing');
@@ -103,11 +117,14 @@ export default function StartupScreen() {
         />
       )}
       {view === 'creation' && (
-        <ProfileCreation 
+        <ProfileCreation
           onCancel={() => {
-            if (profiles.length > 0) setView('selection');
+            if (profiles.length === 0) {
+              setEmptyCreationDismissed(true);
+            }
+            setView('selection');
           }}
-          onSave={handleAddProfile} 
+          onSave={handleAddProfile}
         />
       )}
       {view === 'editing' && editingProfile && (

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Minus, Square, X, Copy } from 'lucide-react';
 import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
 import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
@@ -6,8 +6,6 @@ import { useTauri } from '@/src/hooks/useTauri';
 import { SketchMinus, SketchSquare, SketchX } from '@/src/components/ui/Icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const appWindow = getCurrentWindow();
 
 interface WindowControlsProps {
   theme?: 'sketch' | 'terminal';
@@ -20,10 +18,11 @@ interface WindowControlsProps {
  */
 export function WindowControls({ theme, isIncognito, contrast }: WindowControlsProps) {
   const { isTauri, isMaximized } = useTauri();
+  const appWindow = useMemo(() => (isTauri ? getCurrentWindow() : null), [isTauri]);
   const [showSnapLayouts, setShowSnapLayouts] = useState(false);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  if (!isTauri) return null;
+  if (!isTauri || !appWindow) return null;
 
   const handleMaximize = async () => {
     if (await appWindow.isMaximized()) {

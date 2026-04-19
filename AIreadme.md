@@ -26,7 +26,7 @@ This project exists in two states: **Public** (Frontend only) and **Private** (F
 Finch is a high-performance desktop AI chat application built with Tauri v2 and React 19. It provides a local-first, extensible interface for interacting with various LLM providers (Anthropic, OpenAI, Gemini, LM Studio, Ollama) and real-time Web Search (Tavily, Brave, SearXNG), while maintaining strict security by routing all model communication through a secure Rust IPC bridge.
 
 ## 2. Branch / OS Setup
-- **main branch** → Windows (primary dev machine). Path: `C:\Random things i dont want deleted\MyPrograms\Neoscript\sandboxed_assets\finch\`
+- **main branch** → Windows (primary dev machine). Path: `C:\Random things i dont want deleted\MyPrograms\SB_Projects\Finch_full\`
 - **linux branch** → Linux laptop. Separate branch, same codebase.
 - Always confirm which branch you're on before making changes.
 
@@ -94,8 +94,45 @@ No Redux or Context is used for global state.
 ## 8. Key Providers & IPC Flow
 LLM providers are abstracted in `src-tauri/src/providers/` (anthropic.rs, openai.rs, gemini.rs, local.rs). All chat interactions route through the `chat.rs` IPC command. Real-time streaming utilizes Tauri Channels with `.onmessage` handling. LLM performance metrics and token counts are emitted as a `__STATS__:` sentinel JSON payload (or `stats` event) at the end of the stream. Web search utilizes `search.rs` and `tavily.rs` to fetch and inject context.
 
-## 9. Current Phase
-Current Focus: **Phase 13: Voice Transcription (Local-First)**. Implementation of local-first whisper transcription, audio device management, and model marketplace for voice models. Note: Phases 14-15 (Token Enrichment & Context Intelligence) are already partially implemented or completed.
+## 9. Current State & Priority Work
+
+All 15 planned phases are complete or effectively done. Voice transcription (Phase 13) is fully wired — `useVoiceTranscription` hook, `start_recording`/`stop_recording` commands, model marketplace, whisper-rs backend all implemented.
+
+### Feature Audit (as of 2026-04-19)
+What is actually wired end-to-end vs. missing:
+
+| Feature | Status |
+|---|---|
+| Multi-provider (Anthropic, OpenAI, Gemini, Ollama, LM Studio) | ✅ Fully wired |
+| Streaming via Tauri Channel | ✅ Fully wired |
+| Markdown + code rendering (Shiki, remark-gfm, copy button) | ✅ Fully wired |
+| Chat history persistence (Zustand + disk via `save_chat`) | ✅ Fully wired |
+| Web search (Tavily/Brave/SearXNG, injected pre-response) | ✅ Fully wired |
+| Chat sidebar search (title + message content) | ✅ Fully wired |
+| Voice transcription (local whisper) | ✅ Fully wired |
+| Incognito mode (no disk save, no profile switch) | ✅ Fully wired |
+| Token stats + right sidebar | ✅ Fully wired |
+| Profile system (system prompts, default models, avatars) | ✅ Fully wired |
+| Context window tracking + overflow modal | ✅ Fully wired |
+| Copy button on user messages | ✅ Present |
+| **File/image upload → sent to AI** | ⚠️ UI only — never reaches Rust or AI |
+| **Copy button on AI messages** | ❌ Missing |
+| **Auto-naming chats** | ❌ Missing (uses first 40 chars of message) |
+| **Regenerate response** | ❌ Missing |
+| **Edit user message + resend** | ❌ Missing |
+
+### Current Priority: Close Baseline Gaps
+The app is feature-rich but missing 5 table-stakes items every competitor has. Close these before building any new features. See `docs/BACKLOG.md` for full specs and architecture.
+
+**Ordered priority:**
+1. **File/image → actually sent to AI** — architecture fully specced in `docs/BACKLOG.md`. Rust `ContentPart` enum, provider adapters for all 5 providers already designed. Also fix the "Analyze an image" empty-state suggestion card which currently breaks its own promise.
+2. **Copy button on AI messages** — trivial. Mirror the existing user message copy button in `MessageBubble.tsx`.
+3. **Auto-naming chats** — on first message, fire lightweight AI call for a 4-6 word title. Store in session metadata. Currently defaults to `messages[0].content.substring(0, 40)` in `Dashboard.tsx:177`.
+4. **Regenerate response** — button on AI message actions, re-invoke `streamMessage` from last user message.
+5. **Edit user message + resend** — truncate history to that point, replace message content, re-invoke stream.
+
+### Above-Baseline (do not build until gaps above are closed)
+OmniSearch, local ML/vector embeddings, Artifacts system, Finch Projects, Ghost Context, Semantic Vault. All specced in `docs/BACKLOG.md` and `docs/IDEAS.md`.
 
 ## 10. Agent Conventions
 - Read STATE.md before starting any task.

@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AvatarPickerDialog } from '@/src/components/profile/AvatarPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
+import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
 import { cn } from '@/lib/utils';
 
 export type ProfileCreationPayload = {
@@ -84,7 +85,7 @@ export default function ProfileCreation({
 
   const hasAnyModel = Object.values(modelsMap).some((m) => m.length > 0);
 
-  const dicebearPreview = `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(name || 'New')}&backgroundColor=transparent`;
+  const dicebearPreview = funEmojiAvatarUrl(name || 'New');
   const avatarPreviewSrc = avatarLocalPath ? resolveMediaSrc(avatarLocalPath) : dicebearPreview;
 
   const hasSearchCredentials = (c: Record<string, unknown> | null) =>
@@ -152,23 +153,30 @@ export default function ProfileCreation({
 
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center overflow-hidden px-4 relative bg-background">
-      {/* Header — drag region for frameless Tauri window; Cancel stays clickable */}
-      <div className="absolute top-8 left-0 right-0 px-8 z-50 flex justify-center">
+      {/* Header — stacks on narrow widths so title + Cancel never overlap */}
+      <div className="absolute top-6 left-0 right-0 z-50 flex justify-center px-3 sm:top-8 sm:px-4">
         <div
           data-tauri-drag-region
-          className="flex w-full max-w-5xl items-start justify-between gap-4 rounded-xl py-2"
+          className={cn(
+            'flex w-full max-w-md rounded-xl py-2',
+            'flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4'
+          )}
         >
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-medium text-primary">Create Profile</h1>
+          <div className="min-w-0 sm:flex-1 sm:pr-2">
+            <h1 className="break-words text-xl font-medium leading-snug text-primary sm:text-2xl">
+              Create Profile
+            </h1>
             <p className="text-sm text-primary/60">Step {activeStep} of 3</p>
           </div>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="no-drag shrink-0 text-primary/60 hover:text-primary transition-colors text-sm font-medium"
-          >
-            Cancel
-          </button>
+          <div className="flex shrink-0 justify-end sm:justify-start sm:pt-0.5">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="no-drag inline-flex items-center justify-center rounded-md px-1 py-0.5 text-sm font-medium text-primary/60 transition-colors hover:bg-primary/5 hover:text-primary"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
       
@@ -182,7 +190,7 @@ export default function ProfileCreation({
           animate={getStepState(1)}
           transition={springTransition}
           onClick={() => activeStep !== 1 && setActiveStep(1)}
-          className={`absolute w-full min-h-[420px] bg-card border border-border rounded-3xl p-8 shadow-2xl flex flex-col items-center justify-center ${activeStep !== 1 ? 'cursor-pointer hover:border-primary/30' : ''}`}
+          className={`absolute w-full min-h-[420px] bg-card border border-border rounded-3xl p-5 shadow-2xl flex flex-col items-center justify-center sm:p-8 ${activeStep !== 1 ? 'cursor-pointer hover:border-primary/30' : ''}`}
           style={{ 
             transformOrigin: 'bottom center',
             willChange: 'transform, opacity',
@@ -200,14 +208,20 @@ export default function ProfileCreation({
             </div>
             <button
               type="button"
-              className="no-drag absolute inset-0 bg-background/60 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer border-0 p-0"
+              className={cn(
+                'no-drag absolute inset-0 z-10 inline-flex cursor-pointer items-center justify-center rounded-full border-0 p-0 transition-opacity duration-200',
+                'bg-black/35 [background-clip:unset] [-webkit-background-clip:unset]',
+                'pointer-events-none opacity-0',
+                'group-hover:pointer-events-auto group-hover:opacity-100',
+                'focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 setAvatarPickerOpen(true);
               }}
               aria-label="Change profile picture"
             >
-              <Camera className="w-8 h-8 text-primary" />
+              <Camera className="h-8 w-8 text-white/85 drop-shadow-sm" strokeWidth={1.75} />
             </button>
           </div>
           
@@ -248,7 +262,7 @@ export default function ProfileCreation({
           animate={getStepState(2)}
           transition={springTransition}
           onClick={() => activeStep !== 2 && highestStep >= 2 && setActiveStep(2)}
-          className={`absolute w-full min-h-[420px] bg-card border border-border rounded-3xl p-8 shadow-2xl flex flex-col justify-center ${activeStep !== 2 ? (highestStep >= 2 ? 'cursor-pointer hover:border-primary/30' : '') : ''}`}
+          className={`absolute w-full min-h-[420px] bg-card border border-border rounded-3xl p-5 shadow-2xl flex flex-col justify-center sm:p-8 ${activeStep !== 2 ? (highestStep >= 2 ? 'cursor-pointer hover:border-primary/30' : '') : ''}`}
           style={{ 
             transformOrigin: 'bottom center',
             willChange: 'transform, opacity',
@@ -257,19 +271,19 @@ export default function ProfileCreation({
           }}
         >
           <div className="space-y-6 w-full">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-medium text-primary">The Mindset</h2>
-              <p className="text-sm text-primary/60 mt-1">How should this profile behave?</p>
+            <div className="mb-6 text-center sm:mb-8">
+              <h2 className="text-xl font-medium text-primary sm:text-2xl">The Mindset</h2>
+              <p className="mt-1 text-sm text-primary/60">How should this profile behave?</p>
             </div>
 
             <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <label className="block text-sm font-medium text-primary/80">Default model</label>
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <label className="min-w-0 text-sm font-medium text-primary/80">Default model</label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="no-drag h-8 px-2 text-xs text-primary/60 hover:text-primary"
+                  className="no-drag h-8 w-fit shrink-0 self-start px-2 text-xs text-primary/60 hover:text-primary sm:self-auto"
                   disabled={activeStep !== 2 || modelsLoading}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -290,12 +304,17 @@ export default function ProfileCreation({
                   setSelectedProvider(p as ProviderId);
                   setSelectedModel(m);
                 }}
-                className="w-full bg-background border border-border rounded-lg px-4 py-3 text-primary outline-none appearance-none focus:border-primary/50 transition-colors"
+                className="w-full min-w-0 bg-background border border-border rounded-lg px-3 py-3 text-sm text-primary outline-none appearance-none focus:border-primary/50 transition-colors sm:px-4 sm:text-base"
                 disabled={activeStep !== 2 || modelsLoading || !hasAnyModel}
+                title={
+                  !hasAnyModel
+                    ? 'Add API keys or local endpoints in Settings, then pick a model in the app.'
+                    : undefined
+                }
               >
                 {!hasAnyModel ? (
                   <option value="">
-                    No models found — add API keys or local endpoints in Settings after signup
+                    No models — configure providers in Settings
                   </option>
                 ) : (
                   (Object.keys(PROVIDER_LABELS) as ProviderId[]).map((pid) => {
@@ -364,7 +383,7 @@ export default function ProfileCreation({
           animate={getStepState(3)}
           transition={springTransition}
           onClick={() => activeStep !== 3 && highestStep >= 3 && setActiveStep(3)}
-          className={`absolute w-full min-h-[420px] bg-card border border-border rounded-3xl p-8 shadow-2xl flex flex-col justify-center ${activeStep !== 3 ? (highestStep >= 3 ? 'cursor-pointer hover:border-primary/30' : '') : ''}`}
+          className={`absolute w-full min-h-[420px] bg-card border border-border rounded-3xl p-5 shadow-2xl flex flex-col justify-center sm:p-8 ${activeStep !== 3 ? (highestStep >= 3 ? 'cursor-pointer hover:border-primary/30' : '') : ''}`}
           style={{ 
             transformOrigin: 'bottom center',
             willChange: 'transform, opacity',
@@ -373,9 +392,9 @@ export default function ProfileCreation({
           }}
         >
           <div className="space-y-6 w-full">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-medium text-primary">Capabilities</h2>
-              <p className="text-sm text-primary/60 mt-1">What tools can this profile use?</p>
+            <div className="mb-6 text-center sm:mb-8">
+              <h2 className="text-xl font-medium text-primary sm:text-2xl">Capabilities</h2>
+              <p className="mt-1 text-sm text-primary/60">What tools can this profile use?</p>
             </div>
 
             <div className="space-y-4">

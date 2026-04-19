@@ -1155,14 +1155,17 @@ dependencies = [
 name = "finch"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
  "cpal",
  "futures-util",
+ "hex",
  "image",
  "reqwest 0.12.28",
  "rubato",
  "serde",
  "serde_json",
+ "sha2",
  "sysinfo",
  "tauri",
  "tauri-build",
