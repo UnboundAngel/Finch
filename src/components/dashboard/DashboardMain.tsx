@@ -67,6 +67,7 @@ interface DashboardMainProps {
   handleChangeBackground: () => void;
   setCustomBgDark: (val: string) => void;
   setCustomBgLight: (val: string) => void;
+  onRegenerate: () => void;
 }
 
 const SidebarIncognitoController = ({ isIncognito, children }: { isIncognito: boolean, children: React.ReactNode }) => {
@@ -129,7 +130,7 @@ export function DashboardMain(props: DashboardMainProps) {
     voiceStatus, input, handleSend, abort, isStreaming, attachedFile,
     setAttachedFile, isWebSearchActive, setIsWebSearchActive, enterToSend, isModelLoaded,
     handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight,
-    userAvatarSrc, userAvatarLetter,
+    userAvatarSrc, userAvatarLetter, onRegenerate,
   } = props;
 
   return (
@@ -216,6 +217,7 @@ export function DashboardMain(props: DashboardMainProps) {
                       voiceStatus={voiceStatus}
                       userAvatarSrc={userAvatarSrc}
                       userAvatarLetter={userAvatarLetter}
+                      onRegenerate={onRegenerate}
                     />
 
                     <div className="relative z-20">

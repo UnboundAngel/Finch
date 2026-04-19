@@ -21,6 +21,7 @@ interface ChatAreaProps {
   voiceStatus: 'idle' | 'recording' | 'transcribing';
   userAvatarSrc: string;
   userAvatarLetter: string;
+  onRegenerate?: () => void;
 }
 
 export const ChatArea = memo(({
@@ -36,6 +37,7 @@ export const ChatArea = memo(({
   voiceStatus,
   userAvatarSrc,
   userAvatarLetter,
+  onRegenerate,
 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -140,6 +142,11 @@ export const ChatArea = memo(({
               isPinkMode={isPinkMode}
               userAvatarSrc={userAvatarSrc}
               userAvatarLetter={userAvatarLetter}
+              onRegenerate={
+                msg.role === 'ai' && index === messages.length - 1 && !isThinking
+                  ? onRegenerate
+                  : undefined
+              }
             />
           ))}
 

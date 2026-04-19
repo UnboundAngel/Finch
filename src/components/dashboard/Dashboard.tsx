@@ -207,6 +207,57 @@ function DashboardContent({
     } catch (err) { console.error('Failed to save chat:', err); }
   };
 
+  const invokeStream = useCallback((
+    userMessage: string,
+    historyWithUserMsg: Message[],
+  ) => {
+    const { systemPrompt, temperature, topP, maxTokens } = useModelParams.getState();
+    setIsThinking(true);
+    let isFirstToken = true;
+    const aiMessageId = crypto.randomUUID();
+    wasAbortedRef.current = false;
+
+    streamMessage(
+      userMessage, selectedModel, selectedProvider,
+      (token) => {
+        if (isFirstToken) {
+          setIsThinking(false);
+          isFirstToken = false;
+          session.setMessages(prev => [...prev, {
+            id: aiMessageId, role: 'ai', content: token, streaming: true,
+            metadata: { timestamp: new Date(), model: selectedModel }
+          }]);
+        } else {
+          session.setMessages(prev => {
+            const last = prev[prev.length - 1];
+            if (last?.role === 'ai') return [...prev.slice(0, -1), { ...last, content: last.content + token }];
+            return prev;
+          });
+        }
+      },
+      (ev) => setResearchEvents(prev => [...prev, ev]),
+      (stats) => {
+        session.setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === 'ai') {
+            const wasAborted = wasAbortedRef.current;
+            wasAbortedRef.current = false;
+            const mergedStats = { ...(stats || {}) };
+            if (wasAborted) mergedStats.stopReason = 'user_stopped';
+            const final = [...prev.slice(0, -1), { ...last, streaming: false, metadata: { ...last.metadata, ...mergedStats } }];
+            setTimeout(() => updateActiveSessionInList(final), 0);
+            return final;
+          }
+          return prev;
+        });
+        setIsThinking(false);
+      },
+      (err) => { setIsThinking(false); toast.error(`Error: ${err}`); },
+      { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive },
+      historyWithUserMsg,
+    );
+  }, [selectedModel, selectedProvider, isWebSearchActive, streamMessage, session, wasAbortedRef]);
+
   const handleSend = async (bypassCheck = false) => {
     if (!input.trim() || isThinking || isStreaming) return;
     const { systemPrompt, temperature, topP, maxTokens, contextIntelligence: ci } = useModelParams.getState();
@@ -220,40 +271,23 @@ function DashboardContent({
     const updatedMessages: Message[] = [...session.messages, { id: crypto.randomUUID(), role: 'user', content: userMessage }];
     session.setMessages(updatedMessages);
     await updateActiveSessionInList(updatedMessages);
-    setIsThinking(true);
-
-    let isFirstToken = true;
-    const aiMessageId = crypto.randomUUID();
-    streamMessage(userMessage, selectedModel, selectedProvider, (token) => {
-      if (isFirstToken) {
-        setIsThinking(false);
-        isFirstToken = false;
-        session.setMessages(prev => [...prev, { id: aiMessageId, role: 'ai', content: token, streaming: true, metadata: { timestamp: new Date(), model: selectedModel } }]);
-      } else {
-        session.setMessages(prev => {
-          const last = prev[prev.length - 1];
-          if (last?.role === 'ai') return [...prev.slice(0, -1), { ...last, content: last.content + token }];
-          return prev;
-        });
-      }
-    }, (ev) => setResearchEvents(prev => [...prev, ev]), (stats) => {
-      session.setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'ai') {
-          const wasAborted = wasAbortedRef.current;
-          wasAbortedRef.current = false;
-          const mergedStats = { ...(stats || {}) };
-          if (wasAborted) mergedStats.stopReason = 'user_stopped';
-          const final = [...prev.slice(0, -1), { ...last, streaming: false, metadata: { ...last.metadata, ...mergedStats } }];
-          setTimeout(() => updateActiveSessionInList(final), 0);
-          return final;
-        }
-        return prev;
-      });
-      setIsThinking(false);
-    }, (err) => { setIsThinking(false); toast.error(`Error: ${err}`); },
-    { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive }, updatedMessages);
+    invokeStream(userMessage, updatedMessages);
   };
+
+  const handleRegenerate = useCallback(async () => {
+    if (isThinking || isStreaming) return;
+    const msgs = session.messages;
+    const lastUserIdx = msgs.reduceRight(
+      (found, m, i) => found !== -1 ? found : (m.role === 'user' ? i : -1), -1
+    );
+    if (lastUserIdx === -1) return;
+    const userMsg = msgs[lastUserIdx];
+    const truncated = msgs.slice(0, lastUserIdx + 1);
+    session.setMessages(truncated);
+    setResearchEvents([]);
+    await updateActiveSessionInList(truncated);
+    invokeStream(userMsg.content, truncated);
+  }, [session.messages, isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
 
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
@@ -303,6 +337,7 @@ function DashboardContent({
         hasCustomBgValue={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
         voiceStatus={voiceStatus} input={input} handleInputChange={handleInputChange}
         handleSend={handleSend} abort={handleStop} isStreaming={isStreaming}
+        onRegenerate={handleRegenerate}
         attachedFile={attachedFile} setAttachedFile={setAttachedFile}
         isWebSearchActive={isWebSearchActive} setIsWebSearchActive={setIsWebSearchActive}
         enterToSend={enterToSend} isModelLoaded={selectedModel ? isModelLoaded : true}

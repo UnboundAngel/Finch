@@ -1,6 +1,6 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Files, Check, Square } from 'lucide-react';
+import { MessageSquare, Files, Check, Square, RefreshCw } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ interface MessageBubbleProps {
   isPinkMode?: boolean;
   userAvatarSrc: string;
   userAvatarLetter: string;
+  onRegenerate?: () => void;
 }
 
 export const MessageBubble = ({
@@ -34,6 +35,7 @@ export const MessageBubble = ({
   isPinkMode,
   userAvatarSrc,
   userAvatarLetter,
+  onRegenerate,
 }: MessageBubbleProps) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -178,6 +180,24 @@ export const MessageBubble = ({
               "flex items-center gap-1 px-1 transition-opacity duration-200",
               copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}>
+              {onRegenerate && (
+                <TooltipProvider delay={400}>
+                  <Tooltip>
+                    <TooltipTrigger
+                      onClick={onRegenerate}
+                      className={cn(
+                        "p-1.5 rounded-md transition-all active:scale-90",
+                        "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-[10px] py-1 px-2">
+                      Regenerate
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <TooltipProvider delay={400}>
                 <Tooltip>
                   <TooltipTrigger
