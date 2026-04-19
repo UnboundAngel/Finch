@@ -287,7 +287,7 @@ function DashboardContent({
     setResearchEvents([]);
     await updateActiveSessionInList(truncated);
     invokeStream(userMsg.content, truncated);
-  }, [session.messages, isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
+  }, [isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
 
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
