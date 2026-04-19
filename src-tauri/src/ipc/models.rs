@@ -256,7 +256,7 @@ pub async fn get_model_loaded_status(
                 for m in models {
                     if let Some(id) = m.get("id").and_then(|i| i.as_str()) {
                         let id_lower = id.to_lowercase();
-                        let is_match = id_lower == model_id_lower || id_lower.contains(&model_id_lower) || model_id_lower.contains(&id_lower);
+                        let is_match = id_lower == model_id_lower;
                         
                         if is_match {
                             if let Some(state) = m.get("state").and_then(|s| s.as_str()) {

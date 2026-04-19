@@ -47,7 +47,7 @@ These issues break the core value proposition of large context models and cause 
 - **File**: `src-tauri/src/ipc/models.rs` (lines 259-260)
 - **Problem**: When checking if an LM Studio model is loaded, the code uses a loose `.contains()` check (`id_lower.contains(&model_id_lower)`). This means asking if `llama-3` is loaded will return true if `llama-3-70b-instruct` happens to be loaded, leading the frontend to skip loading the actual requested model.
 - **Fix Direction**: Replace `.contains()` with exact string equality (`==`) after splitting off any quantizer or instruct tags, or strictly enforce exact ID matching for LM Studio.
-- **Status**: open
+- **Status**: done
 
 ### W9-2 — Blocking I/O on Async Thread (Chat Saving)
 - **Severity**: Low
