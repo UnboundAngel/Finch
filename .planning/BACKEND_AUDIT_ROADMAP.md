@@ -61,4 +61,4 @@ These issues break the core value proposition of large context models and cause 
 - **File**: `src-tauri/src/download.rs` (lines 38-40)
 - **Problem**: Voice model downloading prints `checksum validation not yet implemented` and skips SHA256 validation. Downloaded binaries could be corrupted or compromised.
 - **Fix Direction**: Implement `sha2::Sha256` hashing on the downloaded temporary file (`tmp_path`). Compare the hash against `manifest.sha256` before performing the atomic rename to `final_path`.
-- **Status**: open
+- **Status**: done

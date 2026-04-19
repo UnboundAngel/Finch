@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fs;
 use tauri::{AppHandle, Manager, Runtime, Emitter};
 use tokio::io::AsyncWriteExt;
@@ -35,10 +36,6 @@ pub async fn download_model<R: Runtime>(
     let final_path = whisper_dir.join(format!("{}.bin", manifest.id));
     let tmp_path = whisper_dir.join(format!("{}.bin.tmp", manifest.id));
 
-    // Stub: Checksum validation not yet implemented
-    #[cfg(debug_assertions)]
-    println!("checksum validation not yet implemented for {} (sha256: {})", manifest.id, manifest.sha256);
-
     // Start download
     let client = reqwest::Client::new();
     let response = client.get(&manifest.url).send().await.map_err(|e| e.to_string())?;
@@ -72,6 +69,19 @@ pub async fn download_model<R: Runtime>(
 
     file.flush().await.map_err(|e| e.to_string())?;
     drop(file);
+
+    // Validate SHA256 before committing the file
+    if !manifest.sha256.is_empty() {
+        let tmp_bytes = tokio::fs::read(&tmp_path).await.map_err(|e| e.to_string())?;
+        let actual_hex = hex::encode(Sha256::digest(&tmp_bytes));
+        if actual_hex != manifest.sha256.to_lowercase() {
+            tokio::fs::remove_file(&tmp_path).await.ok();
+            return Err(format!(
+                "Checksum mismatch for {}: expected {}, got {}",
+                manifest.id, manifest.sha256, actual_hex
+            ));
+        }
+    }
 
     // Atomic rename
     tokio::fs::rename(tmp_path, final_path).await.map_err(|e| e.to_string())?;
