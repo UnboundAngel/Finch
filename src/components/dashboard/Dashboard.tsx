@@ -268,9 +268,13 @@ function DashboardContent({
     const userMessage = input.trim();
     setInput('');
     setResearchEvents([]);
+    const isFirstMessage = session.messages.length === 0;
     const updatedMessages: Message[] = [...session.messages, { id: crypto.randomUUID(), role: 'user', content: userMessage }];
     session.setMessages(updatedMessages);
     await updateActiveSessionInList(updatedMessages);
+    if (isFirstMessage) {
+      void autoNameChat(userMessage);
+    }
     invokeStream(userMessage, updatedMessages);
   };
 
@@ -301,6 +305,32 @@ function DashboardContent({
     await updateActiveSessionInList(truncated);
     invokeStream(newContent, truncated);
   }, [isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
+
+  const autoNameChat = useCallback(async (userMessage: string) => {
+    const sessionId = session.activeSessionIdRef.current;
+    if (!sessionId || !selectedModel || !selectedProvider) return;
+    try {
+      const title = await invoke<string>('send_message', {
+        prompt: `Give this chat a 4-6 word title based on the opening message. Reply with ONLY the title — no quotes, no punctuation, no explanation.\n\nMessage: "${userMessage.substring(0, 300)}"`,
+        model: selectedModel,
+        provider: selectedProvider,
+        conversationHistory: [],
+        systemPrompt: 'You are a chat title generator. Reply with only a concise title.',
+        maxTokens: 20,
+      });
+      const cleanTitle = title.trim().replace(/^["'\s]+|["'\s]+$/g, '').replace(/[.,!?]$/, '');
+      if (!cleanTitle || cleanTitle.length > 80) return;
+      setRecentChats(prev => {
+        const chat = prev.find(c => c.id === sessionId);
+        if (!chat) return prev;
+        const updated = { ...chat, title: cleanTitle };
+        void invoke('save_chat', { chat: updated });
+        return prev.map(c => c.id === sessionId ? updated : c);
+      });
+    } catch {
+      // Silent fail — fallback title already set
+    }
+  }, [selectedModel, selectedProvider, session.activeSessionIdRef, setRecentChats]);
 
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
