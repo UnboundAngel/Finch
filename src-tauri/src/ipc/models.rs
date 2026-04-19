@@ -86,8 +86,13 @@ pub async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
     
     let api_key = match config.and_then(|c| c.openai_api_key) {
-        Some(k) if k != "••••••••" => k,
-        _ => return Ok(vec![]),
+        Some(k) if k != "••••••••" => Some(k),
+        _ => None,
+    }
+    .or_else(|| env::var("OPENAI_API_KEY").ok());
+
+    let Some(api_key) = api_key else {
+        return Ok(vec![]);
     };
 
     let client = reqwest::Client::new();

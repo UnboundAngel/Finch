@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Globe, ShieldCheck, Zap, X, ChevronLeft, ChevronRight, Key } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';

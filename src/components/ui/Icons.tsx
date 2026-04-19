@@ -16,10 +16,3 @@ export const SketchSquare = () => (
     <path d="M3 5c0-1.1.9-2 2-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" />
   </svg>
 );
-
-export const SketchSend = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 2L11 13" />
-    <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-  </svg>
-);

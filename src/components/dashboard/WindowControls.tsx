@@ -5,7 +5,7 @@ import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import { useTauri } from '@/src/hooks/useTauri';
 import { SketchMinus, SketchSquare, SketchX } from '@/src/components/ui/Icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface WindowControlsProps {
   theme?: 'sketch' | 'terminal';

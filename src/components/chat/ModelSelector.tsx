@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, Bookmark } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { BookmarkIconButton } from '@/components/ui/bookmark-icon-button';
 import { fetchModelsMap } from '@/src/lib/availableModels';
@@ -61,7 +61,12 @@ export const ModelSelector = ({
     { id: 'gemini', name: 'Gemini', models: models.gemini },
     { id: 'local_ollama', name: 'Ollama', models: models.local_ollama },
     { id: 'local_lmstudio', name: 'LM Studio', models: models.local_lmstudio },
-  ];
+  ].map(p => {
+    if (p.id === selectedProvider && selectedModel && !p.models.includes(selectedModel)) {
+      return { ...p, models: [selectedModel, ...p.models] };
+    }
+    return p;
+  });
 
   const fetchModels = async () => {
     try {
@@ -139,7 +144,7 @@ export const ModelSelector = ({
       />
 
       <DropdownMenuContent
-        align="start"
+        align="center"
         className={cn(
           "w-72 rounded-2xl shadow-2xl backdrop-blur-xl p-1.5 z-50 overflow-hidden",
           isPinkMode

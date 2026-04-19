@@ -7,14 +7,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import Switch from '@/components/ui/sky-toggle';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Cloud, Cpu, Sparkles, Zap, Key, Globe, RefreshCcw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { ProviderSection } from './ProviderSection';
 
 import {
@@ -32,29 +32,21 @@ import {
 interface SettingsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  isDark: boolean;
-  onThemeChange: (checked: boolean) => void;
   enterToSend: boolean;
   setEnterToSend: (enter: boolean) => void;
   setMessages?: (messages: Message[]) => void;
   setRecentChats: (chats: ChatSession[]) => void;
   setActiveSessionId?: (id: string | null) => void;
-  onOpenWallpaperPicker?: (mode: 'light' | 'dark') => void;
-  onClearWallpapers?: () => void | Promise<void>;
 }
 
 export const SettingsDialog = ({
   isOpen,
   onOpenChange,
-  isDark,
-  onThemeChange,
   enterToSend,
   setEnterToSend,
   setMessages,
   setRecentChats,
   setActiveSessionId,
-  onOpenWallpaperPicker,
-  onClearWallpapers,
 }: SettingsDialogProps) => {
   const [activeTab, setActiveTab] = React.useState('general');
 
@@ -96,65 +88,18 @@ export const SettingsDialog = ({
                 className="col-start-1 row-start-1 flex flex-col gap-6"
               >
                 <div className="space-y-4">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Appearance</h4>
-                  <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium">Theme</span>
-                      <span className="text-xs text-muted-foreground">Toggle between light and dark mode</span>
-                    </div>
-                    <Switch checked={isDark} onChange={onThemeChange} />
-                  </div>
-                  
-                  <div className="flex flex-col gap-3 p-4 border rounded-2xl bg-muted/5">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium">Chat Background</span>
-                      <span className="text-xs text-muted-foreground">Select a custom GIF or image for the chat area</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="rounded-xl flex-1 h-9 gap-2"
-                        onClick={() => onOpenWallpaperPicker?.('light')}
-                      >
-                        <Sparkles className="h-4 w-4 text-amber-500" />
-                        Set Light BG
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="rounded-xl flex-1 h-9 gap-2"
-                        onClick={() => onOpenWallpaperPicker?.('dark')}
-                      >
-                        <Zap className="h-4 w-4 text-primary" />
-                        Set Dark BG
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="rounded-xl h-9 px-3 text-muted-foreground hover:text-destructive transition-colors"
-                        onClick={() => void onClearWallpapers?.()}
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
                   <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Chat</h4>
-                  <div className="flex items-center justify-between p-4 border rounded-2xl bg-muted/5">
+                  <div className="group flex items-center justify-between p-4 border rounded-2xl bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer select-none"
+                    onClick={() => setEnterToSend(!enterToSend)}
+                  >
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">Enter to Send</span>
                       <span className="text-xs text-muted-foreground">Send messages by pressing Enter</span>
                     </div>
-                    <input 
-                      type="checkbox" 
-                      checked={!!enterToSend} 
-                      onChange={(e) => {
-                        setEnterToSend(e.target.checked);
-                      }} 
-                      className="h-5 w-5 rounded-lg border-muted-foreground/30 text-primary focus:ring-primary cursor-pointer" 
+                    <Switch
+                      checked={!!enterToSend}
+                      onCheckedChange={(checked) => setEnterToSend(checked)}
+                      aria-label="Send messages when pressing Enter"
                     />
                   </div>
                 </div>

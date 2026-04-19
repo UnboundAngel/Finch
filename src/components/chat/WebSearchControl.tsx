@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Globe, Edit2, ExternalLink, ListFilter, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { 
   DropdownMenu, 
@@ -205,4 +205,3 @@ export const WebSearchControl = ({
     </motion.div>
   );
 };
-export default WebSearchControl;

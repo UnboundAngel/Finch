@@ -489,14 +489,12 @@ export function Dashboard() {
           profileName, setProfileName, profileEmail, setProfileEmail, onLogout: handleLogout
         }} 
         settingsProps={{
-          isDark, onThemeChange: handleThemeChange, enterToSend, setEnterToSend,
+          enterToSend, setEnterToSend,
           setRecentChats,
           setMessages: (messages: Message[]) =>
             chatSessionActionsRef.current?.setMessages(messages),
           setActiveSessionId: (id: string | null) =>
             chatSessionActionsRef.current?.setActiveSessionId(id),
-          onOpenWallpaperPicker: openWallpaperPicker,
-          onClearWallpapers: handleClearWallpapers,
         }} 
       >
         <WallpaperPickerDialog

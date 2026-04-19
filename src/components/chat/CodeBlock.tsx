@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { createHighlighter, type Highlighter } from 'shiki';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 interface CodeBlockProps {

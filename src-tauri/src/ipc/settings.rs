@@ -90,7 +90,13 @@ pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderCon
         if provider_config.gemini_api_key.is_some() {
             provider_config.gemini_api_key = Some("••••••••".to_string());
         }
-        
+        if provider_config.tavily_api_key.is_some() {
+            provider_config.tavily_api_key = Some("••••••••".to_string());
+        }
+        if provider_config.brave_api_key.is_some() {
+            provider_config.brave_api_key = Some("••••••••".to_string());
+        }
+
         Ok(Some(provider_config))
     } else {
         Ok(None)
@@ -106,7 +112,7 @@ pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> 
 
     if let (Some(current_obj), Some(new_obj)) = (current_config_val.as_object_mut(), new_config_val.as_object()) {
         for (k, v) in new_obj {
-            if !v.is_null() {
+            if !v.is_null() && v.as_str() != Some("••••••••") {
                 current_obj.insert(k.clone(), v.clone());
             }
         }
@@ -128,8 +134,16 @@ pub async fn update_search_config(handle: AppHandle, config: serde_json::Value) 
         .unwrap_or_default();
 
     if let Some(obj) = config.as_object() {
-        if let Some(k) = obj.get("tavily_api_key").and_then(|v| v.as_str()) { current_config.tavily_api_key = Some(k.to_string()); }
-        if let Some(k) = obj.get("brave_api_key").and_then(|v| v.as_str()) { current_config.brave_api_key = Some(k.to_string()); }
+        if let Some(k) = obj.get("tavily_api_key").and_then(|v| v.as_str()) {
+            if k != "••••••••" {
+                current_config.tavily_api_key = Some(k.to_string());
+            }
+        }
+        if let Some(k) = obj.get("brave_api_key").and_then(|v| v.as_str()) {
+            if k != "••••••••" {
+                current_config.brave_api_key = Some(k.to_string());
+            }
+        }
         if let Some(u) = obj.get("searxng_url").and_then(|v| v.as_str()) { current_config.searxng_url = Some(u.to_string()); }
         if let Some(p) = obj.get("active_search_provider").and_then(|v| v.as_str()) { current_config.active_search_provider = Some(p.to_string()); }
     }

@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { Binoculars, Check, Clock, ChevronDown, ChevronUp, ExternalLink as ExternalLinkIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { ExternalLink } from '@/src/components/ui/ExternalLink';
 
-export interface SearchEvent {
+interface SearchEvent {
   type: 'search_start' | 'search_source' | 'search_done';
   data?: any;
 }

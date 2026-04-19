@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { invoke } from '@tauri-apps/api/core';
 import { unmaskKey } from '@/src/lib/tauri-utils';
 import { Key, Globe, RefreshCcw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 
-export interface ProviderSectionProps {
+interface ProviderSectionProps {
   title: string;
   icon: React.ElementType;
   description: string;

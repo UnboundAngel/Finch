@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { WhisperModel } from '../components/chat/ModelMarketplace';
 import { useChatStore } from '../store';
 
-export interface DownloadProgressEvent {
+interface DownloadProgressEvent {
   id: string;
   progress: number;
   total_bytes: number;

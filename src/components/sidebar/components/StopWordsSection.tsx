@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Hash, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useModelParams } from '@/src/store';
 import { cn } from '@/lib/utils';
 import { ParameterZone } from './ParameterZone';

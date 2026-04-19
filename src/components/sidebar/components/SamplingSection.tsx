@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sliders, HelpCircle, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useModelParams } from '@/src/store';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { BackgroundPlus } from '@/components/ui/background-plus';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';

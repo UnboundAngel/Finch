@@ -5,7 +5,7 @@ import { useChatStore } from '@/src/store/index';
 
 import { Message } from '../types/chat';
 
-export interface AIStats {
+interface AIStats {
   totalTokens: number;
   inputTokens?: number;
   outputTokens?: number;
@@ -14,7 +14,7 @@ export interface AIStats {
   totalDuration?: number;
 }
 
-export interface GenerationParams {
+interface GenerationParams {
   systemPrompt?: string;
   temperature?: number;
   topP?: number;

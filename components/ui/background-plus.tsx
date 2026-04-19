@@ -44,5 +44,3 @@ export const BackgroundPlus: React.FC<PlusPatternBackgroundProps> = ({
     />
   )
 }
-
-export default BackgroundPlus;

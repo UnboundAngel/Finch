@@ -1,11 +1,9 @@
 mod search;
 mod voice;
 mod download;
-mod tavily;
 mod types;
 mod session;
 mod providers;
-mod config;
 mod ipc;
 
 use types::AppState;

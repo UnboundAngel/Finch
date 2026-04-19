@@ -1,3 +1,6 @@
+//! Anthropic REST / SSE JSON shapes — many fields exist only for `Deserialize` and are not read in-app.
+#![allow(dead_code)]
+
 use serde::{Deserialize, Serialize};
 use serde_json;
 use reqwest::Client;

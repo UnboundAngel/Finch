@@ -109,8 +109,6 @@ export function DashboardHeader({
                     provider: selectedProvider,
                     modelId: selectedModel
                   });
-                  setSelectedModel('');
-                  setSelectedProvider('');
                   toast.success('Model ejected successfully');
                 } catch (err) {
                   console.error('Failed to eject model:', err);

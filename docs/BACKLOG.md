@@ -6,60 +6,42 @@ Items are ordered by priority. Close all **Baseline** items before touching **Di
 
 ## 🔴 Baseline — Must Close First
 
-### [ ] 1. File / Image Upload → Actually Sent to AI
-**What's broken:** File picker UI exists (`ChatInput.tsx:241–254`), files attach visually, but nothing is ever sent to the AI. The "Analyze an image" empty-state card is a broken promise on first launch.
+### [ ] 1. AI Message Actions — Positioning + Regenerate Visibility
+**Two issues in one:**
 
-**Architecture (already designed — just needs building):**
+1. **Copy button is on the left** of `MetadataRow`. Should be on the right, mirroring user message layout: `[MetadataRow] [Regenerate | Copy]`. **Files:** `MessageBubble.tsx:236–289`.
 
-Rust unified message type:
-```rust
-enum ContentPart {
-    Text(String),
-    Image { base64: String, mime: String },
-    Document { base64: String, mime: String },
-}
-struct InternalMessage {
-    role: String,
-    content: Vec<ContentPart>,
-}
-```
-
-Provider adapter mapping:
-| Provider | Block Type | Field | Data Format |
-|:---|:---|:---|:---|
-| Anthropic | `image` / `document` | `source` | `{"type": "base64", "data": "..."}` |
-| OpenAI | `image_url` | `image_url` | `{"url": "data:image/png;base64,..."}` |
-| Gemini | `inlineData` | `inlineData` | `{"mimeType": "...", "data": "..."}` |
-| Ollama | `image` (array) | `images` | List of raw base64 strings |
-| LM Studio | Same as OpenAI | — | — |
-
-IPC contract: Frontend sends `[{ type: "file", path: "/abs/path/img.png" }]`. Rust reads + encodes to base64 JIT when building the outbound HTTP request per provider.
-
-**Also:** Either wire up or replace the "Analyze an image" empty-state suggestion card in the dashboard.
+2. **Regenerate button is invisible in practice.** The prop chain exists (`Dashboard → DashboardMain → ChatArea → MessageBubble`) but `ChatArea.tsx:148` only passes `onRegenerate` when the message is the very last one in the list — and even then it's hover-only. Users never discover it. **Fix:** Show regenerate on all AI messages (or at minimum keep it on last-message but make it always visible, not hover-gated).
 
 ---
 
-### [ ] 2. Copy Button on AI Messages
-**What's broken:** Copy button exists on user messages (`MessageBubble.tsx:122–166`) but not on AI messages — only a metadata row at line 168.
-**Fix:** Mirror the same copy button pattern on the AI message side.
+### [ ] 2. File Attachment — Image Preview + Broader File Types
+**Two issues in one:**
+
+1. **No image thumbnail preview.** When an image is attached, the input shows a paperclip pill with just the filename (`ChatInput.tsx:216–225`). It should show an actual thumbnail for image files (png, jpg, gif, webp). Use Tauri's `convertFileSrc()` to get a local URL from the file path, detect image by extension, and render a small `<img>` inside the pill.
+
+2. **File picker is too narrow.** `ChatInput.tsx:135` only allows `['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf']`. Should support the full range that providers accept:
+   - **Documents:** `txt, md, csv, rtf, html, json`
+   - **Code:** `py, js, ts, jsx, tsx, rs, go, java, cpp, c, cs, rb, php, yaml, toml, xml`
+   - **Office:** `docx, xlsx, pptx`
+   - **Images:** keep existing
+   - **PDF:** keep existing
+   
+   Also consider enabling `multiple: true` so users can attach more than one file per message (Claude supports up to 20).
 
 ---
 
-### [ ] 3. Auto-Naming Chats
-**What's broken:** Chat title defaults to `messages[0].content.substring(0, 40)` (`Dashboard.tsx:177`). No AI-generated naming. Manual rename exists via double-click in sidebar.
-**Fix:** On first message sent, fire a lightweight non-streaming AI call: *"Give this conversation a 4–6 word title based on this opening message."* Store result in session metadata. Use the cheapest/fastest available model for this call.
+### [ ] 4. Power / Advanced Settings Tab
+**What's missing:** Several UI features are surfaced by default that power users want but casual users don't need:
+- Right sidebar toggle button in the header (hidden by default)
+- Token stats / metadata row under AI messages (hidden by default)
+- System prompt / persona controls (keep visible — these are core)
 
----
+**Fix:** Add an **Advanced** (or "Power") tab inside the Settings dialog. Put feature-flag toggles there:
+- "Show right sidebar" — off by default
+- "Show message stats" — off by default
 
-### [ ] 4. Regenerate Response
-**What's missing:** No retry/regenerate UI anywhere. User must manually retype.
-**Fix:** Add a regenerate button to AI message actions. Re-invoke `streamMessage` using the last user message in history, replacing the current AI message.
-
----
-
-### [ ] 5. Edit User Message + Resend
-**What's missing:** Messages are immutable after send. No edit button exists.
-**Fix:** Add edit button to user message actions. On confirm: truncate `messages` array to exclude the edited message and everything after it, replace with edited content, re-invoke stream.
+Store flags in `useProfileStore` or `useModelParams` with `persist`. Gate the right sidebar toggle button and `<MetadataRow />` render behind these flags.
 
 ---
 
@@ -77,26 +59,20 @@ IPC contract: Frontend sends `[{ type: "file", path: "/abs/path/img.png" }]`. Ru
 ---
 
 ### [ ] Favicon Privacy (Web Search Icons)
-**Issue:** Fetches favicons from `icons.duckduckgo.com` — leaks visited domains to third party.
-**Fix:** Generate local fallback icons: deterministic HSL color from domain name hash + first-letter initial. Zero external pings.
+**Issue:** Fetches favicons from `icons.duckduckgo.com` — unreliable and leaks visited domains to a third party.
+**Fix:** Generate local fallback icons: deterministic HSL color from domain name hash + first-letter initial. Zero external pings, always works.
 
 ---
 
 ### [ ] Search Bar UI Polish
-**Issue:** Search bar in left sidebar works (filters by title + content) but animations and UI are rough.
+**Issue:** Search bar in left sidebar works but animations and UI are rough.
 **Fix:** Polish animations and transitions. No functional changes needed.
 
 ---
 
 ### [ ] Settings Cleanup
-**Issue:** Settings has theme/background toggles that duplicate controls already in the top bar. Feels sparse.
-**Fix:** Remove duplicate toggles from Settings. Consider consolidating into a single clean tab.
-
----
-
-### [ ] Right Sidebar Default State
-**Issue:** Right sidebar is collapsed by default, which is correct. But the content (token stats, sampling params) may be too technical to surface prominently.
-**Consideration:** Keep collapsed by default. May want to hide token stats entirely until user opens sidebar.
+**Issue:** Settings has theme/background toggles that duplicate controls already in the top bar.
+**Fix:** Remove duplicate toggles. Consolidate into the new Advanced tab if applicable.
 
 ---
 

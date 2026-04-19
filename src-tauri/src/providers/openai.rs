@@ -1,48 +1,8 @@
 use crate::types::{ProviderConfig, StreamingEvent};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::{AppHandle, ipc::Channel};
-use tauri_plugin_store::StoreExt;
+use tauri::ipc::Channel;
 use futures_util::StreamExt;
-
-pub async fn list_openai_models(handle: AppHandle) -> Result<Vec<String>, String> {
-    let store = handle.get_store("finch_config.json").ok_or("Store not found")?;
-    let config_val = store.get("provider_config");
-    let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
-    
-    let api_key = match config.and_then(|c| c.openai_api_key) {
-        Some(k) if k != "••••••••" => k,
-        _ => match std::env::var("OPENAI_API_KEY") {
-            Ok(k) => k,
-            Err(_) => return Ok(vec![]),
-        }
-    };
-
-    let client = reqwest::Client::new();
-    let resp = client.get("https://api.openai.com/v1/models")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .send()
-        .await;
-
-    match resp {
-        Ok(r) => {
-            let json: serde_json::Value = r.json().await.unwrap_or_default();
-            let mut models = Vec::new();
-            if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
-                for item in data {
-                    let owned_by = item.get("owned_by").and_then(|o| o.as_str()).unwrap_or_default();
-                    let id = item.get("id").and_then(|i| i.as_str()).unwrap_or_default();
-                    if owned_by == "openai" && (id.starts_with("gpt-") || id.starts_with("o")) {
-                        models.push(id.to_string());
-                    }
-                }
-            }
-            models.sort();
-            Ok(models)
-        }
-        Err(_) => Ok(vec![]),
-    }
-}
 
 pub async fn send_message_openai(
     config: &ProviderConfig,
