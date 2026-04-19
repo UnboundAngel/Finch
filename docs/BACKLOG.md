@@ -78,6 +78,18 @@ Store flags in `useProfileStore` or `useModelParams` with `persist`. Gate the ri
 
 ## 🟢 Differentiators — Build After All Above Is Done
 
+### [ ] File Attachment Preview Modal
+Clicking an attached file (in the input or in a sent message) opens a preview modal — similar to Claude's implementation:
+
+- **PDFs:** Render first page via `<iframe src={convertFileSrc(path)}>` (WebView has a built-in PDF renderer). Show filename at top, page count at bottom. On hover: card tilts slightly left, page count swaps to a Download arrow, clicking opens the file in the system browser (not a download).
+- **Images:** Lightbox with `<img src={convertFileSrc(path)}>`.
+- **Code/text files:** Read contents via Tauri `fs` plugin, display with Shiki syntax highlighting (already used in `CodeBlock.tsx`).
+- **Other docs:** Filename + file size + type icon.
+
+The tilt + label-swap hover effect is pure CSS `transform: rotate(-2deg)` + conditional render on hover state.
+
+---
+
 ### [ ] Artifacts System
 Intercept `<antArtifact>` XML tags in the AI stream → render in a sliding side panel (code via Shiki, Markdown, or live preview). Store in message metadata for reopening.
 
