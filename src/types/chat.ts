@@ -24,6 +24,8 @@ export type ChatSession = {
   id: string;
   title: string;
   messages: Message[];
+  /** Finch profile that owns this chat (omitted on older saved files). */
+  profileId?: string;
   model?: string;
   provider?: string;
   timestamp: number;

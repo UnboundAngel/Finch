@@ -83,11 +83,14 @@ export default function StartupScreen() {
 
   return (
     <div className="min-h-screen bg-background text-primary flex flex-col items-center justify-center font-sans relative">
-      <div
-        data-tauri-drag-region
-        className="absolute inset-x-0 top-0 h-14 z-10"
-        aria-hidden
-      />
+      {/* Only on profile grid: full-width drag strip. Edit/creation screens have their own headers + buttons — strip would steal clicks (e.g. Cancel). */}
+      {view === 'selection' && (
+        <div
+          data-tauri-drag-region
+          className="absolute inset-x-0 top-0 z-10 h-14"
+          aria-hidden
+        />
+      )}
       {view === 'selection' && (
         <ProfileSelection 
           profiles={profiles} 
@@ -101,7 +104,9 @@ export default function StartupScreen() {
       )}
       {view === 'creation' && (
         <ProfileCreation 
-          onCancel={() => profiles.length > 0 ? setView('selection') : null} 
+          onCancel={() => {
+            if (profiles.length > 0) setView('selection');
+          }}
           onSave={handleAddProfile} 
         />
       )}

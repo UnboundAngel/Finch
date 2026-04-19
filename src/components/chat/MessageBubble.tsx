@@ -20,9 +20,21 @@ interface MessageBubbleProps {
   isIncognito?: boolean;
   hasCustomBg?: boolean;
   isPinkMode?: boolean;
+  userAvatarSrc: string;
+  userAvatarLetter: string;
 }
 
-export const MessageBubble = ({ msg, selectedModel, isDark, isLatest, isIncognito, hasCustomBg, isPinkMode }: MessageBubbleProps) => {
+export const MessageBubble = ({
+  msg,
+  selectedModel,
+  isDark,
+  isLatest,
+  isIncognito,
+  hasCustomBg,
+  isPinkMode,
+  userAvatarSrc,
+  userAvatarLetter,
+}: MessageBubbleProps) => {
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = () => {
@@ -35,8 +47,8 @@ export const MessageBubble = ({ msg, selectedModel, isDark, isLatest, isIncognit
     <div className="flex gap-4 w-full group">
       {msg.role === 'user' ? (
         <Avatar className="h-8 w-8 shrink-0 mt-0.5 rounded-lg border border-muted-foreground/20">
-          <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" alt="User" />
-          <AvatarFallback className="rounded-lg bg-primary/10 text-primary">U</AvatarFallback>
+          <AvatarImage src={userAvatarSrc} alt="" referrerPolicy="no-referrer" />
+          <AvatarFallback className="rounded-lg bg-primary/10 text-primary">{userAvatarLetter}</AvatarFallback>
         </Avatar>
       ) : (
         <div className="h-8 w-8 shrink-0 mt-0.5 rounded-lg bg-primary flex items-center justify-center shadow-sm">

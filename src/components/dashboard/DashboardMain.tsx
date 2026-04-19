@@ -35,6 +35,8 @@ interface DashboardMainProps {
   handleDeleteChat: (id: string, e: React.MouseEvent) => void;
   setIsProfileOpen: (val: boolean) => void;
   setIsSettingsOpen: (val: boolean) => void;
+  userAvatarSrc: string;
+  userAvatarLetter: string;
   showPinkMode: boolean;
   isDark: boolean;
   customBgDark: string;
@@ -126,7 +128,8 @@ export function DashboardMain(props: DashboardMainProps) {
     messages, isThinking, researchEvents, selectedModel, stableSetInput, hasCustomBgValue,
     voiceStatus, input, handleSend, abort, isStreaming, attachedFile,
     setAttachedFile, isWebSearchActive, setIsWebSearchActive, enterToSend, isModelLoaded,
-    handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight
+    handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight,
+    userAvatarSrc, userAvatarLetter,
   } = props;
 
   return (
@@ -211,6 +214,8 @@ export function DashboardMain(props: DashboardMainProps) {
                       hasCustomBg={hasCustomBgValue}
                       isPinkMode={showPinkMode}
                       voiceStatus={voiceStatus}
+                      userAvatarSrc={userAvatarSrc}
+                      userAvatarLetter={userAvatarLetter}
                     />
 
                     <div className="relative z-20">

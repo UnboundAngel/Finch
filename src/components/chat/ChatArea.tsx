@@ -19,6 +19,8 @@ interface ChatAreaProps {
   isPinkMode?: boolean;
   researchEvents: any[];
   voiceStatus: 'idle' | 'recording' | 'transcribing';
+  userAvatarSrc: string;
+  userAvatarLetter: string;
 }
 
 export const ChatArea = memo(({
@@ -31,7 +33,9 @@ export const ChatArea = memo(({
   isIncognito,
   hasCustomBg,
   isPinkMode,
-  voiceStatus
+  voiceStatus,
+  userAvatarSrc,
+  userAvatarLetter,
 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +138,8 @@ export const ChatArea = memo(({
               isIncognito={isIncognito}
               hasCustomBg={hasCustomBg}
               isPinkMode={isPinkMode}
+              userAvatarSrc={userAvatarSrc}
+              userAvatarLetter={userAvatarLetter}
             />
           ))}
 

@@ -7,11 +7,13 @@ import { useChatStore } from '../store';
 interface UseChatSessionProps {
   recentChats: ChatSession[];
   setRecentChats: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+  activeProfileId: string | null;
 }
 
 export function useChatSession({
   recentChats,
-  setRecentChats
+  setRecentChats,
+  activeProfileId,
 }: UseChatSessionProps) {
   const isIncognito = useChatStore(state => state.isIncognito);
   const setIsIncognito = useChatStore(state => state.setIsIncognito);
@@ -23,6 +25,22 @@ export function useChatSession({
   const activeSessionIdRef = useRef<string | null>(null);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const hasInitialized = useRef(false);
+
+  const prevProfileIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      prevProfileIdRef.current !== null &&
+      activeProfileId !== null &&
+      prevProfileIdRef.current !== activeProfileId
+    ) {
+      hasInitialized.current = false;
+      setActiveSessionId(null);
+      setMessages([]);
+      setEditingSessionId(null);
+    }
+    prevProfileIdRef.current = activeProfileId;
+  }, [activeProfileId]);
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
@@ -120,8 +138,8 @@ export function useChatSession({
     }
   }, [handleRenameCommit, setEditingSessionId]);
 
-  const hasInitialized = useRef(false);
   useEffect(() => {
+    if (!activeProfileId) return;
     if (!hasInitialized.current && recentChats.length > 0) {
       hasInitialized.current = true;
       if (!activeSessionId && !isIncognito && messages.length === 0) {
@@ -130,7 +148,7 @@ export function useChatSession({
         setMessages(mostRecent.messages);
       }
     }
-  }, [recentChats, activeSessionId, isIncognito, messages.length]);
+  }, [recentChats, activeSessionId, isIncognito, messages.length, activeProfileId]);
 
   return {
     messages,

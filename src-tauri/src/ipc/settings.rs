@@ -1,56 +1,19 @@
 use tauri::{AppHandle, command, Manager};
 use crate::types::{ProviderConfig, HardwareInfo};
+use crate::ipc::media_import::{pick_and_save_media, CompressProfile};
 use tauri_plugin_store::StoreExt;
 use std::fs;
 use std::path::{Component, PathBuf};
 use sysinfo::System;
-use uuid::Uuid;
-
-fn pick_and_copy_to_subdir(
-    handle: &AppHandle,
-    subdir: &str,
-    filter_label: &str,
-    extensions: &[&str],
-) -> Result<String, String> {
-    use tauri_plugin_dialog::DialogExt;
-
-    let file_path_enum = handle
-        .dialog()
-        .file()
-        .add_filter(filter_label, extensions)
-        .blocking_pick_file()
-        .ok_or("No file selected")?;
-
-    let file_path = match file_path_enum {
-        tauri_plugin_dialog::FilePath::Path(p) => p,
-        _ => return Err("Selected item is not a local file".into()),
-    };
-
-    let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
-    let dir = app_dir.join(subdir);
-    if !dir.exists() {
-        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    }
-
-    let ext = file_path
-        .extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("bin");
-    let dest_name = format!("{}.{}", Uuid::new_v4(), ext);
-    let dest_path = dir.join(dest_name);
-
-    fs::copy(&file_path, &dest_path).map_err(|e| e.to_string())?;
-
-    Ok(dest_path.to_string_lossy().to_string())
-}
 
 #[command]
 pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<String, String> {
-    pick_and_copy_to_subdir(
+    pick_and_save_media(
         &handle,
         "backgrounds",
         "Images",
         &["png", "jpg", "jpeg", "gif", "webp"],
+        CompressProfile::background(),
     )
 }
 
@@ -58,13 +21,26 @@ pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<St
 #[command]
 pub async fn import_user_media(handle: AppHandle, kind: String) -> Result<String, String> {
     match kind.as_str() {
-        "avatar_static" => pick_and_copy_to_subdir(&handle, "avatars", "Images", &["png", "jpg", "jpeg", "webp"]),
-        "avatar_gif" => pick_and_copy_to_subdir(&handle, "avatars", "GIF", &["gif"]),
-        "background" => pick_and_copy_to_subdir(
+        "avatar_static" => pick_and_save_media(
+            &handle,
+            "avatars",
+            "Images",
+            &["png", "jpg", "jpeg", "webp"],
+            CompressProfile::avatar_static(),
+        ),
+        "avatar_gif" => pick_and_save_media(
+            &handle,
+            "avatars",
+            "GIF",
+            &["gif"],
+            CompressProfile::avatar_gif(),
+        ),
+        "background" => pick_and_save_media(
             &handle,
             "backgrounds",
             "Images",
             &["png", "jpg", "jpeg", "gif", "webp"],
+            CompressProfile::background(),
         ),
         _ => Err("Invalid import kind".into()),
     }

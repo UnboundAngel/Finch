@@ -2,8 +2,12 @@ use tauri::{AppHandle, command};
 use crate::session::{ChatSession, list_chats as list_chats_fn, load_chat as load_chat_fn, save_chat as save_chat_fn, delete_chat as delete_chat_fn};
 
 #[command]
-pub async fn list_chats(handle: AppHandle) -> Result<Vec<ChatSession>, String> {
-    list_chats_fn(handle).await
+pub async fn list_chats(
+    handle: AppHandle,
+    profile_id: String,
+    legacy_inbox_owner_profile_id: Option<String>,
+) -> Result<Vec<ChatSession>, String> {
+    list_chats_fn(handle, profile_id, legacy_inbox_owner_profile_id).await
 }
 
 #[command]

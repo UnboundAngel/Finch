@@ -39,6 +39,8 @@ function DashboardContent({
   const isModelLoaded = useChatStore(state => state.isModelLoaded);
   const voiceStatus = useChatStore(state => state.voiceStatus);
   const activeProfile = useProfileStore((s) => s.activeProfile);
+  const profiles = useProfileStore((s) => s.profiles);
+  const legacyInboxOwnerProfileId = profiles[0]?.id ?? null;
   const setSystemPrompt = useModelParams((s) => s.setSystemPrompt);
   const fetchContextIntelligence = useModelParams((s) => s.fetchContextIntelligence);
 
@@ -106,13 +108,21 @@ function DashboardContent({
 
   const showPinkMode = !isDark && !customBgLight && !isIncognito;
 
+  const userAvatarSrc =
+    activeProfile?.avatarUrl && activeProfile.avatarUrl.trim() !== ''
+      ? resolveMediaSrc(activeProfile.avatarUrl)
+      : `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(activeProfile?.name || profileName || 'User')}&backgroundColor=transparent`;
+  const userAvatarLetter = (activeProfile?.name || profileName || 'U').charAt(0).toUpperCase();
+
   const { handleInputChange, handleInputFocus } = useModelPolling(selectedModel, selectedProvider);
   const { headerContrast, sidebarContrast, rightSidebarContrast } = useDynamicBackground({
     isDark, customBgLight, customBgDark, isIncognito, showPinkMode
   });
 
   const session = useChatSession({
-    recentChats, setRecentChats
+    recentChats,
+    setRecentChats,
+    activeProfileId: activeProfile?.id ?? null,
   });
 
   useEffect(() => {
@@ -136,9 +146,15 @@ function DashboardContent({
   useInactivityEject({ provider: selectedProvider, modelId: selectedModel, onEject: handleEject });
 
   useChatPersistence({
-    recentChats, setRecentChats, profileName, setProfileName, profileEmail, setProfileEmail,
-    enterToSend, setEnterToSend, selectedModel, setSelectedModel, selectedProvider,
-    setSelectedProvider, customBgLight, setCustomBgLight, customBgDark, setCustomBgDark
+    setRecentChats,
+    enterToSend,
+    setEnterToSend,
+    selectedModel,
+    setSelectedModel,
+    selectedProvider,
+    setSelectedProvider,
+    activeProfileId: activeProfile?.id ?? null,
+    legacyInboxOwnerProfileId,
   });
 
   useKeyboardShortcuts({
@@ -159,6 +175,7 @@ function DashboardContent({
       id: currentSessionId || '',
       title: existing?.title || updatedMessages[0].content.substring(0, 40),
       messages: updatedMessages as any,
+      profileId: activeProfile?.id,
       timestamp: Date.now(),
       created_at: existing?.created_at || Date.now(),
       updated_at: Date.now(),
@@ -286,6 +303,8 @@ function DashboardContent({
         profileEmail={profileEmail} setProfileEmail={setProfileEmail}
         setIsProfileOpen={setIsProfileOpen}
         setIsSettingsOpen={setIsSettingsOpen}
+        userAvatarSrc={userAvatarSrc}
+        userAvatarLetter={userAvatarLetter}
       />
     </div>
   );
@@ -359,6 +378,15 @@ export function Dashboard() {
     if (checked) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   };
+
+  const prevActiveProfileId = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const id = activeProfile?.id;
+    if (prevActiveProfileId.current !== undefined && prevActiveProfileId.current !== id) {
+      setRecentChats([]);
+    }
+    prevActiveProfileId.current = id;
+  }, [activeProfile?.id]);
 
   return (
     <TooltipProvider>

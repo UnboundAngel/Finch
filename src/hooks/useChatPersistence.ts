@@ -3,54 +3,43 @@ import { ChatSession } from '../types/chat';
 import { invoke } from '@tauri-apps/api/core';
 
 interface UseChatPersistenceProps {
-  recentChats: ChatSession[];
   setRecentChats: (chats: ChatSession[]) => void;
-  profileName: string;
-  setProfileName: (name: string) => void;
-  profileEmail: string;
-  setProfileEmail: (email: string) => void;
   enterToSend: boolean;
   setEnterToSend: (enter: boolean) => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
   selectedProvider: string;
   setSelectedProvider: (provider: string) => void;
-  customBgLight: string;
-  setCustomBgLight: (path: string) => void;
-  customBgDark: string;
-  setCustomBgDark: (path: string) => void;
+  /** Active Finch profile — chats are listed and migrated under this id. */
+  activeProfileId: string | null;
+  /** First profile in store order: pre–profile-id chat files (no `profileId`) appear only for this profile. */
+  legacyInboxOwnerProfileId: string | null;
 }
 
 export const useChatPersistence = ({
-  recentChats,
   setRecentChats,
-  profileName,
-  setProfileName,
-  profileEmail,
-  setProfileEmail,
   enterToSend,
   setEnterToSend,
   selectedModel,
   setSelectedModel,
   selectedProvider,
   setSelectedProvider,
-  customBgLight,
-  setCustomBgLight,
-  customBgDark,
-  setCustomBgDark,
+  activeProfileId,
+  legacyInboxOwnerProfileId,
 }: UseChatPersistenceProps) => {
   const isLoaded = useRef(false);
+  const migrationRan = useRef(false);
 
-  // Initial Load & Migration
+  // Initial settings load, one-time localStorage migration, and profile-scoped chat list
   useEffect(() => {
     const loadAndMigrate = async () => {
       try {
-        // 1. Load settings from Tauri store
-        const config: any = await invoke('get_provider_config');
-        if (config) {
-          if (config.enter_to_send !== undefined) setEnterToSend(config.enter_to_send);
-          if (config.selected_model) setSelectedModel(config.selected_model);
-          if (config.selected_provider) setSelectedProvider(config.selected_provider);
+        const config: unknown = await invoke('get_provider_config');
+        if (config && typeof config === 'object') {
+          const c = config as Record<string, unknown>;
+          if (c.enter_to_send !== undefined) setEnterToSend(!!c.enter_to_send);
+          if (typeof c.selected_model === 'string') setSelectedModel(c.selected_model);
+          if (typeof c.selected_provider === 'string') setSelectedProvider(c.selected_provider);
         } else {
           const savedEnterToSend = localStorage.getItem('finch_enter_to_send');
           if (savedEnterToSend !== null) {
@@ -58,47 +47,63 @@ export const useChatPersistence = ({
           }
         }
 
-        // 2. Load chats from individual files via Rust
-        let chats = await invoke<ChatSession[]>('list_chats');
+        if (!activeProfileId) {
+          setRecentChats([]);
+          isLoaded.current = true;
+          return;
+        }
 
-        // 3. Migration from localStorage if needed
-        const legacyChatsStr = localStorage.getItem('finch_chats');
-        if (legacyChatsStr) {
-          try {
-            const legacyChats = JSON.parse(legacyChatsStr);
-            if (Array.isArray(legacyChats) && legacyChats.length > 0) {
-              console.log(`Migrating ${legacyChats.length} legacy chats to individual files...`);
-              for (const chat of legacyChats) {
-                // Ensure chat has required fields for the new format
-                const migratedChat: ChatSession = {
-                  ...chat,
-                  created_at: chat.created_at || Date.now(),
-                  updated_at: chat.updated_at || Date.now(),
-                  pinned: chat.pinned ?? false,
-                  incognito: chat.incognito ?? false,
-                  systemPrompt: chat.systemPrompt ?? '',
-                  generationParams: chat.generationParams ?? { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
-                  stats: chat.stats ?? { totalTokens: 0, totalMessages: chat.messages?.length || 0, averageSpeed: 0 }
-                };
+        if (!migrationRan.current) {
+          migrationRan.current = true;
+          const legacyChatsStr = localStorage.getItem('finch_chats');
+          if (legacyChatsStr) {
+            try {
+              const legacyChats = JSON.parse(legacyChatsStr) as unknown;
+              if (Array.isArray(legacyChats) && legacyChats.length > 0) {
+                console.log(`Migrating ${legacyChats.length} legacy chats to individual files...`);
+                for (const chat of legacyChats) {
+                  const migratedChat: ChatSession = {
+                    ...(chat as ChatSession),
+                    profileId: activeProfileId,
+                    created_at: (chat as ChatSession).created_at || Date.now(),
+                    updated_at: (chat as ChatSession).updated_at || Date.now(),
+                    pinned: (chat as ChatSession).pinned ?? false,
+                    incognito: (chat as ChatSession).incognito ?? false,
+                    systemPrompt: (chat as ChatSession).systemPrompt ?? '',
+                    generationParams:
+                      (chat as ChatSession).generationParams ?? {
+                        temperature: 0.7,
+                        maxTokens: 2048,
+                        topP: 1.0,
+                      },
+                    stats:
+                      (chat as ChatSession).stats ?? {
+                        totalTokens: 0,
+                        totalMessages: (chat as ChatSession).messages?.length || 0,
+                        averageSpeed: 0,
+                      },
+                  };
 
-                // Only migrate non-incognito chats
-                if (!migratedChat.incognito) {
-                  await invoke('save_chat', { chat: migratedChat });
+                  if (!migratedChat.incognito) {
+                    await invoke('save_chat', { chat: migratedChat });
+                  }
                 }
+                localStorage.removeItem('finch_chats');
+                localStorage.removeItem('finch_profile');
+                localStorage.removeItem('finch_enter_to_send');
+                localStorage.removeItem('finch_bookmarked_models');
+                console.log('Migration complete. LocalStorage cleared.');
               }
-              // Reload chat list after migration
-              chats = await invoke<ChatSession[]>('list_chats');
-              // Clear legacy data
-              localStorage.removeItem('finch_chats');
-              localStorage.removeItem('finch_profile');
-              localStorage.removeItem('finch_enter_to_send');
-              localStorage.removeItem('finch_bookmarked_models');
-              console.log('Migration complete. LocalStorage cleared.');
+            } catch (e) {
+              console.error('Failed to migrate legacy chats:', e);
             }
-          } catch (e) {
-            console.error('Failed to migrate legacy chats:', e);
           }
         }
+
+        const chats = await invoke<ChatSession[]>('list_chats', {
+          profile_id: activeProfileId,
+          legacy_inbox_owner_profile_id: legacyInboxOwnerProfileId,
+        });
 
         setRecentChats(chats);
         isLoaded.current = true;
@@ -107,8 +112,15 @@ export const useChatPersistence = ({
       }
     };
 
-    loadAndMigrate();
-  }, [setRecentChats, setProfileName, setProfileEmail, setEnterToSend, setSelectedModel, setSelectedProvider, setCustomBgLight, setCustomBgDark]);
+    void loadAndMigrate();
+  }, [
+    activeProfileId,
+    legacyInboxOwnerProfileId,
+    setRecentChats,
+    setEnterToSend,
+    setSelectedModel,
+    setSelectedProvider,
+  ]);
 
   // Reactive Save for settings
   useEffect(() => {
@@ -121,13 +133,13 @@ export const useChatPersistence = ({
             enter_to_send: enterToSend,
             selected_model: selectedModel,
             selected_provider: selectedProvider,
-          }
+          },
         });
       } catch (e) {
         console.error('Failed to save settings:', e);
       }
     };
 
-    saveSettings();
+    void saveSettings();
   }, [enterToSend, selectedModel, selectedProvider]);
 };

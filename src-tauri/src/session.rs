@@ -21,9 +21,16 @@ pub struct ChatSession {
     #[serde(rename = "generationParams")]
     pub generation_params: Option<serde_json::Value>,
     pub stats: Option<serde_json::Value>,
+    /// Finch profile that owns this chat. Missing on older files — listed only for `legacy_inbox_owner_profile_id`.
+    #[serde(rename = "profileId", default)]
+    pub profile_id: Option<String>,
 }
 
-pub async fn list_chats(handle: AppHandle) -> Result<Vec<ChatSession>, String> {
+pub async fn list_chats(
+    handle: AppHandle,
+    profile_id: String,
+    legacy_inbox_owner_profile_id: Option<String>,
+) -> Result<Vec<ChatSession>, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chats_dir = app_dir.join("chats");
     
@@ -42,6 +49,11 @@ pub async fn list_chats(handle: AppHandle) -> Result<Vec<ChatSession>, String> {
             }
         }
     }
+
+    chats.retain(|chat| match &chat.profile_id {
+        Some(pid) => pid == &profile_id,
+        None => legacy_inbox_owner_profile_id.as_deref() == Some(profile_id.as_str()),
+    });
 
     chats.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
     Ok(chats)

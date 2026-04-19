@@ -108,6 +108,10 @@ export default function ProfileSelection({
 }) {
   const [isManaging, setIsManaging] = useState(false);
 
+  /** Same layout as the “?” + pencil branch so the check sits in the same spot relative to the last letter. */
+  const trailingIconSlot =
+    'no-drag pointer-events-auto absolute left-full top-0 z-10 translate-y-[2px] pl-[1px] md:translate-y-[3px] md:pl-[2px]';
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
@@ -122,22 +126,49 @@ export default function ProfileSelection({
     >
       <div
         data-tauri-drag-region
-        className="flex w-full items-center justify-center gap-4 mb-12 rounded-2xl py-3 px-2"
+        className="mb-12 flex w-full justify-center rounded-2xl py-3 px-2"
       >
-        <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-center text-primary flex-1 min-w-0">
-          {isManaging ? "Manage Profiles" : "Who's chatting?"}
+        <h1 className="inline-flex max-w-full flex-wrap items-baseline justify-center text-4xl md:text-5xl font-medium tracking-tight text-primary">
+          {isManaging ? (
+            <>
+              <span>Manage Profile</span>
+              <span className="relative inline-block leading-none">
+                <span className="inline-block">s</span>
+                <span className={trailingIconSlot}>
+                  <Tooltip text="Done">
+                    <button
+                      type="button"
+                      onClick={() => setIsManaging(false)}
+                      className="rounded p-0.5 text-primary/50 hover:bg-muted/40 hover:text-primary/90"
+                      aria-label="Done managing profiles"
+                    >
+                      <Check className="h-3 w-3 md:h-3.5 md:w-3.5" strokeWidth={2.5} />
+                    </button>
+                  </Tooltip>
+                </span>
+              </span>
+            </>
+          ) : (
+            <>
+              <span>Who&apos;s chatting</span>
+              <span className="relative inline-block leading-none">
+                <span className="inline-block">?</span>
+                <span className={trailingIconSlot}>
+                  <Tooltip text="Manage Profiles">
+                    <button
+                      type="button"
+                      onClick={() => setIsManaging(true)}
+                      className="rounded p-0.5 text-primary/50 hover:bg-muted/40 hover:text-primary/90"
+                      aria-label="Manage profiles"
+                    >
+                      <Pencil className="h-3 w-3 md:h-3.5 md:w-3.5" strokeWidth={2.25} />
+                    </button>
+                  </Tooltip>
+                </span>
+              </span>
+            </>
+          )}
         </h1>
-        <div className="no-drag shrink-0">
-          <Tooltip text={isManaging ? "Done" : "Manage Profiles"}>
-            <button
-              type="button"
-              onClick={() => setIsManaging(!isManaging)}
-              className="p-2 text-primary/60 hover:text-primary transition-colors"
-            >
-              {isManaging ? <Check className="w-8 h-8" /> : <Pencil className="w-8 h-8" />}
-            </button>
-          </Tooltip>
-        </div>
       </div>
       
       <div className="flex flex-wrap justify-center items-start gap-4 md:gap-8">

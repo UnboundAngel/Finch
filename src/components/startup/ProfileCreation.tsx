@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AvatarPickerDialog } from '@/src/components/profile/AvatarPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
+import { cn } from '@/lib/utils';
 
 export type ProfileCreationPayload = {
   name: string;
@@ -51,7 +52,6 @@ export default function ProfileCreation({
   const [selectedProvider, setSelectedProvider] = useState<ProviderId | ''>('');
   const [selectedModel, setSelectedModel] = useState('');
   const [modelsLoading, setModelsLoading] = useState(true);
-  const [passiveLearning, setPassiveLearning] = useState(true);
   const [webSearch, setWebSearch] = useState(false);
   const [searchOnboardingOpen, setSearchOnboardingOpen] = useState(false);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
@@ -379,29 +379,22 @@ export default function ProfileCreation({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-background rounded-lg border border-border">
+              <div className="pointer-events-none flex items-center justify-between gap-4 p-4 bg-background rounded-lg border border-border select-none">
                 <div>
-                  <div className="text-sm font-medium text-primary">Passive Learning</div>
+                  <div className="text-sm font-medium text-destructive">Passive Learning</div>
                   <div className="text-xs text-primary/60 mt-1">
                     Placeholder for a future memory feature — no effect yet.
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPassiveLearning(!passiveLearning);
-                  }}
-                  disabled={activeStep !== 3}
-                  className={`no-drag w-12 h-6 rounded-full p-1 transition-colors ${passiveLearning ? 'bg-primary' : 'bg-muted'}`}
+                <div
+                  className="no-drag flex h-6 w-12 shrink-0 items-center justify-start rounded-full bg-muted p-1 ring-1 ring-inset ring-border/70"
+                  aria-hidden
                 >
-                  <div
-                    className={`w-4 h-4 rounded-full transform transition-transform ${passiveLearning ? 'translate-x-6 bg-background' : 'translate-x-0 bg-primary'}`}
-                  />
-                </button>
+                  <span className="block h-4 w-4 shrink-0 rounded-full bg-primary shadow-sm" />
+                </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-background rounded-lg border border-border">
+              <div className="flex items-center justify-between gap-4 p-4 bg-background rounded-lg border border-border">
                 <div>
                   <div className="text-sm font-medium text-primary">Web research (default on)</div>
                   <div className="text-xs text-primary/60 mt-1">
@@ -413,10 +406,18 @@ export default function ProfileCreation({
                   type="button"
                   onClick={(e) => void tryEnableWebSearch(e)}
                   disabled={activeStep !== 3}
-                  className={`no-drag w-12 h-6 rounded-full p-1 transition-colors ${webSearch ? 'bg-primary' : 'bg-muted'}`}
+                  className={cn(
+                    'no-drag flex h-6 w-12 shrink-0 items-center rounded-full p-1 transition-colors',
+                    webSearch
+                      ? 'justify-end bg-primary'
+                      : 'justify-start bg-muted ring-1 ring-inset ring-border/70'
+                  )}
                 >
-                  <div
-                    className={`w-4 h-4 rounded-full transform transition-transform ${webSearch ? 'translate-x-6 bg-background' : 'translate-x-0 bg-primary'}`}
+                  <span
+                    className={cn(
+                      'pointer-events-none block h-4 w-4 shrink-0 rounded-full shadow-sm',
+                      webSearch ? 'bg-primary-foreground' : 'bg-primary'
+                    )}
                   />
                 </button>
               </div>
@@ -435,7 +436,7 @@ export default function ProfileCreation({
                       prompt,
                       model: selectedModel,
                       provider: selectedProvider || '',
-                      passiveLearning,
+                      passiveLearning: false,
                       webSearch,
                       avatarUrl: avatarLocalPath || undefined,
                     });
