@@ -22,6 +22,7 @@ interface ChatAreaProps {
   userAvatarSrc: string;
   userAvatarLetter: string;
   onRegenerate?: () => void;
+  onEditResend?: (messageId: string, newContent: string) => void;
 }
 
 export const ChatArea = memo(({
@@ -38,6 +39,7 @@ export const ChatArea = memo(({
   userAvatarSrc,
   userAvatarLetter,
   onRegenerate,
+  onEditResend,
 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -147,6 +149,7 @@ export const ChatArea = memo(({
                   ? onRegenerate
                   : undefined
               }
+              onEditResend={msg.role === 'user' && !isThinking ? onEditResend : undefined}
             />
           ))}
 

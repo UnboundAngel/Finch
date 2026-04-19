@@ -289,6 +289,19 @@ function DashboardContent({
     invokeStream(userMsg.content, truncated);
   }, [isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
 
+  const handleEditResend = useCallback(async (messageId: string, newContent: string) => {
+    if (isThinking || isStreaming) return;
+    const msgs = session.messages;
+    const idx = msgs.findIndex(m => m.id === messageId);
+    if (idx === -1) return;
+    const editedMessage: Message = { ...msgs[idx], content: newContent };
+    const truncated = [...msgs.slice(0, idx), editedMessage];
+    session.setMessages(truncated);
+    setResearchEvents([]);
+    await updateActiveSessionInList(truncated);
+    invokeStream(newContent, truncated);
+  }, [isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
+
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
       ? (isDark ? "bg-[#1a1a1a]" : "bg-[#fffcf0]") 
@@ -338,6 +351,7 @@ function DashboardContent({
         voiceStatus={voiceStatus} input={input} handleInputChange={handleInputChange}
         handleSend={handleSend} abort={handleStop} isStreaming={isStreaming}
         onRegenerate={handleRegenerate}
+        onEditResend={handleEditResend}
         attachedFile={attachedFile} setAttachedFile={setAttachedFile}
         isWebSearchActive={isWebSearchActive} setIsWebSearchActive={setIsWebSearchActive}
         enterToSend={enterToSend} isModelLoaded={selectedModel ? isModelLoaded : true}
