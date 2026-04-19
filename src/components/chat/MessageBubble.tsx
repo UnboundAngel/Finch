@@ -165,7 +165,42 @@ export const MessageBubble = ({
           </div>
         )}
 
-        {msg.role === 'ai' && msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} hasCustomBg={hasCustomBg} />}
+        {msg.role === 'ai' && (
+          <div className="flex items-center gap-1">
+            <div className={cn(
+              "flex items-center gap-1 px-1 transition-opacity duration-200",
+              copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}>
+              <TooltipProvider delay={400}>
+                <Tooltip>
+                  <TooltipTrigger
+                    onClick={handleCopy}
+                    className={cn(
+                      "p-1.5 rounded-md transition-all active:scale-90",
+                      "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <AnimatePresence mode="wait">
+                      {copied ? (
+                        <motion.div key="check" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.15 }}>
+                          <Check className="h-3.5 w-3.5" />
+                        </motion.div>
+                      ) : (
+                        <motion.div key="copy" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.15 }}>
+                          <Files className="h-3.5 w-3.5" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-[10px] py-1 px-2">
+                    {copied ? "Copied!" : "Copy"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            {msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} hasCustomBg={hasCustomBg} />}
+          </div>
+        )}
       </div>
     </div>
   );
