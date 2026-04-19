@@ -1,16 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Camera } from 'lucide-react';
+import { Camera, RefreshCw } from 'lucide-react';
+import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
+import {
+  fetchModelsMap,
+  firstUsableModel,
+  PROVIDER_LABELS,
+  type ModelsMap,
+  type ProviderId,
+} from '@/src/lib/availableModels';
+import { SearchOnboarding } from '@/src/components/chat/SearchOnboarding';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
-export default function ProfileCreation({ onCancel, onSave }: { onCancel: () => void, onSave: (data: { name: string, prompt: string, model: string, passiveLearning: boolean, webSearch: boolean }) => void }) {
+export type ProfileCreationPayload = {
+  name: string;
+  prompt: string;
+  model: string;
+  provider: string;
+  passiveLearning: boolean;
+  webSearch: boolean;
+};
+
+export default function ProfileCreation({
+  onCancel,
+  onSave,
+}: {
+  onCancel: () => void;
+  onSave: (data: ProfileCreationPayload) => void;
+}) {
   const [name, setName] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState('model-1');
+  const [modelsMap, setModelsMap] = useState<ModelsMap>({
+    anthropic: [],
+    openai: [],
+    gemini: [],
+    local_ollama: [],
+    local_lmstudio: [],
+  });
+  const [selectedProvider, setSelectedProvider] = useState<ProviderId | ''>('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [passiveLearning, setPassiveLearning] = useState(true);
-  const [webSearch, setWebSearch] = useState(true);
+  const [webSearch, setWebSearch] = useState(false);
+  const [searchOnboardingOpen, setSearchOnboardingOpen] = useState(false);
 
   const [activeStep, setActiveStep] = useState(1);
   const [highestStep, setHighestStep] = useState(1);
+
+  const loadModels = useCallback(async () => {
+    setModelsLoading(true);
+    try {
+      const map = await fetchModelsMap();
+      setModelsMap(map);
+      const pick = firstUsableModel(map);
+      if (pick) {
+        setSelectedProvider(pick.provider);
+        setSelectedModel(pick.model);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Could not load models');
+    } finally {
+      setModelsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadModels();
+  }, [loadModels]);
+
+  const hasAnyModel = Object.values(modelsMap).some((m) => m.length > 0);
+
+  const hasSearchCredentials = (c: Record<string, unknown> | null) =>
+    !!(c?.tavily_api_key || c?.brave_api_key || c?.searxng_url);
+
+  const tryEnableWebSearch = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (webSearch) {
+      setWebSearch(false);
+      return;
+    }
+    try {
+      const c = (await invoke('get_provider_config')) as Record<string, unknown> | null;
+      if (hasSearchCredentials(c)) {
+        setWebSearch(true);
+        toast.success('Web research will default to on for new chats');
+      } else {
+        setSearchOnboardingOpen(true);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Could not read search configuration');
+    }
+  };
 
   const handleNext = (step: number) => {
     setHighestStep(Math.max(highestStep, step + 1));
@@ -50,19 +139,28 @@ export default function ProfileCreation({ onCancel, onSave }: { onCancel: () => 
     return 'future';
   };
 
-  const springTransition = { type: 'spring', stiffness: 260, damping: 25 };
+  const springTransition = { type: 'spring' as const, stiffness: 260, damping: 25 };
 
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center overflow-hidden px-4 relative bg-background">
-      {/* Header */}
-      <div className="absolute top-8 left-0 right-0 px-8 flex justify-between items-center max-w-5xl mx-auto w-full z-50">
-        <div>
-          <h1 className="text-2xl font-medium text-primary">Create Profile</h1>
-          <p className="text-sm text-primary/60">Step {activeStep} of 3</p>
+      {/* Header — drag region for frameless Tauri window; Cancel stays clickable */}
+      <div className="absolute top-8 left-0 right-0 px-8 z-50 flex justify-center">
+        <div
+          data-tauri-drag-region
+          className="flex w-full max-w-5xl items-start justify-between gap-4 rounded-xl py-2"
+        >
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-medium text-primary">Create Profile</h1>
+            <p className="text-sm text-primary/60">Step {activeStep} of 3</p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="no-drag shrink-0 text-primary/60 hover:text-primary transition-colors text-sm font-medium"
+          >
+            Cancel
+          </button>
         </div>
-        <button onClick={onCancel} className="text-primary/60 hover:text-primary transition-colors text-sm font-medium">
-          Cancel
-        </button>
       </div>
       
       {/* Cards Container with Perspective */}
@@ -148,38 +246,92 @@ export default function ProfileCreation({ onCancel, onSave }: { onCancel: () => 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-primary/80 mb-2">Model</label>
-              <select 
-                value={model} 
-                onChange={e => setModel(e.target.value)} 
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <label className="block text-sm font-medium text-primary/80">Default model</label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="no-drag h-8 px-2 text-xs text-primary/60 hover:text-primary"
+                  disabled={activeStep !== 2 || modelsLoading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void loadModels();
+                  }}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1 ${modelsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
+              <select
+                value={selectedProvider && selectedModel ? `${selectedProvider}|${selectedModel}` : ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) return;
+                  const [p, ...rest] = v.split('|');
+                  const m = rest.join('|');
+                  setSelectedProvider(p as ProviderId);
+                  setSelectedModel(m);
+                }}
                 className="w-full bg-background border border-border rounded-lg px-4 py-3 text-primary outline-none appearance-none focus:border-primary/50 transition-colors"
-                disabled={activeStep !== 2}
+                disabled={activeStep !== 2 || modelsLoading || !hasAnyModel}
               >
-                <option value="model-1">Primary Model</option>
-                <option value="model-2">Secondary Model</option>
-                <option value="model-3">Fast Model</option>
+                {!hasAnyModel ? (
+                  <option value="">
+                    No models found — add API keys or local endpoints in Settings after signup
+                  </option>
+                ) : (
+                  (Object.keys(PROVIDER_LABELS) as ProviderId[]).map((pid) => {
+                    const ids = modelsMap[pid];
+                    if (!ids.length) return null;
+                    return (
+                      <optgroup key={pid} label={PROVIDER_LABELS[pid]}>
+                        {ids.map((mid) => (
+                          <option key={`${pid}:${mid}`} value={`${pid}|${mid}`}>
+                            {mid}
+                          </option>
+                        ))}
+                      </optgroup>
+                    );
+                  })
+                )}
               </select>
+              {!modelsLoading && !hasAnyModel && (
+                <p className="text-xs text-primary/50 mt-2">
+                  You can still create a profile; configure providers in Settings, then pick a model in the app.
+                </p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-primary/80 mb-2">
-                System Prompt <span className="text-primary/50 font-normal">(Optional)</span>
+                Global system prompt{' '}
+                <span className="text-primary/50 font-normal">(optional)</span>
               </label>
-              <textarea 
+              <p className="text-xs text-primary/50 mb-2">
+                Applied as the default system prompt for every chat while this profile is active (you can still edit it per chat in the sidebar).
+              </p>
+              <textarea
                 value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                rows={4} 
-                placeholder="e.g. You are a helpful coding assistant..." 
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={4}
+                placeholder="e.g. You are a concise technical writer..."
                 className="w-full bg-background border border-border rounded-lg px-4 py-3 text-primary outline-none resize-none focus:border-primary/50 transition-colors"
                 disabled={activeStep !== 2}
-              ></textarea>
+              />
             </div>
 
             {activeStep === 2 && (
               <div className="flex justify-center pt-2">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleNext(2); }}
-                  className="px-8 py-2.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (hasAnyModel && (!selectedModel || !selectedProvider)) return;
+                    handleNext(2);
+                  }}
+                  disabled={hasAnyModel && (!selectedModel || !selectedProvider)}
+                  className="px-8 py-2.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-40"
                 >
                   Continue
                 </button>
@@ -213,37 +365,64 @@ export default function ProfileCreation({ onCancel, onSave }: { onCancel: () => 
               <div className="flex items-center justify-between p-4 bg-background rounded-lg border border-border">
                 <div>
                   <div className="text-sm font-medium text-primary">Passive Learning</div>
-                  <div className="text-xs text-primary/60 mt-1">Allow the AI to learn and remember details.</div>
+                  <div className="text-xs text-primary/60 mt-1">
+                    Placeholder for a future memory feature — no effect yet.
+                  </div>
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setPassiveLearning(!passiveLearning); }} 
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPassiveLearning(!passiveLearning);
+                  }}
                   disabled={activeStep !== 3}
-                  className={`w-12 h-6 rounded-full p-1 transition-colors ${passiveLearning ? 'bg-primary' : 'bg-muted'}`}
+                  className={`no-drag w-12 h-6 rounded-full p-1 transition-colors ${passiveLearning ? 'bg-primary' : 'bg-muted'}`}
                 >
-                  <div className={`w-4 h-4 rounded-full transform transition-transform ${passiveLearning ? 'translate-x-6 bg-background' : 'translate-x-0 bg-primary'}`} />
+                  <div
+                    className={`w-4 h-4 rounded-full transform transition-transform ${passiveLearning ? 'translate-x-6 bg-background' : 'translate-x-0 bg-primary'}`}
+                  />
                 </button>
               </div>
 
               <div className="flex items-center justify-between p-4 bg-background rounded-lg border border-border">
                 <div>
-                  <div className="text-sm font-medium text-primary">Web Search</div>
-                  <div className="text-xs text-primary/60 mt-1">Enable web search capabilities by default.</div>
+                  <div className="text-sm font-medium text-primary">Web research (default on)</div>
+                  <div className="text-xs text-primary/60 mt-1">
+                    Runs a web search pass before each reply when the globe is on. Turning this on requires a
+                    Tavily, Brave, or SearXNG setup.
+                  </div>
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setWebSearch(!webSearch); }} 
+                <button
+                  type="button"
+                  onClick={(e) => void tryEnableWebSearch(e)}
                   disabled={activeStep !== 3}
-                  className={`w-12 h-6 rounded-full p-1 transition-colors ${webSearch ? 'bg-primary' : 'bg-muted'}`}
+                  className={`no-drag w-12 h-6 rounded-full p-1 transition-colors ${webSearch ? 'bg-primary' : 'bg-muted'}`}
                 >
-                  <div className={`w-4 h-4 rounded-full transform transition-transform ${webSearch ? 'translate-x-6 bg-background' : 'translate-x-0 bg-primary'}`} />
+                  <div
+                    className={`w-4 h-4 rounded-full transform transition-transform ${webSearch ? 'translate-x-6 bg-background' : 'translate-x-0 bg-primary'}`}
+                  />
                 </button>
               </div>
             </div>
 
             {activeStep === 3 && (
               <div className="flex justify-center pt-6">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); name.trim() && onSave({ name: name.trim(), prompt, model, passiveLearning, webSearch }); }}
-                  disabled={!name.trim()}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!name.trim()) return;
+                    if (hasAnyModel && (!selectedModel || !selectedProvider)) return;
+                    onSave({
+                      name: name.trim(),
+                      prompt,
+                      model: selectedModel,
+                      provider: selectedProvider || '',
+                      passiveLearning,
+                      webSearch,
+                    });
+                  }}
+                  disabled={!name.trim() || (hasAnyModel && (!selectedModel || !selectedProvider))}
                   className="px-10 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-lg shadow-primary/10"
                 >
                   Complete Profile
@@ -253,6 +432,23 @@ export default function ProfileCreation({ onCancel, onSave }: { onCancel: () => 
           </div>
         </motion.div>
       </div>
+
+      <Dialog open={searchOnboardingOpen} onOpenChange={setSearchOnboardingOpen}>
+        <DialogContent className="no-drag max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Set up web search</DialogTitle>
+          </DialogHeader>
+          <SearchOnboarding
+            initialStep={0}
+            onComplete={() => {
+              setWebSearch(true);
+              setSearchOnboardingOpen(false);
+              toast.success('Web research will default to on for new chats');
+            }}
+            onClose={() => setSearchOnboardingOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

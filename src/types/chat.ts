@@ -52,6 +52,8 @@ export type Profile = {
   email?: string;
   prompt?: string;
   model?: string;
+  /** Provider id matching the chat store (e.g. anthropic, openai, local_ollama). */
+  provider?: string;
   passiveLearning?: boolean;
   webSearch?: boolean;
   customBgLight?: string;

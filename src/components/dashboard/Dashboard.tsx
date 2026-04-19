@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
@@ -15,6 +15,7 @@ import { ModalProvider, useModals } from '@/src/providers/ModalProvider';
 import { DashboardHeader } from './DashboardHeader';
 import { DashboardMain } from './DashboardMain';
 import { BackgroundPlus } from '@/components/ui/background-plus';
+import { fetchModelsMap, inferProviderForModel } from '@/src/lib/availableModels';
 
 function DashboardContent({
   recentChats, setRecentChats,
@@ -34,6 +35,9 @@ function DashboardContent({
   const isIncognito = useChatStore(state => state.isIncognito);
   const isModelLoaded = useChatStore(state => state.isModelLoaded);
   const voiceStatus = useChatStore(state => state.voiceStatus);
+  const activeProfile = useProfileStore((s) => s.activeProfile);
+  const setSystemPrompt = useModelParams((s) => s.setSystemPrompt);
+  const fetchContextIntelligence = useModelParams((s) => s.fetchContextIntelligence);
 
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -45,6 +49,57 @@ function DashboardContent({
 
   const { openOverflowModal, setIsProfileOpen, setIsSettingsOpen } = useModals();
   const { streamMessage, abort, isStreaming } = useAIStreaming();
+
+  const appliedProfileKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!activeProfile?.id) {
+      appliedProfileKey.current = null;
+      return;
+    }
+    const key = [
+      activeProfile.id,
+      activeProfile.model ?? '',
+      activeProfile.provider ?? '',
+      activeProfile.prompt ?? '',
+      activeProfile.webSearch ? '1' : '0',
+    ].join(':');
+    if (appliedProfileKey.current === key) return;
+    appliedProfileKey.current = key;
+
+    let cancelled = false;
+    (async () => {
+      let provider = activeProfile.provider || '';
+      const model = activeProfile.model || '';
+      if (model && !provider) {
+        const map = await fetchModelsMap();
+        if (cancelled) return;
+        const inferred = inferProviderForModel(model, map);
+        if (inferred) provider = inferred;
+      }
+      if (cancelled) return;
+      if (model) setSelectedModel(model);
+      if (provider) setSelectedProvider(provider);
+      setSystemPrompt(activeProfile.prompt ?? '');
+      setIsWebSearchActive(!!activeProfile.webSearch);
+      if (provider && model) void fetchContextIntelligence(provider, model);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeProfile?.id,
+    activeProfile?.model,
+    activeProfile?.provider,
+    activeProfile?.prompt,
+    activeProfile?.webSearch,
+    setSelectedModel,
+    setSelectedProvider,
+    setSystemPrompt,
+    setIsWebSearchActive,
+    fetchContextIntelligence,
+  ]);
 
   const showPinkMode = !isDark && !customBgLight && !isIncognito;
 
@@ -109,7 +164,7 @@ function DashboardContent({
       provider: selectedProvider,
       pinned: existing?.pinned || false,
       incognito: false,
-      systemPrompt: existing?.systemPrompt || '',
+      systemPrompt: existing?.systemPrompt || useModelParams.getState().systemPrompt || '',
       generationParams: existing?.generationParams || { temperature: 0.7, maxTokens: 2048, topP: 1.0 },
       stats: { totalTokens: useChatStore.getState().tokensUsed, totalMessages: updatedMessages.length, averageSpeed: 0 }
     };

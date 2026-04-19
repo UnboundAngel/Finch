@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { BookmarkIconButton } from '@/components/ui/bookmark-icon-button';
+import { fetchModelsMap } from '@/src/lib/availableModels';
 
 interface ModelSelectorProps {
   selectedProvider: string;
@@ -64,44 +65,11 @@ export const ModelSelector = ({
 
   const fetchModels = async () => {
     try {
+      const map = await fetchModelsMap();
+      setModels(map);
+
       const config: any = await invoke('get_provider_config');
-      if (!config) return;
-
-      // Try fetching for each provider
-      const anthropic = await invoke<string[]>('list_anthropic_models');
-      const openai = await invoke<string[]>('list_openai_models');
-      const gemini = await invoke<string[]>('list_gemini_models');
-
-      let ollama: string[] = [];
-      if (config.ollama_endpoint) {
-        try {
-          ollama = await invoke<string[]>('list_local_models', {
-            endpoint: config.ollama_endpoint,
-            provider: 'local_ollama'
-          });
-        } catch (e) { console.error("Ollama fetch failed", e); }
-      }
-
-      let lmstudio: string[] = [];
-      if (config.lmstudio_endpoint) {
-        try {
-          lmstudio = await invoke<string[]>('list_local_models', {
-            endpoint: config.lmstudio_endpoint,
-            provider: 'local_lmstudio'
-          });
-        } catch (e) { console.error("LM Studio fetch failed", e); }
-      }
-
-      setModels({
-        anthropic: anthropic || [],
-        openai: openai || [],
-        gemini: gemini || [],
-        local_ollama: ollama || [],
-        local_lmstudio: lmstudio || [],
-      });
-
-      // Load bookmarks from config
-      if (config.bookmarked_models) {
+      if (config?.bookmarked_models) {
         setBookmarkedModels(config.bookmarked_models);
       }
     } catch (err) {

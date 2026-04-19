@@ -103,7 +103,7 @@ export default function ProfileSelection({
   profiles: Profile[], 
   onAddProfile: () => void,
   onEditProfile: (profile: Profile) => void,
-  onSelectProfile: (profile: Profile) => void
+  onSelectProfile: (profile: Profile, remember: boolean) => void
 }) {
   const [isManaging, setIsManaging] = useState(false);
 
@@ -119,18 +119,24 @@ export default function ProfileSelection({
         backfaceVisibility: 'hidden'
       }}
     >
-      <div className="flex items-center justify-center gap-4 mb-12">
-        <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-center text-primary">
+      <div
+        data-tauri-drag-region
+        className="flex w-full items-center justify-center gap-4 mb-12 rounded-2xl py-3 px-2"
+      >
+        <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-center text-primary flex-1 min-w-0">
           {isManaging ? "Manage Profiles" : "Who's chatting?"}
         </h1>
-        <Tooltip text={isManaging ? "Done" : "Manage Profiles"}>
-          <button 
-            onClick={() => setIsManaging(!isManaging)}
-            className="p-2 text-primary/60 hover:text-primary transition-colors"
-          >
-            {isManaging ? <Check className="w-8 h-8" /> : <Pencil className="w-8 h-8" />}
-          </button>
-        </Tooltip>
+        <div className="no-drag shrink-0">
+          <Tooltip text={isManaging ? "Done" : "Manage Profiles"}>
+            <button
+              type="button"
+              onClick={() => setIsManaging(!isManaging)}
+              className="p-2 text-primary/60 hover:text-primary transition-colors"
+            >
+              {isManaging ? <Check className="w-8 h-8" /> : <Pencil className="w-8 h-8" />}
+            </button>
+          </Tooltip>
+        </div>
       </div>
       
       <div className="flex flex-wrap justify-center items-start gap-4 md:gap-8">

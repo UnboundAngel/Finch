@@ -217,6 +217,11 @@
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
+/* Tauri frameless window: keep clicks working on controls inside a drag region */
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
 /* Custom Range Input Cursor (LM Studio Style) */
 input[type="range"] {
   cursor: grab;
