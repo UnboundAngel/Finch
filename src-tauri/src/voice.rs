@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager, Runtime, Emitter};
+use std::sync::atomic::{AtomicU32, Ordering};
+use tauri::{AppHandle, Manager, Runtime};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use whisper_rs::{WhisperContext, WhisperContextParameters, FullParams, SamplingStrategy};
 
@@ -18,6 +19,8 @@ pub struct VoiceManager {
     pub buffer: Arc<Mutex<Vec<f32>>>,
     pub context: Arc<Mutex<Option<WhisperContext>>>,
     pub selected_device: Arc<Mutex<Option<String>>>,
+    /// Latest normalized input level (0–1) for the UI, written from the audio callback.
+    meter_level_bits: Arc<AtomicU32>,
     stream: Arc<Mutex<Option<cpal::Stream>>>,
 }
 
@@ -28,6 +31,7 @@ impl VoiceManager {
             buffer: Arc::new(Mutex::new(Vec::new())),
             context: Arc::new(Mutex::new(None)),
             selected_device: Arc::new(Mutex::new(None)),
+            meter_level_bits: Arc::new(AtomicU32::new(0)),
             stream: Arc::new(Mutex::new(None)),
         }
     }
@@ -66,7 +70,7 @@ impl VoiceManager {
         *dev = Some(name);
     }
 
-    pub fn start_recording<R: Runtime>(&self, app_handle: AppHandle<R>) -> Result<(), String> {
+    pub fn start_recording<R: Runtime>(&self, _app_handle: AppHandle<R>) -> Result<(), String> {
         let host = cpal::default_host();
         
         // Select device
@@ -88,6 +92,7 @@ impl VoiceManager {
 
         let status = self.status.clone();
         let buffer = self.buffer.clone();
+        let meter_level_bits = self.meter_level_bits.clone();
         let sample_rate = config.sample_rate().0 as f32;
         let channels = config.channels() as usize;
 
@@ -96,6 +101,7 @@ impl VoiceManager {
             let mut b = buffer.lock().unwrap();
             b.clear();
         }
+        self.meter_level_bits.store(0, Ordering::Relaxed);
 
         let err_cb = move |err| eprintln!("an error occurred on stream: {}", err);
         
@@ -108,9 +114,12 @@ impl VoiceManager {
                         if !data.is_empty() {
                             let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
                             let rms = (sum_sq / data.len() as f32).sqrt();
-                            // Normalize volume loosely - 0.5 is usually a very loud signal in RMS
-                            let normalized_volume = (rms * 4.0).clamp(0.0, 1.0);
-                            let _ = app_handle.emit("voice-volume", normalized_volume);
+                            // Louder visual gain for speech (RMS is often very small on consumer mics).
+                            let boosted = rms * 14.0;
+                            let normalized_volume = (1.0 - (-boosted).exp()).clamp(0.0, 1.0);
+                            // Do not emit from the audio thread: WebView eval must run on the UI thread
+                            // (Windows/WebView2). The frontend polls `get_voice_meter_level` instead.
+                            meter_level_bits.store(normalized_volume.to_bits(), Ordering::Relaxed);
                         }
 
                         let mut b = buffer.lock().unwrap();
@@ -154,6 +163,7 @@ impl VoiceManager {
             let mut s_lock = self.stream.lock().unwrap();
             *s_lock = None;
         }
+        self.meter_level_bits.store(0, Ordering::Relaxed);
 
         let status = self.status.clone();
         let buffer = self.buffer.clone();
@@ -235,6 +245,15 @@ impl VoiceManager {
 
     pub fn get_status(&self) -> VoiceStatus {
         self.status.lock().unwrap().clone()
+    }
+
+    /// Normalized RMS (0–1) while recording; safe to call from the UI thread.
+    pub fn get_meter_level(&self) -> f32 {
+        let status = self.status.lock().unwrap();
+        if !matches!(*status, VoiceStatus::Recording) {
+            return 0.0;
+        }
+        f32::from_bits(self.meter_level_bits.load(Ordering::Relaxed))
     }
 }
 

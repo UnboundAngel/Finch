@@ -41,6 +41,7 @@
     "allow-start-recording",
     "allow-stop-recording",
     "allow-get-transcription-status",
+    "allow-get-voice-meter-level",
     "allow-list-audio-devices",
     "allow-set-audio-device",
     "allow-download-voice-model",

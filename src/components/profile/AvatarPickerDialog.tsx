@@ -141,11 +141,12 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
                   ))}
                 </div>
                 <div className="relative z-10 flex flex-col items-center gap-2 py-6">
-                  <span className="text-xs font-bold tracking-wide text-primary drop-shadow-sm">
-                    GIF
+                  <span className="inline-flex items-center justify-center text-xs font-bold tracking-wide text-primary drop-shadow-sm">
+                    <span className="bg-background/80 rounded-md px-2 py-0.5 border border-border mr-1" style={{ minWidth: 20, minHeight: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      GIF 
+                    </span>
                   </span>
-                  <span className="text-sm font-medium text-primary drop-shadow-sm">Choose GIF</span>
-                  <span className="text-[10px] text-primary/70">from your files</span>
+                  <span className="text-sm font-medium text-primary drop-shadow-sm">Choose an animated pfp</span>
                 </div>
               </button>
             </div>
@@ -153,7 +154,7 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-primary">Recent avatars</h3>
               <p className="text-xs text-muted-foreground">
-                Your six most recently chosen profile pictures (local files).
+                The last 6 images you used for your pfp.
               </p>
               <TooltipProvider delay={250}>
                 <div className="flex gap-2 flex-wrap">
@@ -184,7 +185,7 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
                                     {...rest}
                                     type="button"
                                     className={cn(
-                                      'pointer-events-none flex h-6 w-6 scale-90 items-center justify-center rounded-full border border-border/60 bg-background/70 text-rose-400 opacity-0 shadow-md backdrop-blur-sm transition-[opacity,transform] group-hover/corner:pointer-events-auto group-hover/corner:scale-100 group-hover/corner:opacity-100 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100',
+                                      'pointer-events-none flex h-6 w-6 scale-90 items-center justify-center rounded-full border border-red-950 bg-gradient-to-br from-red-950 to-black text-rose-300 opacity-0 shadow-md transition-[opacity,transform] group-hover/corner:pointer-events-auto group-hover/corner:scale-100 group-hover/corner:opacity-100 focus-visible:pointer-events-auto focus-visible:scale-100 focus-visible:opacity-100',
                                       className
                                     )}
                                     onClick={(e) => {
@@ -201,7 +202,10 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
                                 );
                               }}
                             />
-                            <TooltipContent side="top" sideOffset={6}>
+                            <TooltipContent
+                              side="top"
+                              sideOffset={17}
+                            >
                               Remove
                             </TooltipContent>
                           </Tooltip>

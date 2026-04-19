@@ -114,6 +114,11 @@ description = "Allows polling for transcription status"
 commands.allow = ["get_transcription_status"]
 
 [[permission]]
+identifier = "allow-get-voice-meter-level"
+description = "Allows polling live input level for the recording waveform"
+commands.allow = ["get_voice_meter_level"]
+
+[[permission]]
 identifier = "allow-download-voice-model"
 description = "Allows downloading voice models from external URLs"
 commands.allow = ["download_voice_model"]

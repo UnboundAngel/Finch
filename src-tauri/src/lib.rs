@@ -68,6 +68,7 @@ pub fn run() {
             ipc::voice::start_recording,
             ipc::voice::stop_recording,
             ipc::voice::get_transcription_status,
+            ipc::voice::get_voice_meter_level,
             ipc::voice::list_audio_devices,
             ipc::voice::set_audio_device,
             ipc::voice::download_voice_model,

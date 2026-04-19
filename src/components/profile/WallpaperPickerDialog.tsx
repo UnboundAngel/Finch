@@ -93,7 +93,10 @@ export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Pro
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="no-drag sm:max-w-lg rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden">
+        <DialogContent
+          showCloseButton={false}
+          className="no-drag sm:max-w-lg rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden"
+        >
           <DialogHeader className="px-6 pt-6 pb-2 flex flex-row items-center justify-between space-y-0">
             <DialogTitle className="text-xl font-semibold">Select a wallpaper</DialogTitle>
             <Button

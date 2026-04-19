@@ -20,6 +20,11 @@ pub async fn get_transcription_status(state: State<'_, AppState>) -> Result<Voic
 }
 
 #[command]
+pub async fn get_voice_meter_level(state: State<'_, AppState>) -> Result<f32, String> {
+    Ok(state.voice_manager.get_meter_level())
+}
+
+#[command]
 pub async fn list_audio_devices(state: State<'_, AppState>) -> Result<Vec<String>, String> {
     Ok(state.voice_manager.list_devices())
 }

@@ -145,12 +145,16 @@
     color: var(--selection-text);
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html {
+    @apply font-sans h-full w-full;
   }
 
-  html {
-    @apply font-sans;
+  body {
+    @apply h-full w-full overflow-hidden bg-background text-foreground;
+  }
+
+  #root {
+    @apply h-full w-full min-h-0;
   }
 }
 

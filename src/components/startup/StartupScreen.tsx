@@ -70,7 +70,7 @@ export default function StartupScreen() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center relative">
+      <div className="h-full min-h-0 overflow-y-auto bg-background flex items-center justify-center relative">
         <div
           data-tauri-drag-region
           className="absolute inset-x-0 top-0 h-14 z-10"
@@ -82,7 +82,7 @@ export default function StartupScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-primary flex flex-col items-center justify-center font-sans relative">
+    <div className="h-full min-h-0 overflow-y-auto bg-background text-primary flex flex-col items-center justify-center font-sans relative">
       {/* Only on profile grid: full-width drag strip. Edit/creation screens have their own headers + buttons — strip would steal clicks (e.g. Cancel). */}
       {view === 'selection' && (
         <div

@@ -244,7 +244,7 @@ function DashboardContent({
   };
 
   return (
-    <div className={`flex flex-col h-screen w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
+    <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
       ? (isDark ? "bg-[#1a1a1a]" : "bg-[#fffcf0]") 
       : (!isIncognito && (isDark ? customBgDark : customBgLight)) 
         ? 'bg-transparent text-foreground has-custom-bg' 
@@ -258,7 +258,6 @@ function DashboardContent({
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
-              backgroundAttachment: 'fixed',
             }
           : {}),
         ...(showPinkMode ? { background: 'linear-gradient(to bottom, #fff5f7, #ffe4e8)' } : {})

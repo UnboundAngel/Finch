@@ -101,8 +101,8 @@ export const useChatPersistence = ({
         }
 
         const chats = await invoke<ChatSession[]>('list_chats', {
-          profile_id: activeProfileId,
-          legacy_inbox_owner_profile_id: legacyInboxOwnerProfileId,
+          profileId: activeProfileId,
+          legacyInboxOwnerProfileId: legacyInboxOwnerProfileId,
         });
 
         setRecentChats(chats);
