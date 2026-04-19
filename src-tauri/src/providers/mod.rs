@@ -3,8 +3,10 @@ pub mod openai;
 pub mod gemini;
 pub mod local;
 
-use crate::types::ChatMessage;
+use crate::types::{ChatMessage, AttachmentInput};
 use crate::providers::anthropic::Message as AnthropicMessage;
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use std::path::Path;
 
 pub fn estimate_tokens(text: &str) -> usize {
     (text.chars().count() as f32 / 4.0).ceil() as usize
@@ -78,12 +80,12 @@ pub fn prepare_messages(
                 .into_iter()
                 .map(|m| AnthropicMessage {
                     role: m.role,
-                    content: m.content,
+                    content: serde_json::Value::String(m.content),
                 })
                 .collect();
             messages.push(AnthropicMessage {
                 role: "user".to_string(),
-                content: current_prompt,
+                content: serde_json::Value::String(current_prompt),
             });
             serde_json::to_value(messages).unwrap_or(serde_json::json!([]))
         }
@@ -117,6 +119,76 @@ pub fn prepare_messages(
             serde_json::to_value(messages).unwrap_or(serde_json::json!([]))
         }
     }
+}
+
+fn detect_mime(path: &Path) -> &'static str {
+    match path.extension().and_then(|e| e.to_str()) {
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("png") => "image/png",
+        Some("gif") => "image/gif",
+        Some("webp") => "image/webp",
+        Some("pdf") => "application/pdf",
+        _ => "application/octet-stream",
+    }
+}
+
+pub fn inject_attachments_into_messages(
+    messages: &mut serde_json::Value,
+    provider: &str,
+    attachments: &[AttachmentInput],
+) -> Result<(), String> {
+    if attachments.is_empty() {
+        return Ok(());
+    }
+    let msgs = messages.as_array_mut().ok_or("messages is not an array")?;
+    // Find the last user/user-role message
+    let last_user_idx = msgs.iter().rposition(|m| {
+        m.get("role").and_then(|r| r.as_str()) == Some("user")
+    }).ok_or("no user message found")?;
+
+    for attachment in attachments {
+        let path = Path::new(&attachment.path);
+        let bytes = std::fs::read(path)
+            .map_err(|e| format!("Failed to read attachment {}: {}", attachment.path, e))?;
+        let b64 = BASE64.encode(&bytes);
+        let mime = detect_mime(path);
+
+        match provider {
+            "anthropic" => {
+                let msg = &mut msgs[last_user_idx];
+                let original_text = msg["content"].as_str().unwrap_or("").to_string();
+                msg["content"] = serde_json::json!([
+                    { "type": "text", "text": original_text },
+                    { "type": "image", "source": { "type": "base64", "media_type": mime, "data": b64 } }
+                ]);
+            }
+            "gemini" => {
+                let msg = &mut msgs[last_user_idx];
+                if let Some(parts) = msg["parts"].as_array_mut() {
+                    parts.push(serde_json::json!({ "inlineData": { "mimeType": mime, "data": b64 } }));
+                }
+            }
+            "local_ollama" => {
+                let msg = &mut msgs[last_user_idx];
+                let images = msg["images"].as_array_mut();
+                if let Some(arr) = images {
+                    arr.push(serde_json::json!(b64));
+                } else {
+                    msg["images"] = serde_json::json!([b64]);
+                }
+            }
+            _ => {
+                // OpenAI and LM Studio: replace content string with array
+                let msg = &mut msgs[last_user_idx];
+                let original_text = msg["content"].as_str().unwrap_or("").to_string();
+                msg["content"] = serde_json::json!([
+                    { "type": "text", "text": original_text },
+                    { "type": "image_url", "image_url": { "url": format!("data:{};base64,{}", mime, b64) } }
+                ]);
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn map_model(model_name: &str) -> String {

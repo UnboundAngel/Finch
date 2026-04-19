@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Message {
     pub role: String,
-    pub content: String,
+    pub content: serde_json::Value,
 }
 
 #[derive(Debug, Serialize)]

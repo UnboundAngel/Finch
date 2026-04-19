@@ -9,6 +9,11 @@ pub struct ChatMessage {
     pub content: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AttachmentInput {
+    pub path: String,
+}
+
 pub struct AppState {
     pub abort_flag: Arc<AtomicBool>,
     pub voice_manager: Arc<VoiceManager>,

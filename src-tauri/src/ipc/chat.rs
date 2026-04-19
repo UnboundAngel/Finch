@@ -1,6 +1,6 @@
 use tauri::{AppHandle, command, State};
-use crate::types::{ChatMessage, AppState, StreamingEvent, ProviderConfig, SourceEntry};
-use crate::providers::{prepare_messages, map_model};
+use crate::types::{ChatMessage, AppState, StreamingEvent, ProviderConfig, SourceEntry, AttachmentInput};
+use crate::providers::{prepare_messages, map_model, inject_attachments_into_messages};
 use crate::providers::anthropic::{AnthropicClient, AnthropicRequest};
 use crate::providers::openai::{send_message_openai, stream_message_openai};
 use crate::providers::gemini::{send_message_gemini, stream_message_gemini};
@@ -83,6 +83,7 @@ pub async fn stream_message(
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>,
     enable_web_search: Option<bool>,
+    attachments: Option<Vec<AttachmentInput>>,
     channel: tauri::ipc::Channel<String>,
     state: State<'_, AppState>
 ) -> Result<(), String> {
@@ -135,7 +136,14 @@ pub async fn stream_message(
     }
     // ----------------------------
 
-    let messages = prepare_messages(conversation_history, final_prompt, &provider, &model, system_prompt.clone(), max_tokens);
+    let mut messages = prepare_messages(conversation_history, final_prompt, &provider, &model, system_prompt.clone(), max_tokens);
+
+    if let Some(ref att) = attachments {
+        if !att.is_empty() {
+            inject_attachments_into_messages(&mut messages, &provider, att)
+                .map_err(|e| format!("Attachment error: {}", e))?;
+        }
+    }
 
     match provider.as_str() {
         "anthropic" => {
