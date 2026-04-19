@@ -146,8 +146,15 @@ pub fn inject_attachments_into_messages(
         m.get("role").and_then(|r| r.as_str()) == Some("user")
     }).ok_or("no user message found")?;
 
+    const MAX_ATTACHMENT_BYTES: u64 = 25 * 1024 * 1024; // 25 MB
+
     for attachment in attachments {
         let path = Path::new(&attachment.path);
+        let meta = std::fs::metadata(path)
+            .map_err(|e| format!("Cannot stat attachment {}: {}", attachment.path, e))?;
+        if meta.len() > MAX_ATTACHMENT_BYTES {
+            return Err(format!("Attachment {} exceeds 25 MB limit", attachment.path));
+        }
         let bytes = std::fs::read(path)
             .map_err(|e| format!("Failed to read attachment {}: {}", attachment.path, e))?;
         let b64 = BASE64.encode(&bytes);
@@ -156,35 +163,59 @@ pub fn inject_attachments_into_messages(
         match provider {
             "anthropic" => {
                 let msg = &mut msgs[last_user_idx];
-                let original_text = msg["content"].as_str().unwrap_or("").to_string();
-                msg["content"] = serde_json::json!([
-                    { "type": "text", "text": original_text },
-                    { "type": "image", "source": { "type": "base64", "media_type": mime, "data": b64 } }
-                ]);
+                let image_entry = serde_json::json!({
+                    "type": "image",
+                    "source": { "type": "base64", "media_type": mime, "data": b64 }
+                });
+                if msg["content"].is_array() {
+                    if let Some(arr) = msg["content"].as_array_mut() {
+                        arr.push(image_entry);
+                    }
+                } else {
+                    let original_text = msg["content"].as_str().unwrap_or("").to_string();
+                    msg["content"] = serde_json::json!([
+                        { "type": "text", "text": original_text },
+                        image_entry
+                    ]);
+                }
             }
             "gemini" => {
                 let msg = &mut msgs[last_user_idx];
+                if !msg["parts"].is_array() {
+                    msg["parts"] = serde_json::json!([]);
+                }
                 if let Some(parts) = msg["parts"].as_array_mut() {
                     parts.push(serde_json::json!({ "inlineData": { "mimeType": mime, "data": b64 } }));
                 }
             }
             "local_ollama" => {
                 let msg = &mut msgs[last_user_idx];
-                let images = msg["images"].as_array_mut();
-                if let Some(arr) = images {
-                    arr.push(serde_json::json!(b64));
+                if msg["images"].is_array() {
+                    if let Some(arr) = msg["images"].as_array_mut() {
+                        arr.push(serde_json::json!(b64));
+                    }
                 } else {
                     msg["images"] = serde_json::json!([b64]);
                 }
             }
             _ => {
-                // OpenAI and LM Studio: replace content string with array
+                // OpenAI and LM Studio: replace content string with array, append on subsequent attachments
                 let msg = &mut msgs[last_user_idx];
-                let original_text = msg["content"].as_str().unwrap_or("").to_string();
-                msg["content"] = serde_json::json!([
-                    { "type": "text", "text": original_text },
-                    { "type": "image_url", "image_url": { "url": format!("data:{};base64,{}", mime, b64) } }
-                ]);
+                let image_entry = serde_json::json!({
+                    "type": "image_url",
+                    "image_url": { "url": format!("data:{};base64,{}", mime, b64) }
+                });
+                if msg["content"].is_array() {
+                    if let Some(arr) = msg["content"].as_array_mut() {
+                        arr.push(image_entry);
+                    }
+                } else {
+                    let original_text = msg["content"].as_str().unwrap_or("").to_string();
+                    msg["content"] = serde_json::json!([
+                        { "type": "text", "text": original_text },
+                        image_entry
+                    ]);
+                }
             }
         }
     }
