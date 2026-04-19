@@ -18,6 +18,7 @@ import { BackgroundPlus } from '@/components/ui/background-plus';
 import { fetchModelsMap, inferProviderForModel } from '@/src/lib/availableModels';
 import { WallpaperPickerDialog } from '@/src/components/profile/WallpaperPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
+import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
 function DashboardContent({
   recentChats, setRecentChats,
   profileName, setProfileName,
@@ -54,6 +55,13 @@ function DashboardContent({
 
   const { openOverflowModal, setIsProfileOpen, setIsSettingsOpen } = useModals();
   const { streamMessage, abort, isStreaming } = useAIStreaming();
+
+  const wasAbortedRef = useRef(false);
+
+  const handleStop = useCallback(() => {
+    wasAbortedRef.current = true;
+    abort();
+  }, [abort]);
 
   const appliedProfileKey = useRef<string | null>(null);
 
@@ -111,7 +119,7 @@ function DashboardContent({
   const userAvatarSrc =
     activeProfile?.avatarUrl && activeProfile.avatarUrl.trim() !== ''
       ? resolveMediaSrc(activeProfile.avatarUrl)
-      : `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${encodeURIComponent(activeProfile?.name || profileName || 'User')}&backgroundColor=transparent`;
+      : funEmojiAvatarUrl(activeProfile?.name || profileName || 'User');
   const userAvatarLetter = (activeProfile?.name || profileName || 'U').charAt(0).toUpperCase();
 
   const { handleInputChange, handleInputFocus } = useModelPolling(selectedModel, selectedProvider);
@@ -232,7 +240,11 @@ function DashboardContent({
       session.setMessages(prev => {
         const last = prev[prev.length - 1];
         if (last?.role === 'ai') {
-          const final = [...prev.slice(0, -1), { ...last, streaming: false, metadata: { ...last.metadata, ...(stats || {}) } }];
+          const wasAborted = wasAbortedRef.current;
+          wasAbortedRef.current = false;
+          const mergedStats = { ...(stats || {}) };
+          if (wasAborted) mergedStats.stopReason = 'user_stopped';
+          const final = [...prev.slice(0, -1), { ...last, streaming: false, metadata: { ...last.metadata, ...mergedStats } }];
           setTimeout(() => updateActiveSessionInList(final), 0);
           return final;
         }
@@ -290,7 +302,7 @@ function DashboardContent({
         selectedModel={selectedModel} stableSetInput={stableSetInput}
         hasCustomBgValue={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
         voiceStatus={voiceStatus} input={input} handleInputChange={handleInputChange}
-        handleSend={handleSend} abort={abort} isStreaming={isStreaming}
+        handleSend={handleSend} abort={handleStop} isStreaming={isStreaming}
         attachedFile={attachedFile} setAttachedFile={setAttachedFile}
         isWebSearchActive={isWebSearchActive} setIsWebSearchActive={setIsWebSearchActive}
         enterToSend={enterToSend} isModelLoaded={selectedModel ? isModelLoaded : true}

@@ -43,7 +43,7 @@ export const MetadataRow = ({ metadata, isLatest, hasCustomBg }: MetadataRowProp
   };
 
   const isErrorStopReason = (reason?: string) => {
-    if (!reason || reason === 'stop' || reason === 'end_turn' || reason === 'complete') return false;
+    if (!reason || reason === 'stop' || reason === 'end_turn' || reason === 'complete' || reason === 'user_stopped') return false;
     return true;
   };
 

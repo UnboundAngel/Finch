@@ -1,6 +1,6 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Files, Check } from 'lucide-react';
+import { MessageSquare, Files, Check, Square } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -162,6 +162,13 @@ export const MessageBubble = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          </div>
+        )}
+
+        {msg.role === 'ai' && !msg.streaming && msg.metadata?.stopReason === 'user_stopped' && (
+          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground/50">
+            <Square className="h-2.5 w-2.5 fill-current" />
+            <span>Generation stopped</span>
           </div>
         )}
 
