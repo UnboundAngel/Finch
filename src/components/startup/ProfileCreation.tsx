@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { AvatarPickerDialog } from '@/src/components/profile/AvatarPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
+import { isTauri } from '@/src/lib/tauri-utils';
 import { cn } from '@/lib/utils';
 
 export type ProfileCreationPayload = {
@@ -73,7 +74,7 @@ export default function ProfileCreation({
       }
     } catch (e) {
       console.error(e);
-      toast.error("Your models ghosted us, so tap refresh and we will try again.");
+      toast.error("Your models are hiding right now, tap refresh and we will try again");
     } finally {
       setModelsLoading(false);
     }
@@ -97,6 +98,10 @@ export default function ProfileCreation({
       setWebSearch(false);
       return;
     }
+    if (!isTauri()) {
+      toast.error('Web research can only be enabled in the desktop app.');
+      return;
+    }
     try {
       const c = (await invoke('get_provider_config')) as Record<string, unknown> | null;
       if (hasSearchCredentials(c)) {
@@ -107,7 +112,7 @@ export default function ProfileCreation({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Your search settings are playing hide and seek right now.");
+      toast.error("Your search settings are playing hide and seek right now");
     }
   };
 
@@ -270,14 +275,14 @@ export default function ProfileCreation({
             backfaceVisibility: 'hidden'
           }}
         >
-          <div className="space-y-6 w-full">
+          <div className="space-y-8 w-full">
             <div className="mb-6 text-center sm:mb-8">
               <h2 className="text-xl font-medium text-primary sm:text-2xl">The Mindset</h2>
               <p className="mt-1 text-sm text-primary/60">How should this profile behave?</p>
             </div>
 
             <div>
-              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <label className="min-w-0 text-sm font-medium text-primary/80">Default model</label>
                 <Button
                   type="button"
@@ -314,7 +319,7 @@ export default function ProfileCreation({
               >
                 {!hasAnyModel ? (
                   <option value="">
-                    No models — configure providers in Settings
+                    No models yet. Add a provider in Settings.
                   </option>
                 ) : (
                   (Object.keys(PROVIDER_LABELS) as ProviderId[]).map((pid) => {
@@ -333,18 +338,18 @@ export default function ProfileCreation({
                 )}
               </select>
               {!modelsLoading && !hasAnyModel && (
-                <p className="text-xs text-primary/50 mt-2">
-                  You can still create a profile; configure providers in Settings, then pick a model in the app.
+                <p className="text-xs text-primary/50 mt-3">
+                  You can still create this profile now. Add a provider in Settings, then choose a model when you are ready.
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-primary/80 mb-2">
+              <label className="block text-sm font-medium text-primary/80 mb-3">
                 Global system prompt{' '}
                 <span className="text-primary/50 font-normal">(optional)</span>
               </label>
-              <p className="text-xs text-primary/50 mb-2">
+              <p className="text-xs text-primary/50 mb-3">
                 Applied as the default system prompt for every chat while this profile is active (you can still edit it per chat in the sidebar).
               </p>
               <textarea

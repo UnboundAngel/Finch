@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ChatSession } from '../types/chat';
 import { invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@/src/lib/tauri-utils';
 
 interface UseChatPersistenceProps {
   setRecentChats: (chats: ChatSession[]) => void;
@@ -33,6 +34,15 @@ export const useChatPersistence = ({
   // Initial settings load, one-time localStorage migration, and profile-scoped chat list
   useEffect(() => {
     const loadAndMigrate = async () => {
+      if (!isTauri()) {
+        const savedEnterToSend = localStorage.getItem('finch_enter_to_send');
+        if (savedEnterToSend !== null) {
+          setEnterToSend(savedEnterToSend === 'true');
+        }
+        setRecentChats([]);
+        isLoaded.current = true;
+        return;
+      }
       try {
         const config: unknown = await invoke('get_provider_config');
         if (config && typeof config === 'object') {
@@ -125,6 +135,11 @@ export const useChatPersistence = ({
   // Reactive Save for settings
   useEffect(() => {
     if (!isLoaded.current) return;
+
+    if (!isTauri()) {
+      localStorage.setItem('finch_enter_to_send', String(enterToSend));
+      return;
+    }
 
     const saveSettings = async () => {
       try {

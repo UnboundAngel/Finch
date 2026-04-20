@@ -1,6 +1,25 @@
 import { StateCreator } from 'zustand';
 import { Profile } from '../types/chat';
 import { invoke } from '@tauri-apps/api/core';
+import { isTauri } from '@/src/lib/tauri-utils';
+
+const WEB_PROFILES_KEY = 'finch_web_profiles';
+
+const readWebProfiles = (): Profile[] => {
+  try {
+    const raw = localStorage.getItem(WEB_PROFILES_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Profile[]) : [];
+  } catch (err) {
+    console.error('Failed to parse web profiles:', err);
+    return [];
+  }
+};
+
+const writeWebProfiles = (profiles: Profile[]) => {
+  localStorage.setItem(WEB_PROFILES_KEY, JSON.stringify(profiles));
+};
 
 export interface ProfileState {
   activeProfile: Profile | null;
@@ -23,6 +42,11 @@ export const createProfileSlice: StateCreator<ProfileState, [], [], ProfileState
   loadProfiles: async () => {
     set({ isLoading: true });
     try {
+      if (!isTauri()) {
+        const profiles = readWebProfiles();
+        set({ profiles, isLoading: false, error: null });
+        return;
+      }
       const profiles = await invoke<Profile[]>('get_profiles');
       set({ profiles, isLoading: false });
     } catch (err) {
@@ -37,6 +61,21 @@ export const createProfileSlice: StateCreator<ProfileState, [], [], ProfileState
 
   saveProfile: async (profile) => {
     try {
+      if (!isTauri()) {
+        const profiles = readWebProfiles();
+        const existingIdx = profiles.findIndex((p) => p.id === profile.id);
+        const nextProfiles =
+          existingIdx === -1
+            ? [...profiles, profile]
+            : profiles.map((p, idx) => (idx === existingIdx ? profile : p));
+        writeWebProfiles(nextProfiles);
+        const { activeProfile } = get();
+        const merged = nextProfiles.find((p) => p.id === profile.id) ?? profile;
+        const nextActive =
+          activeProfile?.id === profile.id ? merged : activeProfile;
+        set({ profiles: nextProfiles, activeProfile: nextActive, error: null });
+        return;
+      }
       await invoke('save_profile', { profile });
       const profiles = await invoke<Profile[]>('get_profiles');
       const { activeProfile } = get();
@@ -52,6 +91,17 @@ export const createProfileSlice: StateCreator<ProfileState, [], [], ProfileState
 
   deleteProfile: async (profileId) => {
     try {
+      if (!isTauri()) {
+        const profiles = readWebProfiles().filter((p) => p.id !== profileId);
+        writeWebProfiles(profiles);
+        const { activeProfile } = get();
+        set({
+          profiles,
+          activeProfile: activeProfile?.id === profileId ? null : activeProfile,
+          error: null,
+        });
+        return;
+      }
       await invoke('delete_profile', { profileId });
       const { activeProfile } = get();
       if (activeProfile?.id === profileId) {

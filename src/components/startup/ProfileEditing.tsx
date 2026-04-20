@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AvatarPickerDialog } from '@/src/components/profile/AvatarPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
+import { isTauri } from '@/src/lib/tauri-utils';
 import { cn } from '@/lib/utils';
 
 export default function ProfileEditing({
@@ -81,7 +82,7 @@ export default function ProfileEditing({
       if (modelId) setSelectedModel(modelId);
     } catch (e) {
       console.error(e);
-      toast.error('Your models dipped out, so please give refresh a quick tap.');
+      toast.error('Your models dipped out, so please give the refresh button a quick tap!');
     } finally {
       setModelsLoading(false);
     }
@@ -121,6 +122,10 @@ export default function ProfileEditing({
       setWebSearch(false);
       return;
     }
+    if (!isTauri()) {
+      toast.error('Web research can only be enabled in the desktop app.');
+      return;
+    }
     try {
       const c = (await invoke('get_provider_config')) as Record<string, unknown> | null;
       if (hasSearchCredentials(c)) {
@@ -131,7 +136,7 @@ export default function ProfileEditing({
       }
     } catch (err) {
       console.error(err);
-      toast.error('Your search settings went off script for a second.');
+      toast.error("Your search settings are playing hide and seek right now.");
     }
   };
 
@@ -207,7 +212,7 @@ export default function ProfileEditing({
                   disabled={modelsLoading || !hasAnyModel}
                 >
                   {!hasAnyModel ? (
-                    <option value="">No models found — configure providers in Settings</option>
+                    <option value="">No models yet. Add a provider in Settings.</option>
                   ) : (
                     (Object.keys(PROVIDER_LABELS) as ProviderId[]).map((pid) => {
                       const ids = modelsMap[pid];
@@ -227,10 +232,10 @@ export default function ProfileEditing({
               </div>
 
               <div className="flex min-h-0 flex-1 flex-col">
-                <label className="mb-2 block text-sm font-medium text-primary/80">
+                <label className="mb-3 block text-sm font-medium text-primary/80">
                   Global system prompt <span className="font-normal text-primary/50">(optional)</span>
                 </label>
-                <p className="mb-2 text-xs text-primary/50">
+                <p className="mb-3 text-xs text-primary/50">
                   Applied while this profile is active. You can still override per chat later.
                 </p>
                 <textarea

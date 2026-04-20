@@ -78,8 +78,8 @@ export function useAIStreaming() {
 
     if (!isTauri()) {
       console.warn("streamMessage called outside of Tauri context. Mocking stream.");
-      // Mock stream
-      const tokens = `This is a mocked streaming response from Rust using ${provider}:${model}. You said: "${prompt}"`.split(" ");
+      const ack = `Response received: ${prompt}`;
+      const tokens = ack.split(" ");
       for (let i = 0; i < tokens.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 50));
         tokenCount.current++;
