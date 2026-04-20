@@ -88,32 +88,39 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
     if (!isRightSidebarOpen) setIsFullyOpen(false);
   }, [isRightSidebarOpen]);
 
+  const panelClass = showPinkMode
+    ? "bg-gradient-to-b from-pink-100/75 to-rose-100/75 backdrop-blur-2xl"
+    : isIncognito
+      ? (isDark ? "bg-[#111]/85 backdrop-blur-xl" : "bg-[#fefaf0]/85 backdrop-blur-xl")
+      : !isIncognito && (isDark ? customBgDark : customBgLight)
+        ? "bg-background/20 backdrop-blur-2xl"
+        : isDark
+          ? "bg-[#303030]/90 backdrop-blur-xl"
+          : "bg-[#efefef]/85 backdrop-blur-xl";
+
   return (
     <motion.div
       initial={false}
       animate={{
-        width: isRightSidebarOpen ? 300 : 0,
+        width: isRightSidebarOpen ? 312 : 0,
         opacity: isRightSidebarOpen ? 1 : 0
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       onAnimationComplete={() => {
         if (isRightSidebarOpen) setIsFullyOpen(true);
       }}
-      className={`flex-shrink-0 relative z-30 overflow-hidden ${showPinkMode
-        ? "bg-gradient-to-b from-fuchsia-50/80 to-pink-50/80 backdrop-blur-2xl border-l border-pink-200/50"
-        : isIncognito
-          ? (isDark ? "bg-[#111] border-l border-[#222]" : "bg-[#fefaf0] border-l border-[#e5e5e5]")
-          : !isIncognito && (isDark ? customBgDark : customBgLight)
-            ? "bg-background/20 backdrop-blur-2xl border-l border-white/10 dark:border-white/5"
-            : isDark ? "bg-[#161616] border-l border-black/40" : "bg-white border-l"
-        }`}
+      className="flex-shrink-0 relative z-30 overflow-hidden"
     >
-      <RightSidebar
-        isOpen={isRightSidebarOpen}
-        readyToFetch={isFullyOpen}
-        isPinkMode={showPinkMode}
-        contrast={rightSidebarContrast}
-      />
+      <div className="absolute inset-0 pt-3 pb-3 pr-3">
+        <div className={`h-full rounded-xl overflow-hidden shadow-xl ${panelClass}`}>
+          <RightSidebar
+            isOpen={isRightSidebarOpen}
+            readyToFetch={isFullyOpen}
+            isPinkMode={showPinkMode}
+            contrast={rightSidebarContrast}
+          />
+        </div>
+      </div>
     </motion.div>
   );
 };

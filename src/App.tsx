@@ -11,16 +11,17 @@ import { useProfileStore } from './store';
 import StartupScreen from './components/startup/StartupScreen';
 
 export default function App() {
-  const { activeProfile, profiles, loadProfiles, setActiveProfile } = useProfileStore();
+  const { activeProfile, loadProfiles, setActiveProfile } = useProfileStore();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const init = async () => {
+      // Always clear any Zustand-persisted active profile on launch.
+      // We only restore it below if the user explicitly chose "remember me".
+      setActiveProfile(null);
       await loadProfiles();
       const rememberedId = localStorage.getItem('finch_remembered_profile');
       if (rememberedId) {
-        // We need the profiles from the store which are updated after loadProfiles
-        // But since we are in the same render, we might need to get them from the store state
         const currentProfiles = useProfileStore.getState().profiles;
         const rememberedProfile = currentProfiles.find(p => p.id === rememberedId);
         if (rememberedProfile) {

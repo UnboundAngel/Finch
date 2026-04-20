@@ -39,12 +39,12 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
   return (
     <aside
       className={cn(
-        "h-full w-[300px] flex flex-col transition-opacity duration-300 ease-in-out relative overflow-hidden",
+        "h-full w-full flex flex-col transition-opacity duration-300 ease-in-out relative overflow-hidden",
         isOpen ? "opacity-100" : "opacity-0",
         borderColor
       )}
     >
-      <div className="absolute inset-0 w-[300px] flex flex-col min-h-0">
+      <div className="absolute inset-0 flex flex-col min-h-0">
         <TooltipProvider delay={200}>
           <ScrollArea className="flex-1 w-full h-full scrollbar-thin">
             <div className="py-4 space-y-0 relative">

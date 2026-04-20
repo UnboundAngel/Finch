@@ -1,0 +1,48 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - heading "Create Profile" [level=1] [ref=e8]
+        - paragraph [ref=e9]: Step 1 of 3
+      - button "Cancel" [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - img "Avatar preview" [ref=e16]
+          - button "Change profile picture":
+            - img
+        - textbox "Profile Name" [active] [ref=e17]
+        - button "Continue" [ref=e18]
+      - generic:
+        - generic:
+          - generic:
+            - heading "The Mindset" [level=2]
+            - paragraph: How should this profile behave?
+          - generic:
+            - generic:
+              - generic: Default model
+              - button "Refresh" [disabled]:
+                - img
+                - text: Refresh
+            - combobox "Add API keys or local endpoints in Settings, then pick a model in the app." [disabled]:
+              - option "No models — configure providers in Settings" [selected]
+          - generic:
+            - generic: Global system prompt (optional)
+            - paragraph: Applied as the default system prompt for every chat while this profile is active (you can still edit it per chat in the sidebar).
+            - textbox "e.g. You are a concise technical writer..." [disabled]
+      - generic:
+        - generic:
+          - generic:
+            - heading "Capabilities" [level=2]
+            - paragraph: What tools can this profile use?
+          - generic:
+            - generic:
+              - generic:
+                - generic: Passive Learning
+                - generic: Placeholder for a future memory feature — no effect yet.
+            - generic:
+              - generic:
+                - generic: Web research (default on)
+                - generic: Runs a web search pass before each reply when the globe is on. Turning this on requires a Tavily, Brave, or SearXNG setup.
+              - button [disabled]
+  - region "Notifications alt+T"

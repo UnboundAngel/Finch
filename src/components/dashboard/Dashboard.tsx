@@ -408,7 +408,7 @@ function DashboardContent({
         ? 'bg-transparent text-foreground has-custom-bg' 
         : showPinkMode 
           ? 'bg-[#fff5f7] text-foreground is-pink-mode' 
-          : isDark ? 'bg-[#262626] text-foreground' : 'bg-background text-foreground'}`}
+          : 'bg-background text-foreground'}`}
       style={{
         ...(!isIncognito && (isDark ? customBgDark : customBgLight)
           ? {

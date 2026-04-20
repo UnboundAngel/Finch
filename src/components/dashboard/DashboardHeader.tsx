@@ -66,7 +66,7 @@ export function DashboardHeader({
         ? 'bg-transparent'
         : showPinkMode
           ? 'bg-gradient-to-r from-pink-300/30 via-rose-200/30 to-fuchsia-200/30 backdrop-blur-xl'
-          : isDark ? 'bg-[#262626]' : 'bg-background'
+          : 'bg-transparent'
         }`}
     >
       <div className="flex-1 flex items-center justify-start gap-2 pointer-events-none">

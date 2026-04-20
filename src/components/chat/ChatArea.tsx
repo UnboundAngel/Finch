@@ -52,7 +52,10 @@ export const ChatArea = memo(({
   }, [messages, isThinking]);
 
   return (
-    <div className={`flex-1 pt-20 pb-8 px-4 scrollbar-hide ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+    <div
+      className={`flex-1 pt-20 pb-8 pl-6 pr-4 scrollbar-hide ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto'}`}
+      style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 72px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 72px)' }}
+    >
       <div className="max-w-3xl mx-auto min-h-full flex flex-col">
         <div className="flex-1 space-y-6">
           {messages.length === 0 && (
