@@ -11,7 +11,7 @@ status: in-progress
 # Finch — dashboard.tsx Split Todo
 
 > [!note] References
-> ![[Finch - dashboard Extraction Inventory]]
+> [Finch - dashboard Extraction Inventory (archived)](../archive/Finch%20-%20dashboard%20Extraction%20Inventory.md)
 > ![[Finch - dashboard Split Structure]]
 > ![[Finch - dashboard MVP Scope]]
 

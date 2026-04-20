@@ -1134,9 +1134,9 @@ After all tasks are committed, do a single pass with `npm run tauri dev`:
 
 ## Post-Phase: Update BACKLOG.md
 
-Mark all 7 Baseline items as `[x]` in `docs/BACKLOG.md` and commit:
+Mark all 7 Baseline items as `[x]` in `docs/product/BACKLOG.md` and commit:
 
 ```bash
-git add docs/BACKLOG.md
+git add docs/product/BACKLOG.md
 git commit -m "docs: mark all 7 baseline gaps as complete"
 ```

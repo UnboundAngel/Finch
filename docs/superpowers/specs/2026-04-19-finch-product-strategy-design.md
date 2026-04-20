@@ -55,7 +55,7 @@ Finch's moat: Tauri (not Electron), Rust security layer, and the smart routing +
 
 Close all 7 gaps. Every item below will be hit by a first-time user or reviewer within 5 minutes:
 
-1. **File/image upload → actually sent to AI** — architecture fully specced in `docs/BACKLOG.md`
+1. **File/image upload → actually sent to AI** — architecture fully specced in `docs/product/BACKLOG.md`
 2. **Copy button on AI messages** — mirror existing pattern from user messages in `MessageBubble.tsx`
 3. **Auto-naming chats** — lightweight AI call on first message, store in session metadata
 4. **Regenerate response** — button on AI message, re-invoke `streamMessage` from last user message
@@ -84,7 +84,7 @@ Only after Phase 2:
 
 ### What NOT to build until users validate it
 
-OmniSearch, Vector Memory (full semantic vault), Artifacts system, Finch Projects. All specced in `docs/BACKLOG.md` — park there until real users ask for them.
+OmniSearch, Vector Memory (full semantic vault), Artifacts system, Finch Projects. All specced in `docs/product/BACKLOG.md` — park there until real users ask for them.
 
 ---
 

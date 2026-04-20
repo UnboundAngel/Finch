@@ -24,8 +24,8 @@ Several directories and files appear to be leftovers from previous tasks or snap
 - **`profile_screen.zip`**: A compressed backup or asset in the root.
 
 ### 3. Documentation & State Fragmentation
-- **Scattered UAT Logs**: `05-01-UAT.md`, `06-01-UAT.md`, and `13-UAT.md` are in the root instead of `docs/` or a dedicated testing folder.
-- **Duplicate/Legacy Docs**: `codebase.md` and `Finch - Todo.md` exist in the root despite a dedicated `docs/` directory containing similar information.
+- **Scattered UAT Logs**: Resolved — UAT logs live under `docs/qa/`.
+- **Duplicate/Legacy Docs**: Resolved — `codebase.md` and `Finch - Todo.md` live under `docs/architecture/` and `docs/product/` respectively (see `docs/README.md`).
 
 ### 4. Configuration Anomalies
 - **`package.json`**: Includes `express` and `dotenv`, which are typical for Node.js backends but suspicious in a Tauri-focused project unless specifically required for a sidecar.

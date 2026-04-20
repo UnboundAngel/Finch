@@ -175,13 +175,57 @@ function DashboardContent({
     openWallpaperPicker(isDark ? 'dark' : 'light');
   };
 
-  const updateActiveSessionInList = async (updatedMessages: Message[]) => {
+  // Always read latest list when saving. invokeStream is stable (narrow useCallback deps), so
+  // saves that run after streaming must not read a stale `recentChats` closure.
+  const recentChatsRef = useRef(recentChats);
+  recentChatsRef.current = recentChats;
+
+  // AI title is written here synchronously as soon as the model returns, before React commits
+  // setRecentChats. Stream-end saves must see this even if chat list state is still catching up.
+  const pendingAutoTitleBySessionIdRef = useRef<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    pendingAutoTitleBySessionIdRef.current.clear();
+  }, [activeProfile?.id]);
+
+  const resolveSessionTitle = (
+    sessionId: string | null | undefined,
+    updatedMessages: Message[],
+    existingChat: ChatSession | undefined,
+  ): string => {
+    const pending = (sessionId && pendingAutoTitleBySessionIdRef.current.get(sessionId)?.trim()) || '';
+    const existingTitle = existingChat?.title?.trim() ?? '';
+    const firstUser = updatedMessages.find((m) => m.role === 'user');
+    const rawPeek = (firstUser?.content ?? '').substring(0, 40).trim() || 'New Chat';
+    // Pending applies only while the list still shows the default slice (not yet committed AI name).
+    // Once the list has any other title (AI or user rename), trust the list over pending so renames win.
+    const listStillDefaultSlice = !existingTitle || existingTitle === rawPeek;
+    if (pending && listStillDefaultSlice) return pending;
+    if (existingTitle) return existingTitle;
+    return rawPeek;
+  };
+
+  const updateActiveSessionInList = useCallback(async (updatedMessages: Message[]) => {
     if (isIncognito) return;
     const currentSessionId = session.activeSessionIdRef.current;
-    const existing = recentChats.find(c => c.id === currentSessionId);
+    const existing = recentChatsRef.current.find(c => c.id === currentSessionId);
+    const firstUserForPeek = updatedMessages.find((m) => m.role === 'user');
+    const rawPeekForPurge =
+      (firstUserForPeek?.content ?? '').substring(0, 40).trim() || 'New Chat';
+    if (currentSessionId) {
+      const p = pendingAutoTitleBySessionIdRef.current.get(currentSessionId)?.trim();
+      const ex = existing?.title?.trim();
+      if (p && ex && ex !== rawPeekForPurge && ex !== p) {
+        pendingAutoTitleBySessionIdRef.current.delete(currentSessionId);
+      }
+    }
+    const pendingBefore = currentSessionId
+      ? pendingAutoTitleBySessionIdRef.current.get(currentSessionId)?.trim()
+      : '';
+    const resolvedTitle = resolveSessionTitle(currentSessionId, updatedMessages, existing);
     const sessionToSave: ChatSession = {
       id: currentSessionId || '',
-      title: existing?.title || updatedMessages[0].content.substring(0, 40),
+      title: resolvedTitle,
       messages: updatedMessages as any,
       profileId: activeProfile?.id,
       timestamp: Date.now(),
@@ -203,9 +247,13 @@ function DashboardContent({
         session.activeSessionIdRef.current = savedId;
         sessionToSave.id = savedId;
       }
+      const sid = sessionToSave.id;
+      if (pendingBefore && resolvedTitle === pendingBefore) {
+        pendingAutoTitleBySessionIdRef.current.delete(sid);
+      }
       setRecentChats((prev: any) => [sessionToSave, ...prev.filter((c: any) => c.id !== savedId)].sort((a, b) => (a.pinned === b.pinned ? b.timestamp - a.timestamp : a.pinned ? -1 : 1)));
     } catch (err) { console.error('Failed to save chat:', err); }
-  };
+  }, [isIncognito, session.activeSessionIdRef, session.setActiveSessionId]);
 
   const invokeStream = useCallback((
     userMessage: string,
@@ -258,7 +306,7 @@ function DashboardContent({
       historyWithUserMsg,
       attachmentPath ? [{ path: attachmentPath }] : undefined,
     );
-  }, [selectedModel, selectedProvider, isWebSearchActive, streamMessage, session, wasAbortedRef]);
+  }, [selectedModel, selectedProvider, isWebSearchActive, streamMessage, session, wasAbortedRef, updateActiveSessionInList]);
 
   const handleSend = async (bypassCheck = false) => {
     if (!input.trim() || isThinking || isStreaming) return;
@@ -324,6 +372,7 @@ function DashboardContent({
       });
       const cleanTitle = title.trim().replace(/^["'\s]+|["'\s]+$/g, '').replace(/[.,!?]$/, '');
       if (!cleanTitle || cleanTitle.length > 80) return;
+      pendingAutoTitleBySessionIdRef.current.set(sessionId, cleanTitle);
       setRecentChats(prev => {
         const chat = prev.find(c => c.id === sessionId);
         if (!chat) return prev;

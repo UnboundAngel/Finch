@@ -26,9 +26,9 @@ This project exists in two states: **Public** (Frontend only) and **Private** (F
 Finch is a high-performance desktop AI chat application built with Tauri v2 and React 19. It provides a local-first, extensible interface for interacting with various LLM providers (Anthropic, OpenAI, Gemini, LM Studio, Ollama) and real-time Web Search (Tavily, Brave, SearXNG), while maintaining strict security by routing all model communication through a secure Rust IPC bridge.
 
 ## 2. Branch / OS Setup
-- **main branch** → Windows (primary dev machine). Path: `C:\Random things i dont want deleted\MyPrograms\SB_Projects\Finch_full\`
-- **linux branch** → Linux laptop. Separate branch, same codebase.
-- Always confirm which branch you're on before making changes.
+- **main** → Windows (primary machine). Example path: `C:\Random things i dont want deleted\MyPrograms\SB_Projects\Finch_full\`
+- **linux** → Linux laptop (same repo, separate branch). Example path: `~/Desktop/Projects/Finch_full`
+- Confirm branch and remotes before pushing (see Section 1).
 
 ## 3. Tech Stack
 - **Tauri v2**: Native desktop shell and secure Rust-to-React bridge.
@@ -37,8 +37,8 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
 - **Vite**: Ultra-fast build tool and development server.
 - **Tailwind CSS 4**: Utility-first styling with the latest engine optimizations.
 - **Zustand**: Lightweight, hook-based global state management.
-- **Framer Motion 12**: Fluid, declarative animations and micro-interactions.
-- **Shadcn/UI**: High-quality, accessible UI components.
+- **Motion (`motion`, `motion/react`)**: Animations and micro-interactions (Framer Motion successor API).
+- **Shadcn/UI + Radix + Base UI**: Component primitives (`components/ui/` at repo root, app shells under `src/components/`).
 - **Shiki**: High-fidelity, theme-aware syntax highlighting for code blocks.
 - **Rust**: High-performance backend logic, IPC handling, and hardware interaction.
 - **whisper-rs & cpal**: Local-first voice transcription and audio device management.
@@ -52,20 +52,26 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
 ## 4. Directory Structure
 ```text
 /
-├── .planning/       # Authoritative GSD session state and phase plans
-├── src/             # React frontend source
-│   ├── components/  # Modular UI (chat, dashboard, sidebar, ui, search)
-│   ├── hooks/       # Custom hooks (IPC, streaming, voice, persistence)
-│   ├── lib/         # Shared frontend utilities and constants
-│   ├── store/       # Zustand global state slices
-│   ├── types/       # Global TypeScript definitions
-│   └── styles/      # Global CSS and theme configurations
-├── src-tauri/       # Rust backend source
-│   ├── src/         # Rust modules (ipc, providers, search, voice, session)
-│   ├── capabilities/ # Tauri v2 permission definitions
-│   └── permissions/ # Granular command access control
-├── public/          # Static assets (icons, grain textures, SVGs)
-└── docs/            # Project documentation and UAT reports
+├── .planning/       # GSD session state (STATE.md), phase plans, quick tasks, research
+├── components/ui/   # Shared Shadcn-style primitives (import via @/components/ui/…)
+├── src/
+│   ├── components/  # App UI: chat, dashboard, sidebar (split sections), startup, modals, profile
+│   ├── hooks/       # IPC, streaming (useAIStreaming), voice, persistence, shortcuts
+│   ├── lib/         # Utilities, theme, constants
+│   ├── store/       # Zustand slices (chat, model params, profile, …)
+│   ├── types/
+│   └── styles/
+├── src-tauri/src/   # Rust: ipc/, providers/, search, voice, session, media import, …
+├── src-tauri/capabilities/
+├── public/
+└── docs/
+    ├── README.md    # Index of all documentation
+    ├── product/     # BACKLOG, IDEAS, ROADMAP, scratch todo
+    ├── planning/    # Startup / profile integration plans
+    ├── qa/          # UAT logs
+    ├── architecture/# Active codebase maps only
+    ├── archive/     # Retired plans, migration notes, duplicates (read-only)
+    └── superpowers/ # Specs + execution plans (product strategy, baseline gaps)
 ```
 
 ## 5. Architecture Rules — DO NOT VIOLATE
@@ -77,12 +83,14 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
 - Web Search results are injected into the stream via `search_start`, `search_source`, and `search_done` events before the final LLM response.
 - @/ alias resolves to the project root — NOT src/.
 - Shiki is an async singleton. Do not reinitialize it per render.
-- Framer Motion height: auto conflicts with Zustand render cycles during slider drag. Use pure CSS max-height transitions for collapsible zones. Keep Framer Motion for discrete animations only (e.g. chevron rotation).
+- Motion layout/height: `auto` conflicts with Zustand render cycles during slider drag. Use pure CSS max-height transitions for collapsible zones. Reserve Motion for discrete animations (e.g. chevron rotation, icon swaps).
 - Local models use OpenAI-compatible /v1/chat/completions endpoints.
 - Fallback context window for unknown local models: 32k (always overestimate fullness).
 
-## 6. Planning System
-The `.planning/` directory contains the authoritative state of the project. `STATE.md` tracks the current milestone, phase history, and session progress. Detailed execution plans live in `.planning/phases/`, while ad-hoc tasks are in `.planning/quick/`. Agents must read `STATE.md` at the start of every session to establish context.
+## 6. Planning System & Docs
+The `.planning/` directory holds GSD-style state: **`STATE.md`** (milestone, phase history), **`phases/`** (execution plans), **`quick/`** (small tasks), **`research/`**. Read **`STATE.md`** at session start.
+
+User-facing specs, roadmap, UAT, and architecture notes are under **`docs/`** — start from **`docs/README.md`** for the full map (product, planning, qa, architecture, archive, superpowers).
 
 ## 7. State Management
 Zustand is used for global state. Slices are located in `src/store/`:
@@ -92,47 +100,30 @@ Zustand is used for global state. Slices are located in `src/store/`:
 No Redux or Context is used for global state.
 
 ## 8. Key Providers & IPC Flow
-LLM providers are abstracted in `src-tauri/src/providers/` (anthropic.rs, openai.rs, gemini.rs, local.rs). All chat interactions route through the `chat.rs` IPC command. Real-time streaming utilizes Tauri Channels with `.onmessage` handling. LLM performance metrics and token counts are emitted as a `__STATS__:` sentinel JSON payload (or `stats` event) at the end of the stream. Web search utilizes `search.rs` and `tavily.rs` to fetch and inject context.
+LLM providers live in `src-tauri/src/providers/` (Anthropic, OpenAI, Gemini, local/Ollama-LMStudio). Chat streaming goes through IPC (e.g. `stream_message` / channel handlers in the chat path). `useAIStreaming` passes `attachments` when present; Rust merges them via `inject_attachments_into_messages` in `providers/mod.rs` into provider-specific payloads. Real-time streaming uses Tauri Channels with `.onmessage`. Stats/tokens surface as structured events at end of stream. Web search uses `search.rs` plus provider modules (Tavily, Brave, SearXNG) and injects `search_*` events before the model reply.
 
 ## 9. Current State & Priority Work
 
-All 15 planned phases are complete or effectively done. Voice transcription (Phase 13) is fully wired — `useVoiceTranscription` hook, `start_recording`/`stop_recording` commands, model marketplace, whisper-rs backend all implemented.
+Core phases through sidebar refactor and context intelligence are done. Voice (local Whisper, marketplace download, `start_recording` / `stop_recording`) is implemented end-to-end; `STATE.md` may still list Phase 13 or LM Studio stats polish — treat **STATE.md** + **docs/product/BACKLOG.md** as the live gap list.
 
-### Feature Audit (as of 2026-04-19)
-What is actually wired end-to-end vs. missing:
+### Feature audit (synced with codebase, 2026-04-19)
 
 | Feature | Status |
 |---|---|
-| Multi-provider (Anthropic, OpenAI, Gemini, Ollama, LM Studio) | ✅ Fully wired |
-| Streaming via Tauri Channel | ✅ Fully wired |
-| Markdown + code rendering (Shiki, remark-gfm, copy button) | ✅ Fully wired |
-| Chat history persistence (Zustand + disk via `save_chat`) | ✅ Fully wired |
-| Web search (Tavily/Brave/SearXNG, injected pre-response) | ✅ Fully wired |
-| Chat sidebar search (title + message content) | ✅ Fully wired |
-| Voice transcription (local whisper) | ✅ Fully wired |
-| Incognito mode (no disk save, no profile switch) | ✅ Fully wired |
-| Token stats + right sidebar | ✅ Fully wired |
-| Profile system (system prompts, default models, avatars) | ✅ Fully wired |
-| Context window tracking + overflow modal | ✅ Fully wired |
-| Copy button on user messages | ✅ Present |
-| **File/image upload → sent to AI** | ⚠️ UI only — never reaches Rust or AI |
-| **Copy button on AI messages** | ❌ Missing |
-| **Auto-naming chats** | ❌ Missing (uses first 40 chars of message) |
-| **Regenerate response** | ❌ Missing |
-| **Edit user message + resend** | ❌ Missing |
+| Multi-provider, streaming, Markdown + Shiki, persistence (`save_chat`) | ✅ Wired |
+| Web search (Tavily / Brave / SearXNG) | ✅ Wired |
+| Sidebar search, incognito, profiles, context overflow modal | ✅ Wired |
+| **Attachments → Rust → model** | ✅ Wired (`useAIStreaming` → `attachments`, Rust injection). BACKLOG still tracks **UX**: image thumbnail in input, broader file-picker extensions, multi-file. |
+| **AI message copy** | ✅ Wired (`MessageBubble.tsx`). BACKLOG: layout vs `MetadataRow`, discoverability (often hover). |
+| **Regenerate** | ✅ Wired for **last** assistant message (`ChatArea.tsx` passes `onRegenerate` only there). BACKLOG: extend to more messages, reduce hover-only discovery. |
+| **Auto-named chat titles** | ✅ Wired (`Dashboard.tsx` `autoNameChat` → `send_message` title prompt on first user message). Substring title remains fallback until save/async rename. |
+| **Edit user message + resend** | ✅ Wired (`onEditResend` → truncate → `invokeStream`). |
 
-### Current Priority: Close Baseline Gaps
-The app is feature-rich but missing 5 table-stakes items every competitor has. Close these before building any new features. See `docs/BACKLOG.md` for full specs and architecture.
+### Current priority
+Baseline work is mostly **polish and parity**, not missing greenfield flows. Follow the ordered **Baseline** section in `docs/product/BACKLOG.md` (AI actions layout/visibility, attachment UX, Advanced settings tab, etc.). Longer-term differentiators stay in the same BACKLOG and in `docs/product/IDEAS.md`.
 
-**Ordered priority:**
-1. **File/image → actually sent to AI** — architecture fully specced in `docs/BACKLOG.md`. Rust `ContentPart` enum, provider adapters for all 5 providers already designed. Also fix the "Analyze an image" empty-state suggestion card which currently breaks its own promise.
-2. **Copy button on AI messages** — trivial. Mirror the existing user message copy button in `MessageBubble.tsx`.
-3. **Auto-naming chats** — on first message, fire lightweight AI call for a 4-6 word title. Store in session metadata. Currently defaults to `messages[0].content.substring(0, 40)` in `Dashboard.tsx:177`.
-4. **Regenerate response** — button on AI message actions, re-invoke `streamMessage` from last user message.
-5. **Edit user message + resend** — truncate history to that point, replace message content, re-invoke stream.
-
-### Above-Baseline (do not build until gaps above are closed)
-OmniSearch, local ML/vector embeddings, Artifacts system, Finch Projects, Ghost Context, Semantic Vault. All specced in `docs/BACKLOG.md` and `docs/IDEAS.md`.
+### Above-baseline (defer until BACKLOG baseline is closed)
+OmniSearch, vector memory, Artifacts, Finch Projects, Ghost Context, Semantic Vault — see `docs/product/BACKLOG.md` and `docs/product/IDEAS.md`.
 
 ## 10. Agent Conventions
 - Read STATE.md before starting any task.

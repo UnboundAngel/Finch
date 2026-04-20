@@ -102,7 +102,7 @@ Intercept `<antArtifact>` XML tags in the AI stream → render in a sliding side
 Glassmorphic command palette with Discord-style syntax filters:
 `has:image` | `has:file` | `after:YYYY-MM-DD` | `model:claude` | `is:bookmarked`
 Rich snippets with highlighted keywords + "Jump to Context."
-See `docs/IDEAS.md` for full spec.
+See `IDEAS.md` for full spec.
 
 ### [ ] Folder / Category Organization in Sidebar
 Drag-and-drop folder system for chats. Beyond basic pin/rename/delete.
@@ -112,7 +112,7 @@ Drag-and-drop folder system for chats. Beyond basic pin/rename/delete.
 - OCR on images/screenshots, indexed on ingest
 - RAG "Librarian" orchestrator — Top-K retrieval, token-efficient context injection
 - Ghost Context discovery (>90% relevance score triggers faint glow on input)
-See `docs/IDEAS.md` for full spec.
+See `IDEAS.md` for full spec.
 
 ### [ ] Hardware State Orchestration ("Warm Standby")
 - "Hardware-Only Unload" on inactivity: UI state persists, only VRAM purged
