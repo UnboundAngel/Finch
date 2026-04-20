@@ -330,12 +330,28 @@ function DashboardContent({
     invokeStream(userMessage, updatedMessages, attachmentPath);
   };
 
-  const handleRegenerate = useCallback(async () => {
+  const handleRegenerate = useCallback(async (messageId?: string) => {
     if (isThinking || isStreaming) return;
     const msgs = session.messages;
-    const lastUserIdx = msgs.reduceRight(
-      (found, m, i) => found !== -1 ? found : (m.role === 'user' ? i : -1), -1
-    );
+    
+    let lastUserIdx = -1;
+    if (messageId) {
+      const aiIdx = msgs.findIndex(m => m.id === messageId);
+      if (aiIdx !== -1) {
+        // Find the user message just before this AI message
+        for (let i = aiIdx - 1; i >= 0; i--) {
+          if (msgs[i].role === 'user') {
+            lastUserIdx = i;
+            break;
+          }
+        }
+      }
+    } else {
+      lastUserIdx = msgs.reduceRight(
+        (found, m, i) => found !== -1 ? found : (m.role === 'user' ? i : -1), -1
+      );
+    }
+
     if (lastUserIdx === -1) return;
     const userMsg = msgs[lastUserIdx];
     const truncated = msgs.slice(0, lastUserIdx + 1);

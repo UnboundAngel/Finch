@@ -67,7 +67,7 @@ interface DashboardMainProps {
   handleChangeBackground: () => void;
   setCustomBgDark: (val: string) => void;
   setCustomBgLight: (val: string) => void;
-  onRegenerate: () => void;
+  onRegenerate: (messageId?: string) => void;
   onEditResend: (messageId: string, newContent: string) => void;
 }
 

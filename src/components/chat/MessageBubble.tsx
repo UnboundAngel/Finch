@@ -166,7 +166,7 @@ export const MessageBubble = ({
         {/* Action Row (Underneath - User Only) */}
         {msg.role === 'user' && (
           <div className={cn(
-            "flex items-center justify-end gap-1 px-1 transition-opacity duration-200",
+            "flex items-center justify-end gap-1 px-1 transition-opacity duration-500 delay-200 group-hover:duration-200 group-hover:delay-0",
             copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           )}>
             {onEditResend && !isEditing && (
@@ -233,11 +233,11 @@ export const MessageBubble = ({
           </div>
         )}
 
-        {msg.role === 'ai' && (
+        {msg.role === 'ai' && !msg.streaming && (
           <div className="flex items-center gap-1">
             <div className={cn(
-              "flex items-center gap-1 px-1 transition-opacity duration-200",
-              copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              "flex items-center gap-1 px-1 transition-opacity duration-500 delay-200 group-hover:duration-200 group-hover:delay-0",
+              isLatest || copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}>
               {onRegenerate && (
                 <TooltipProvider delay={400}>
@@ -284,7 +284,8 @@ export const MessageBubble = ({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            {msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} hasCustomBg={hasCustomBg} />}
+            {/* Metadata hidden for now - will be moved to settings in the future */}
+            {/* {msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} hasCustomBg={hasCustomBg} />} */}
           </div>
         )}
       </div>

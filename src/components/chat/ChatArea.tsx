@@ -145,8 +145,8 @@ export const ChatArea = memo(({
               userAvatarSrc={userAvatarSrc}
               userAvatarLetter={userAvatarLetter}
               onRegenerate={
-                msg.role === 'ai' && index === messages.length - 1 && !isThinking
-                  ? onRegenerate
+                msg.role === 'ai' && !isThinking
+                  ? () => onRegenerate?.()
                   : undefined
               }
               onEditResend={msg.role === 'user' && !isThinking ? onEditResend : undefined}
