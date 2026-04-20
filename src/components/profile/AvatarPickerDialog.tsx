@@ -65,14 +65,14 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
 
   const importKind = async (kind: 'avatar_static' | 'avatar_gif') => {
     if (!isTauri()) {
-      toast.error('Image upload requires the desktop app');
+      toast.error('Bro, image uploads only work in the desktop app right now.');
       return;
     }
     try {
       const path = await invoke<string>('import_user_media', { kind });
       await handleImportedPath(path);
     } catch (e) {
-      if (e !== 'No file selected') toast.error(String(e));
+      if (e !== 'No file selected') toast.error(`That image import face-planted: ${e}`);
     }
   };
 

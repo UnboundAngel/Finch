@@ -49,7 +49,7 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
             pollIntervalRef.current = null;
           } else if (currentStatus.status === 'Error') {
-            toast.error(`Transcription failed: ${currentStatus.data}`);
+            toast.error(`Bro, transcription went rogue for a sec: ${currentStatus.data}`);
             setStatus('idle');
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
             pollIntervalRef.current = null;
@@ -105,7 +105,7 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
         delete next[model.id];
         return next;
       });
-      toast.error(`Failed to download model: ${err}`);
+      toast.error(`Bro, that model download face-planted: ${err}`);
     }
   }, []);
 
@@ -119,7 +119,7 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
       setIsRecording(true);
       setStatus('recording');
     } catch (err: any) {
-      toast.error(`Failed to start recording: ${err}`);
+      toast.error(`Bro, recording never started, so hit it again: ${err}`);
     }
   }, [installedModels]);
 
@@ -130,7 +130,7 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
       const selectedModel = modelId || installedModels[0];
       await invoke('stop_recording', { modelId: selectedModel });
     } catch (err: any) {
-      toast.error(`Failed to stop recording: ${err}`);
+      toast.error(`Bro, recording did not stop cleanly: ${err}`);
       setIsRecording(false);
       setStatus('idle');
     }

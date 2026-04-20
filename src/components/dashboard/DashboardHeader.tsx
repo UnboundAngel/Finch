@@ -112,7 +112,7 @@ export function DashboardHeader({
                   toast.success('Model ejected successfully');
                 } catch (err) {
                   console.error('Failed to eject model:', err);
-                  toast.error('Failed to eject model');
+                  toast.error('Bro, that model refused to eject, so run it back.');
                 }
               }}
             >

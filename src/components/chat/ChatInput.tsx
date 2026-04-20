@@ -106,7 +106,7 @@ export const ChatInput = ({
       toast.success("Transcription added!");
     } else {
       // No audio detected guard
-      toast.error("No audio detected!", { 
+      toast.error("Bro, I heard nothing but vibes, so try that again.", { 
         duration: 2500,
         position: 'bottom-center'
       });
@@ -402,7 +402,7 @@ export const ChatInput = ({
                                     setSelectedDevice(device);
                                     toast.success(`Microphone set to ${device}`);
                                   } catch (e: any) {
-                                    toast.error(e.toString());
+                                    toast.error(`Bro, mic switch failed this round: ${e}`);
                                   }
                                 }}
                               >

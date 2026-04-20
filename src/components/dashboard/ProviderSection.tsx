@@ -71,7 +71,7 @@ export const ProviderSection = ({ title, icon: Icon, description, storeKey, type
       await invoke('save_provider_config', { config: cleanConfig });
       toast.success(`${title} settings updated`);
     } catch (e) {
-      toast.error(`Failed to save ${title} settings`);
+      toast.error(`Bro, your ${title} settings did not save, so run that again.`);
     } finally {
       setIsSaving(false);
     }
@@ -90,10 +90,10 @@ export const ProviderSection = ({ title, icon: Icon, description, storeKey, type
       if (models.length > 0) {
         toast.success(`Successfully loaded ${models.length} models from ${title}`);
       } else {
-        toast.warning(`No models found for ${title}. Check your ${type === 'key' ? 'API key' : 'endpoint'}.`);
+        toast.warning(`Bro, zero models showed up for ${title}, so double-check your ${type === 'key' ? 'API key' : 'endpoint'}.`);
       }
     } catch (e) {
-      toast.error(`Connection failed: ${e}`);
+      toast.error(`Bro, the ${title} connection got cooked: ${e}`);
     } finally {
       setIsTesting(false);
     }

@@ -81,7 +81,7 @@ export default function ProfileEditing({
       if (modelId) setSelectedModel(modelId);
     } catch (e) {
       console.error(e);
-      toast.error('Could not load models');
+      toast.error('Your models dipped out, so please give refresh a quick tap.');
     } finally {
       setModelsLoading(false);
     }
@@ -131,7 +131,7 @@ export default function ProfileEditing({
       }
     } catch (err) {
       console.error(err);
-      toast.error('Could not read search configuration');
+      toast.error('Your search settings went off script for a second.');
     }
   };
 

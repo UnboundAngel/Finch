@@ -68,15 +68,15 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
     const trimmedSearx = searxUrl.trim();
 
     if (activeProvider === 'tavily' && !trimmedKey) {
-      toast.error("Please enter a Tavily API Key");
+      toast.error("Bro, drop in a Tavily key first so Finch can search.");
       return;
     }
     if (activeProvider === 'brave' && !trimmedBrave) {
-      toast.error("Please enter a Brave API Key");
+      toast.error("Bro, drop in a Brave key first so Finch can search.");
       return;
     }
     if (activeProvider === 'searxng' && !trimmedSearx) {
-      toast.error("Please enter your SearXNG Instance URL");
+      toast.error("Bro, add your SearXNG URL first so Finch knows where to look.");
       return;
     }
     
@@ -93,7 +93,7 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
       toast.success(`Web Research (${activeProvider}) activated!`);
       onComplete(activeProvider);
     } catch (err: any) {
-      toast.error(err.toString());
+      toast.error(`Bro, search setup got cooked: ${err}`);
     } finally {
       setIsSaving(false);
     }

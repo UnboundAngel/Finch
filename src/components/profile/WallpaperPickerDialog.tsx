@@ -61,14 +61,14 @@ export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Pro
 
   const pickBackground = async () => {
     if (!isTauri()) {
-      toast.error('Wallpapers require the desktop app');
+      toast.error('Bro, wallpapers only work in the desktop app right now.');
       return;
     }
     try {
       const path = await invoke<string>('import_user_media', { kind: 'background' });
       await handleImportedPath(path);
     } catch (e) {
-      if (e !== 'No file selected') toast.error(String(e));
+      if (e !== 'No file selected') toast.error(`That wallpaper import wiped out: ${e}`);
     }
   };
 

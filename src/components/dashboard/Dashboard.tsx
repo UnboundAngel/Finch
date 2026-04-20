@@ -301,7 +301,7 @@ function DashboardContent({
         });
         setIsThinking(false);
       },
-      (err) => { setIsThinking(false); toast.error(`Error: ${err}`); },
+      (err) => { setIsThinking(false); toast.error(`Bro, that reply tripped over a cable: ${err}`); },
       { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive },
       historyWithUserMsg,
       attachmentPath ? [{ path: attachmentPath }] : undefined,
@@ -507,7 +507,7 @@ export function Dashboard() {
       });
       toast.success('Backgrounds cleared');
     } catch (e) {
-      toast.error(`Error: ${e}`);
+      toast.error(`Bro, your wallpapers would not clear this round: ${e}`);
     }
   };
 

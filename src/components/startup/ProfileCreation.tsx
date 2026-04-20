@@ -73,7 +73,7 @@ export default function ProfileCreation({
       }
     } catch (e) {
       console.error(e);
-      toast.error('Could not load models');
+      toast.error("Your models ghosted us, so tap refresh and we will try again.");
     } finally {
       setModelsLoading(false);
     }
@@ -107,7 +107,7 @@ export default function ProfileCreation({
       }
     } catch (err) {
       console.error(err);
-      toast.error('Could not read search configuration');
+      toast.error("Your search settings are playing hide and seek right now.");
     }
   };
 

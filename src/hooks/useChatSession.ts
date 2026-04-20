@@ -96,7 +96,7 @@ export function useChatSession({
       });
     } catch (err) {
       console.error('Failed to delete chat:', err);
-      toast.error('Failed to delete chat');
+      toast.error('Bro, that chat would not delete, so give it another shot.');
     }
   }, [recentChats, handleNewChat, setRecentChats]);
 

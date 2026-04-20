@@ -165,7 +165,7 @@ export const WebSearchControl = ({
                           setActiveSearchProvider(p);
                           toast.success(`Search provider set to ${p}`);
                         } catch (e: any) {
-                          toast.error(e.toString());
+                          toast.error(`Bro, search provider swap failed this round: ${e}`);
                         }
                       }}
                       className="text-xs rounded-lg flex items-center justify-between cursor-pointer"
