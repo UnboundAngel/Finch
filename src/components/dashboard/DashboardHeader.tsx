@@ -63,10 +63,10 @@ export function DashboardHeader({
     <header
       data-tauri-drag-region
       className={`h-14 flex items-center justify-between px-4 sticky top-0 z-50 transition-none shrink-0 ${isIncognito
-        ? 'border-transparent bg-transparent'
+        ? 'bg-transparent'
         : showPinkMode
-          ? 'bg-gradient-to-r from-pink-300/40 via-rose-200/40 to-fuchsia-200/40 backdrop-blur-xl border-b border-pink-200/30'
-          : 'bg-background/40 backdrop-blur-xl border-b border-white/10 dark:border-white/5'
+          ? 'bg-gradient-to-r from-pink-300/30 via-rose-200/30 to-fuchsia-200/30 backdrop-blur-xl'
+          : isDark ? 'bg-[#262626]' : 'bg-background'
         }`}
     >
       <div className="flex-1 flex items-center justify-start gap-2 pointer-events-none">

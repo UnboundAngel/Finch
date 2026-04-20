@@ -262,14 +262,14 @@ export function DashboardMain(props: DashboardMainProps) {
           setIsSettingsOpen={setIsSettingsOpen}
           className={
             showPinkMode
-              ? "bg-gradient-to-b from-pink-100/80 to-rose-100/80 backdrop-blur-2xl"
+              ? "bg-gradient-to-b from-pink-100/75 to-rose-100/75 backdrop-blur-2xl"
               : !isIncognito && (isDark ? customBgDark : customBgLight)
-                ? "bg-background/35 backdrop-blur-2xl"
+                ? "bg-background/20 backdrop-blur-2xl"
                 : isIncognito
-                  ? (isDark ? "bg-[#111]/95" : "bg-[#fefaf0]/95")
+                  ? (isDark ? "bg-[#111]/85 backdrop-blur-xl" : "bg-[#fefaf0]/85 backdrop-blur-xl")
                   : isDark
-                    ? "bg-[#252525]/95"
-                    : "bg-[#efefef]/95"
+                    ? "bg-[#303030]/90 backdrop-blur-xl"
+                    : "bg-[#efefef]/85 backdrop-blur-xl"
           }
           contrast={sidebarContrast}
           isPinkMode={showPinkMode}
@@ -277,7 +277,7 @@ export function DashboardMain(props: DashboardMainProps) {
         {isLeftSidebarOpen && (
           <div
             className="absolute top-0 bottom-0 z-40 w-0 pointer-events-none"
-            style={{ left: 'var(--sidebar-width)' }}
+            style={{ left: 'calc(var(--sidebar-width) + 0.75rem)' }}
           >
             <button
               type="button"

@@ -114,19 +114,19 @@ export const ChatSidebar = ({
 
   return (
     <Sidebar variant="sidebar" className={cn(
-      "!absolute !top-0 !bottom-0 !h-full border-none !rounded-r-2xl !overflow-hidden",
+      "!absolute !top-3 !bottom-3 !left-3 !h-auto border-none !rounded-xl !overflow-hidden shadow-xl",
       className
     )}>
       <SidebarHeader className="p-4 select-none">
         <div className="no-drag">
           <Button
-            variant="outline"
-            className={`w-full justify-start gap-2 h-10 px-4 rounded-xl shadow-sm transition-none ${isIncognito ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/50'} ${isPinkMode ? 'bg-white/60 border-rose-200/50 text-foreground' : (contrast === 'light' ? 'bg-white/5 text-white border-white/5' : 'bg-background border-muted-foreground/20 text-foreground')}`}
+            variant="ghost"
+            className={`w-full justify-start gap-2 h-8 px-2 rounded-lg transition-none text-sm ${isIncognito ? 'opacity-50 cursor-not-allowed' : (isPinkMode ? 'hover:bg-rose-200/40 text-foreground' : (contrast === 'light' ? 'hover:bg-white/10 text-white' : 'hover:bg-white/8 text-foreground'))}`}
             onClick={isIncognito ? undefined : handleNewChat}
             disabled={isIncognito}
           >
             <Plus className="h-4 w-4" />
-            <span className="font-medium">New Chat</span>
+            <span>New chat</span>
           </Button>
           <div className="mt-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -163,7 +163,7 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-none group ${activeSessionId === chat.id
+                            className={`h-8 px-3 hover:bg-muted/50 rounded-lg transition-none group ${activeSessionId === chat.id
                                 ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold'
                                 : (contrast === 'dark' ? 'text-black/70 hover:text-black font-medium' : 'text-muted-foreground hover:text-foreground')
                               }`}
@@ -222,7 +222,7 @@ export const ChatSidebar = ({
                         <SidebarMenuItem key={chat.id}>
                           <SidebarMenuButton
                             isActive={activeSessionId === chat.id}
-                            className={`h-10 px-4 hover:bg-muted/50 rounded-xl transition-none group ${activeSessionId === chat.id
+                            className={`h-8 px-3 hover:bg-muted/50 rounded-lg transition-none group ${activeSessionId === chat.id
                                 ? 'bg-[oklch(0.488_0.243_264.376)]/30 text-foreground font-semibold'
                                 : (contrast === 'dark' ? 'text-black/70 hover:text-black font-medium' : 'text-muted-foreground hover:text-foreground')
                               }`}
