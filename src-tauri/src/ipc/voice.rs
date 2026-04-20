@@ -20,6 +20,17 @@ pub async fn get_transcription_status(state: State<'_, AppState>) -> Result<Voic
 }
 
 #[command]
+pub async fn start_voice_preview(handle: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    state.voice_manager.start_preview(handle)
+}
+
+#[command]
+pub async fn stop_voice_preview(state: State<'_, AppState>) -> Result<(), String> {
+    state.voice_manager.stop_preview();
+    Ok(())
+}
+
+#[command]
 pub async fn get_voice_meter_level(state: State<'_, AppState>) -> Result<f32, String> {
     Ok(state.voice_manager.get_meter_level())
 }

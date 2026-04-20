@@ -113,9 +113,8 @@ export const ChatSidebar = ({
   };
 
   return (
-    <Sidebar className={cn(
-      "!absolute !inset-y-0 !h-full border-none",
-      (!isPinkMode && contrast === 'light') ? "bg-[#161616]" : "bg-transparent",
+    <Sidebar variant="sidebar" className={cn(
+      "!absolute !top-0 !bottom-0 !h-full border-none !rounded-r-2xl !overflow-hidden",
       className
     )}>
       <SidebarHeader className="p-4 select-none">
@@ -142,7 +141,7 @@ export const ChatSidebar = ({
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
         {(() => {
           const filteredChats = recentChats.filter(chat => {
             if (!debouncedSearchQuery.trim()) return true;
@@ -184,7 +183,11 @@ export const ChatSidebar = ({
                               />
                             ) : (
                               <span
-                                className={`truncate text-sm font-medium flex-1 ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
+                                className={`text-sm font-medium flex-1 overflow-hidden whitespace-nowrap ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
+                                style={{
+                                  maskImage: 'linear-gradient(to right, black 80%, transparent 98%)',
+                                  WebkitMaskImage: 'linear-gradient(to right, black 80%, transparent 98%)'
+                                }}
                                 onDoubleClick={(e) => {
                                   if (isIncognito) return;
                                   e.preventDefault();
@@ -239,7 +242,11 @@ export const ChatSidebar = ({
                               />
                             ) : (
                               <span
-                                className={`truncate text-sm font-medium flex-1 ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
+                                className={`text-sm font-medium flex-1 overflow-hidden whitespace-nowrap ${isAiNamed(chat.title) ? 'italic text-muted-foreground/80' : ''}`}
+                                style={{
+                                  maskImage: 'linear-gradient(to right, black 80%, transparent 98%)',
+                                  WebkitMaskImage: 'linear-gradient(to right, black 80%, transparent 98%)'
+                                }}
                                 onDoubleClick={(e) => {
                                   if (isIncognito) return;
                                   e.preventDefault();

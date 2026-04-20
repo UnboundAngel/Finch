@@ -50,11 +50,32 @@ impl VoiceManager {
         }
 
         let host = cpal::default_host();
+        let default_name = host
+            .default_input_device()
+            .and_then(|d| d.name().ok());
+
         match host.input_devices() {
             Ok(devices) => {
-                let device_names: Vec<String> = devices
+                let mut device_names: Vec<String> = devices
                     .map(|d| d.name().unwrap_or_else(|_| "Unknown Device".to_string()))
                     .collect();
+                if let Some(default) = default_name {
+                    let clean_name = if default.starts_with("Default - ") {
+                        default.replace("Default - ", "")
+                    } else if default.starts_with("Communications - ") {
+                        default.replace("Communications - ", "")
+                    } else {
+                        default
+                    };
+                    device_names.insert(0, format!("Default - {}", clean_name));
+                }
+                let mut deduped: Vec<String> = Vec::new();
+                for name in device_names.into_iter() {
+                    if !deduped.iter().any(|n| n == &name) {
+                        deduped.push(name);
+                    }
+                }
+                let device_names = deduped;
                 println!("Detected audio devices: {:?}", device_names);
                 device_names
             },
@@ -70,17 +91,54 @@ impl VoiceManager {
         *dev = Some(name);
     }
 
-    pub fn start_recording<R: Runtime>(&self, _app_handle: AppHandle<R>) -> Result<(), String> {
+    pub fn get_meter_level(&self) -> f32 {
+        f32::from_bits(self.meter_level_bits.load(Ordering::Relaxed))
+    }
+
+    pub fn start_preview<R: Runtime>(&self, _app_handle: AppHandle<R>) -> Result<(), String> {
+        if self.stream.lock().unwrap().is_some() {
+            return Ok(());
+        }
+        self.start_recording_internal(true)
+    }
+
+    pub fn stop_preview(&self) {
+        let mut s_lock = self.stream.lock().unwrap();
+        if let Some(_) = &*s_lock {
+            let status = self.status.lock().unwrap();
+            if matches!(*status, VoiceStatus::Idle) {
+                *s_lock = None;
+                self.meter_level_bits.store(0, Ordering::Relaxed);
+            }
+        }
+    }
+
+    fn start_recording_internal(&self, is_preview: bool) -> Result<(), String> {
+        // On Windows, COM must be initialized on whichever thread calls into WASAPI.
+        // Tauri async commands run on a threadpool — each thread needs its own init.
+        #[cfg(target_os = "windows")]
+        unsafe {
+            let _ = windows::Win32::System::Com::CoInitializeEx(
+                None,
+                windows::Win32::System::Com::COINIT_APARTMENTTHREADED,
+            );
+        }
+
         let host = cpal::default_host();
         
-        // Select device
         let device = {
             let selected = self.selected_device.lock().unwrap();
             if let Some(name) = &*selected {
-                host.input_devices()
-                    .map_err(|e| e.to_string())?
-                    .find(|d| d.name().ok().as_ref() == Some(name))
-                    .ok_or_else(|| format!("Device '{}' not found", name))?
+                let alias_selected = name.starts_with("Default - ") || name.starts_with("Communications - ");
+                if alias_selected {
+                    host.default_input_device()
+                        .ok_or_else(|| "No default input device found".to_string())?
+                } else {
+                    host.input_devices()
+                        .map_err(|e| e.to_string())?
+                        .find(|d| d.name().ok().as_ref() == Some(name))
+                        .ok_or_else(|| format!("Device '{}' not found", name))?
+                }
             } else {
                 host.default_input_device()
                     .ok_or_else(|| "No default input device found".to_string())?
@@ -90,14 +148,12 @@ impl VoiceManager {
         let config = device.default_input_config()
             .map_err(|e| e.to_string())?;
 
-        let status = self.status.clone();
         let buffer = self.buffer.clone();
         let meter_level_bits = self.meter_level_bits.clone();
         let sample_rate = config.sample_rate().0 as f32;
         let channels = config.channels() as usize;
 
-        // Clear buffer
-        {
+        if !is_preview {
             let mut b = buffer.lock().unwrap();
             b.clear();
         }
@@ -110,32 +166,26 @@ impl VoiceManager {
                 device.build_input_stream(
                     &config.into(),
                     move |data: &[f32], _: &_| {
-                        // Calculate RMS amplitude for visualization
                         if !data.is_empty() {
                             let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
                             let rms = (sum_sq / data.len() as f32).sqrt();
-                            // Louder visual gain for speech (RMS is often very small on consumer mics).
                             let boosted = rms * 14.0;
                             let normalized_volume = (1.0 - (-boosted).exp()).clamp(0.0, 1.0);
-                            // Do not emit from the audio thread: WebView eval must run on the UI thread
-                            // (Windows/WebView2). The frontend polls `get_voice_meter_level` instead.
                             meter_level_bits.store(normalized_volume.to_bits(), Ordering::Relaxed);
                         }
 
-                        let mut b = buffer.lock().unwrap();
-                        
-                        // Simple Resampling & Mono conversion
-                        // Whisper wants 16000Hz Mono
-                        if sample_rate == 16000.0 && channels == 1 {
-                            b.extend_from_slice(data);
-                        } else {
-                            // Downsample / Mono logic
-                            let step = sample_rate / 16000.0;
-                            let mut i = 0.0;
-                            while (i as usize) < data.len() {
-                                let idx = (i as usize) - ((i as usize) % channels);
-                                b.push(data[idx]);
-                                i += step * (channels as f32);
+                        if !is_preview {
+                            let mut b = buffer.lock().unwrap();
+                            if sample_rate == 16000.0 && channels == 1 {
+                                b.extend_from_slice(data);
+                            } else {
+                                let step = sample_rate / 16000.0;
+                                let mut i = 0.0;
+                                while (i as usize) < data.len() {
+                                    let idx = (i as usize) - ((i as usize) % channels);
+                                    b.push(data[idx]);
+                                    i += step * (channels as f32);
+                                }
                             }
                         }
                     },
@@ -151,10 +201,16 @@ impl VoiceManager {
         let mut s_lock = self.stream.lock().unwrap();
         *s_lock = Some(stream);
         
-        let mut s = status.lock().unwrap();
-        *s = VoiceStatus::Recording;
+        if !is_preview {
+            let mut s = self.status.lock().unwrap();
+            *s = VoiceStatus::Recording;
+        }
 
         Ok(())
+    }
+
+    pub fn start_recording<R: Runtime>(&self, _app_handle: AppHandle<R>) -> Result<(), String> {
+        self.start_recording_internal(false)
     }
 
     pub fn stop_recording<R: Runtime>(&self, app_handle: AppHandle<R>, model_id: Option<String>) -> Result<(), String> {
@@ -245,15 +301,6 @@ impl VoiceManager {
 
     pub fn get_status(&self) -> VoiceStatus {
         self.status.lock().unwrap().clone()
-    }
-
-    /// Normalized RMS (0–1) while recording; safe to call from the UI thread.
-    pub fn get_meter_level(&self) -> f32 {
-        let status = self.status.lock().unwrap();
-        if !matches!(*status, VoiceStatus::Recording) {
-            return 0.0;
-        }
-        f32::from_bits(self.meter_level_bits.load(Ordering::Relaxed))
     }
 }
 

@@ -65,6 +65,8 @@ pub fn run() {
             ipc::sessions::delete_chat,
             ipc::voice::start_recording,
             ipc::voice::stop_recording,
+            ipc::voice::start_voice_preview,
+            ipc::voice::stop_voice_preview,
             ipc::voice::get_transcription_status,
             ipc::voice::get_voice_meter_level,
             ipc::voice::list_audio_devices,

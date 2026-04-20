@@ -28,7 +28,7 @@ export function Switch({ checked, onCheckedChange, className, disabled, "aria-la
         layout
         initial={false}
         animate={{ 
-          x: checked ? 32 : 0,
+          x: checked ? 28 : 0,
         }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn(

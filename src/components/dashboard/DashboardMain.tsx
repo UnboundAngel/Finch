@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
 import { BackgroundPlus } from '@/components/ui/background-plus';
@@ -120,6 +121,15 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
 export function DashboardMain(props: DashboardMainProps) {
   const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
   const { setIsLeftSidebarOpen } = useChatStore();
+  const MIN_LEFT_SIDEBAR_WIDTH = 200;
+  const MAX_LEFT_SIDEBAR_WIDTH = 420;
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(220);
+  const [isResizingLeftSidebar, setIsResizingLeftSidebar] = useState(false);
+  const resizeRef = useRef({ isDragging: false, moved: false, startX: 0, startWidth: 220 });
+  const resizeRafRef = useRef<number | null>(null);
+  const pendingWidthRef = useRef<number | null>(null);
+  const sidebarProviderRef = useRef<HTMLDivElement | null>(null);
+  const railTooltipRef = useRef<HTMLDivElement | null>(null);
   const {
     recentChats, activeSessionId, handleSwitchSession,
     setActiveSessionId, setMessages, setRecentChats, handleNewChat, profileName, setProfileName,
@@ -134,9 +144,96 @@ export function DashboardMain(props: DashboardMainProps) {
     userAvatarSrc, userAvatarLetter, onRegenerate, onEditResend,
   } = props;
 
+  useEffect(() => {
+    const flushPendingWidth = () => {
+      resizeRafRef.current = null;
+      const w = pendingWidthRef.current;
+      if (w != null) setLeftSidebarWidth(w);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!resizeRef.current.isDragging) return;
+      const delta = event.clientX - resizeRef.current.startX;
+      if (Math.abs(delta) > 3) resizeRef.current.moved = true;
+      const next = Math.min(
+        MAX_LEFT_SIDEBAR_WIDTH,
+        Math.max(MIN_LEFT_SIDEBAR_WIDTH, resizeRef.current.startWidth + delta)
+      );
+      pendingWidthRef.current = next;
+      sidebarProviderRef.current?.style.setProperty('--sidebar-width', `${next}px`);
+      if (resizeRafRef.current == null) {
+        resizeRafRef.current = requestAnimationFrame(flushPendingWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (!resizeRef.current.isDragging) return;
+      resizeRef.current.isDragging = false;
+      if (resizeRafRef.current != null) {
+        cancelAnimationFrame(resizeRafRef.current);
+        resizeRafRef.current = null;
+      }
+      const w = pendingWidthRef.current;
+      if (w != null) setLeftSidebarWidth(w);
+      pendingWidthRef.current = null;
+      // Restore transitions after drag
+      sidebarProviderRef.current?.querySelectorAll<HTMLElement>(
+        '[data-slot="sidebar-gap"],[data-slot="sidebar-container"]'
+      ).forEach(el => { el.style.transition = ''; });
+      setIsResizingLeftSidebar(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      if (resizeRafRef.current != null) cancelAnimationFrame(resizeRafRef.current);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  const getSidebarTransitionEls = () =>
+    Array.from(
+      sidebarProviderRef.current?.querySelectorAll<HTMLElement>(
+        '[data-slot="sidebar-gap"],[data-slot="sidebar-container"]'
+      ) ?? []
+    );
+
+  const startResize = (event: React.MouseEvent) => {
+    if (!isLeftSidebarOpen) return;
+    event.preventDefault();
+    resizeRef.current = {
+      isDragging: true,
+      moved: false,
+      startX: event.clientX,
+      startWidth: leftSidebarWidth,
+    };
+    setIsResizingLeftSidebar(true);
+    sidebarProviderRef.current?.style.setProperty('--sidebar-width', `${leftSidebarWidth}px`);
+    // Kill CSS transitions so sidebar tracks cursor immediately with zero lag
+    getSidebarTransitionEls().forEach(el => { el.style.transition = 'none'; });
+    // Hide cursor-following tooltip for the duration of the drag
+    if (railTooltipRef.current) railTooltipRef.current.style.opacity = '0';
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleRailClick = () => {
+    if (resizeRef.current.moved) return;
+    setIsLeftSidebarOpen(false);
+  };
+
   return (
     <div className="flex flex-1 overflow-hidden relative">
-      <SidebarProvider open={isLeftSidebarOpen} onOpenChange={setIsLeftSidebarOpen} className="h-full min-h-0">
+      <SidebarProvider
+        ref={sidebarProviderRef}
+        open={isLeftSidebarOpen}
+        onOpenChange={setIsLeftSidebarOpen}
+        className="h-full min-h-0"
+        style={{ '--sidebar-width': `${leftSidebarWidth}px` } as React.CSSProperties}
+      >
         <ChatSidebar
           recentChats={recentChats}
           activeSessionId={activeSessionId}
@@ -165,16 +262,59 @@ export function DashboardMain(props: DashboardMainProps) {
           setIsSettingsOpen={setIsSettingsOpen}
           className={
             showPinkMode
-              ? "bg-gradient-to-b from-pink-100/80 to-rose-100/80 backdrop-blur-2xl border-r border-pink-200/50"
+              ? "bg-gradient-to-b from-pink-100/80 to-rose-100/80 backdrop-blur-2xl"
               : !isIncognito && (isDark ? customBgDark : customBgLight)
-                ? "bg-background/20 backdrop-blur-2xl border-r border-white/10 dark:border-white/5"
-                : isIncognito 
-                  ? (isDark ? "bg-[#111] border-r border-[#222]" : "bg-[#fefaf0] border-r border-[#e5e5e5]")
-                  : ""
+                ? "bg-background/35 backdrop-blur-2xl"
+                : isIncognito
+                  ? (isDark ? "bg-[#111]/95" : "bg-[#fefaf0]/95")
+                  : isDark
+                    ? "bg-[#252525]/95"
+                    : "bg-[#efefef]/95"
           }
           contrast={sidebarContrast}
           isPinkMode={showPinkMode}
         />
+        {isLeftSidebarOpen && (
+          <div
+            className="absolute top-0 bottom-0 z-40 w-0 pointer-events-none"
+            style={{ left: 'var(--sidebar-width)' }}
+          >
+            <button
+              type="button"
+              onMouseDown={startResize}
+              onClick={handleRailClick}
+              onMouseMove={(e) => {
+                if (resizeRef.current.isDragging) return;
+                const t = railTooltipRef.current;
+                if (t) {
+                  t.style.left = `${e.clientX + 18}px`;
+                  t.style.top = `${e.clientY - 44}px`;
+                  t.style.opacity = '1';
+                }
+              }}
+              onMouseEnter={(e) => {
+                if (resizeRef.current.isDragging) return;
+                const t = railTooltipRef.current;
+                if (t) {
+                  t.style.left = `${e.clientX + 18}px`;
+                  t.style.top = `${e.clientY - 44}px`;
+                  t.style.opacity = '1';
+                }
+              }}
+              onMouseLeave={() => {
+                const t = railTooltipRef.current;
+                if (t) t.style.opacity = '0';
+              }}
+              className="pointer-events-auto group/rail absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 cursor-col-resize touch-none select-none flex items-center justify-center"
+              aria-label="Resize or collapse sidebar"
+            >
+              <span
+                className="h-10 w-[4px] rounded-full opacity-0 group-hover/rail:opacity-100 transition-opacity duration-150 bg-foreground/30 dark:bg-white/35 group-hover/rail:bg-foreground/50 dark:group-hover/rail:bg-white/60 group-active/rail:bg-foreground/70 dark:group-active/rail:bg-white/80"
+                aria-hidden
+              />
+            </button>
+          </div>
+        )}
 
         <SidebarInset className={`flex flex-col min-w-0 min-h-0 relative bg-transparent border-none`}>
           <SidebarIncognitoController isIncognito={isIncognito}>
@@ -273,6 +413,26 @@ export function DashboardMain(props: DashboardMainProps) {
         isIncognito={isIncognito}
         rightSidebarContrast={rightSidebarContrast}
       />
+      {createPortal(
+        <div
+          ref={railTooltipRef}
+          style={{
+            position: 'fixed',
+            opacity: 0,
+            transition: 'opacity 0.12s ease',
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
+          className="rounded-lg border border-border/50 bg-background/90 backdrop-blur-md px-3 py-2 text-xs font-medium text-foreground shadow-xl"
+        >
+          <div className="flex items-center gap-2">
+            <span>Click to collapse</span>
+            <kbd className="rounded border border-border/60 bg-muted px-1.5 py-0.5 text-[10px] font-mono leading-none">Ctrl+B</kbd>
+          </div>
+          <div className="text-muted-foreground mt-0.5">Drag to resize</div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

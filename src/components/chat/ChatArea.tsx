@@ -52,7 +52,7 @@ export const ChatArea = memo(({
   }, [messages, isThinking]);
 
   return (
-    <div className="flex-1 overflow-y-auto pt-20 pb-8 px-4 scrollbar-hide">
+    <div className={`flex-1 pt-20 pb-8 px-4 scrollbar-hide ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto'}`}>
       <div className="max-w-3xl mx-auto min-h-full flex flex-col">
         <div className="flex-1 space-y-6">
           {messages.length === 0 && (

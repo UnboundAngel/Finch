@@ -1,24 +1,19 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Send, Square, Mic, MicOff, Headphones } from 'lucide-react';
+import { Paperclip, Send, Square, Mic, MicOff, Headphones, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { VoiceIndicator } from './VoiceIndicator';
 import { ModelMarketplace } from './ModelMarketplace';
 import { useVoiceTranscription } from '@/src/hooks/useVoiceTranscription';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuGroup
-} from '@/components/ui/dropdown-menu';
+import { CheckIcon } from 'lucide-react';
 import { WebSearchControl } from '@/src/components/chat/WebSearchControl';
 import { invoke } from '@tauri-apps/api/core';
 import { open as openFilePicker } from '@tauri-apps/plugin-dialog';
 import { isTauri } from '@/src/lib/tauri-utils';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ChatInputProps {
   input: string;
@@ -62,18 +57,27 @@ export const ChatInput = ({
   setIsListening,
 }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const micMenuRef = useRef<HTMLDivElement>(null);
+  const micPillRef = useRef<HTMLDivElement>(null);
+  const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
   
   // Controlled Menu States
   const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
+  const [isMicHovering, setIsMicHovering] = useState(false);
+  const [holdToRecord, setHoldToRecord] = useState(true);
   
   // Mic Data
   const [audioDevices, setAudioDevices] = useState<string[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('Default');
+  const [selectedDevice, setSelectedDevice] = useState<string>('');
+  const [meterLevel, setMeterLevel] = useState(0);
 
   const fetchDevices = async () => {
     try {
       const devices = await invoke<string[]>('list_audio_devices');
       setAudioDevices(devices);
+      if (!selectedDevice && devices.length > 0) {
+        setSelectedDevice(devices[0]);
+      }
     } catch (err) {
       console.error("Failed to list audio devices:", err);
     }
@@ -145,6 +149,7 @@ export const ChatInput = ({
   };
 
   const handleMicClick = () => {
+    if (holdToRecord) return;
     if (!isMicEnabled) {
       setIsMarketplaceOpen(true);
     } else {
@@ -157,6 +162,91 @@ export const ChatInput = ({
       }
     }
   };
+
+  const startVoiceCapture = () => {
+    if (!isMicEnabled) {
+      setIsMarketplaceOpen(true);
+      return;
+    }
+    if (!isListening) {
+      startRecording();
+      setIsListening?.(true);
+    }
+  };
+
+  const stopVoiceCapture = () => {
+    if (isListening) {
+      stopRecording();
+      setIsListening?.(false);
+    }
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!holdToRecord || !isMicEnabled) return;
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        startVoiceCapture();
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!holdToRecord || !isMicEnabled) return;
+      if (e.key.toLowerCase() === 'd') {
+        stopVoiceCapture();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [holdToRecord, isMicEnabled, isListening]);
+
+  useEffect(() => {
+    if (!isMicMenuOpen) {
+      setMicMenuPos(null);
+      return;
+    }
+    if (micPillRef.current) {
+      const rect = micPillRef.current.getBoundingClientRect();
+      setMicMenuPos({
+        bottom: window.innerHeight - rect.top + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    const handler = (e: MouseEvent) => {
+      if (
+        micMenuRef.current && !micMenuRef.current.contains(e.target as Node) &&
+        micPillRef.current && !micPillRef.current.contains(e.target as Node)
+      ) {
+        setIsMicMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isMicMenuOpen]);
+
+  useEffect(() => {
+    if (!isMicMenuOpen) {
+      setMeterLevel(0);
+      void invoke('stop_voice_preview');
+      return;
+    }
+    invoke('start_voice_preview').catch((e) => console.error('[voice preview] start failed:', e));
+    const id = window.setInterval(async () => {
+      try {
+        const level = await invoke<number>('get_voice_meter_level');
+        setMeterLevel(Number.isFinite(level) ? Math.max(0, Math.min(1, level)) : 0);
+      } catch {
+        setMeterLevel(0);
+      }
+    }, 60);
+    return () => {
+      window.clearInterval(id);
+      void invoke('stop_voice_preview');
+    };
+  }, [isMicMenuOpen]);
 
   // Theme helper for skeleton colors
   const getSkeletonStyles = () => {
@@ -264,83 +354,157 @@ export const ChatInput = ({
                 />
               </div>
               <div className="flex items-center gap-2">
-                <div className="inline-flex relative">
-                  <DropdownMenu open={isMicMenuOpen} onOpenChange={setIsMicMenuOpen}>
-                    <div className="inline-flex relative">
+                {!input.trim() && (
+                <div
+                  className="inline-flex relative items-center gap-1"
+                  onMouseEnter={() => setIsMicHovering(true)}
+                  onMouseLeave={() => setIsMicHovering(false)}
+                >
+                  {/* Custom mic settings popover — rendered in a portal to escape overflow:hidden ancestors */}
+                  {isMicMenuOpen && micMenuPos && createPortal(
+                    <div
+                      ref={micMenuRef}
+                      style={{ position: 'fixed', bottom: micMenuPos.bottom, right: micMenuPos.right }}
+                      className="w-80 z-[9999] rounded-xl bg-background/85 backdrop-blur-xl border border-white/10 p-2 shadow-2xl"
+                    >
+                      <div className="px-2 pt-3 pb-2 mb-1">
+                        <div className="flex items-center gap-2">
+                          <Mic className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-blue-500 transition-all duration-75"
+                              style={{ width: `${Math.round(meterLevel * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="px-1">
+                        <div className="text-[11px] text-muted-foreground px-2 py-2">
+                          Microphone input
+                        </div>
+                        {audioDevices.length > 0 ? (
+                          audioDevices.map((device) => {
+                            const isSelected = device === selectedDevice;
+                            const isDefaultAlias = device.startsWith("Default - ");
+                            return (
+                              <button
+                                key={device}
+                                type="button"
+                                className={cn(
+                                  "relative flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm cursor-pointer h-9 outline-none",
+                                  "hover:bg-accent hover:text-accent-foreground",
+                                  isSelected && "text-foreground"
+                                )}
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={async () => {
+                                  try {
+                                    await invoke('set_audio_device', { name: device });
+                                    setSelectedDevice(device);
+                                    toast.success(`Microphone set to ${device}`);
+                                  } catch (e: any) {
+                                    toast.error(e.toString());
+                                  }
+                                }}
+                              >
+                                <Headphones className="h-3.5 w-3.5 shrink-0" />
+                                <span className={cn("truncate flex-1 text-left", isDefaultAlias && "font-semibold")}>
+                                  {device}
+                                </span>
+                                {isSelected && <CheckIcon className="h-3.5 w-3.5 shrink-0 ml-auto" />}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="text-[11px] text-muted-foreground px-2 py-2 italic text-center">
+                            No devices found
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2 border-t border-border/50 pt-3 px-3 flex items-center justify-between gap-3 min-w-0">
+                        <span className="text-sm text-muted-foreground truncate">Hold to record</span>
+                        <Switch className="shrink-0" checked={holdToRecord} onCheckedChange={setHoldToRecord} />
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+
+                  <div ref={micPillRef} className="inline-flex relative items-center rounded-xl bg-muted/40 px-1 border border-border/50">
+                    {(isMicHovering || isMicMenuOpen) && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={cn(
-                          "h-8 w-8 rounded-lg transition-all relative overflow-hidden",
-                          !isMicEnabled 
-                            ? "text-destructive hover:bg-destructive/10" 
-                            : (isListening ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")
-                        )}
-                        onClick={handleMicClick}
-                        onContextMenu={(e) => {
+                        className="h-8 w-6 rounded-md text-muted-foreground transition-all"
+                        onMouseDown={(e) => {
                           e.preventDefault();
-                          e.stopPropagation();
-                          if (isMicEnabled) {
+                          if (!isMicEnabled) return;
+                          if (isMicMenuOpen) {
+                            setIsMicMenuOpen(false);
+                          } else {
                             fetchDevices();
                             setIsMicMenuOpen(true);
                           }
                         }}
+                        aria-label="Microphone settings"
                       >
-                        {isMicEnabled ? (
-                          <Mic className={cn("h-4 w-4", isListening && "animate-pulse")} />
-                        ) : (
-                          <MicOff className="h-4 w-4" />
-                        )}
+                        <ChevronDown
+                          className="h-3.5 w-3.5 transition-transform duration-200"
+                          style={{ transform: isMicMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        />
                       </Button>
-                      <DropdownMenuTrigger className="absolute inset-0 opacity-0 pointer-events-none" />
-                    </div>
-                    
-                    <DropdownMenuContent align="end" side="top" sideOffset={8} className="w-64 bg-background/80 backdrop-blur-xl border-white/10 rounded-xl p-1 shadow-2xl">
-                      <DropdownMenuGroup>
-                        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
-                          Microphone Input
-                        </DropdownMenuLabel>
-                        <DropdownMenuRadioGroup value={selectedDevice} onValueChange={async (val) => {
-                          try {
-                            await invoke('set_audio_device', { name: val });
-                            setSelectedDevice(val);
-                            toast.success(`Microphone set to ${val}`);
-                          } catch (e: any) {
-                            toast.error(e.toString());
-                          }
-                        }}>
-                          {audioDevices.length > 0 ? (
-                            audioDevices.map((device) => (
-                              <DropdownMenuRadioItem 
-                                key={device} 
-                                value={device}
-                                className="text-xs rounded-lg gap-2 cursor-pointer"
-                              >
-                                <Headphones className="h-3.5 w-3.5" />
-                                <span className="truncate">{device}</span>
-                              </DropdownMenuRadioItem>
-                            ))
-                          ) : (
-                            <div className="text-[10px] text-muted-foreground px-2 py-2 italic text-center">
-                              No devices found
-                            </div>
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger render={(props) => (
+                        <Button
+                          {...props}
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8 rounded-lg transition-all relative overflow-hidden",
+                            !isMicEnabled
+                              ? "text-destructive hover:bg-destructive/10"
+                              : (isListening ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")
                           )}
-                        </DropdownMenuRadioGroup>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                          onClick={handleMicClick}
+                          onMouseDown={(e) => {
+                            if (!holdToRecord) return;
+                            e.preventDefault();
+                            startVoiceCapture();
+                          }}
+                          onMouseUp={() => {
+                            if (!holdToRecord) return;
+                            stopVoiceCapture();
+                          }}
+                          onMouseLeave={() => {
+                            if (!holdToRecord) return;
+                            stopVoiceCapture();
+                          }}
+                        >
+                          {isMicEnabled ? (
+                            <Mic className={cn("h-4 w-4", isListening && "animate-pulse")} />
+                          ) : (
+                            <MicOff className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )} />
+                      <TooltipContent side="top" className="text-[11px] leading-relaxed whitespace-pre-line py-2 px-3">
+                        {"Press and hold to record\nCtrl+D for voice input"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
-                <Button
-                  size="icon"
-                  className={`h-8 w-8 rounded-lg transition-all ${isThinking
-                      ? 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90'
-                      : (input.trim() ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90' : 'bg-muted text-muted-foreground cursor-not-allowed')
-                    }`}
-                  disabled={!isThinking && !input.trim()}
-                  onClick={isThinking ? onStop : () => handleSend()}
-                >
-                  {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
-                </Button>
+                )}
+                {(isThinking || input.trim()) && (
+                  <Button
+                    size="icon"
+                    className={`h-8 w-8 rounded-lg transition-all ${isThinking
+                        ? 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90'
+                        : 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
+                      }`}
+                    onClick={isThinking ? onStop : () => handleSend()}
+                  >
+                    {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

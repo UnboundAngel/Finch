@@ -119,6 +119,16 @@ description = "Allows polling live input level for the recording waveform"
 commands.allow = ["get_voice_meter_level"]
 
 [[permission]]
+identifier = "allow-start-voice-preview"
+description = "Allows starting the mic preview stream for level metering in the popup"
+commands.allow = ["start_voice_preview"]
+
+[[permission]]
+identifier = "allow-stop-voice-preview"
+description = "Allows stopping the mic preview stream"
+commands.allow = ["stop_voice_preview"]
+
+[[permission]]
 identifier = "allow-download-voice-model"
 description = "Allows downloading voice models from external URLs"
 commands.allow = ["download_voice_model"]
