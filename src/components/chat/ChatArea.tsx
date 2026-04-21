@@ -13,7 +13,7 @@ interface ChatAreaProps {
   isThinking: boolean;
   selectedModel: string;
   isDark: boolean;
-  setInput: (val: string) => void;
+  setInput: (val: string | ((prev: string) => string)) => void;
   isIncognito?: boolean;
   hasCustomBg?: boolean;
   isPinkMode?: boolean;
@@ -21,7 +21,7 @@ interface ChatAreaProps {
   voiceStatus: 'idle' | 'recording' | 'transcribing';
   userAvatarSrc: string;
   userAvatarLetter: string;
-  onRegenerate?: () => void;
+  onRegenerate?: (messageId?: string) => void;
   onEditResend?: (messageId: string, newContent: string) => void;
 }
 
@@ -44,7 +44,7 @@ export const ChatArea = memo(({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   };
 
   useEffect(() => {
@@ -148,9 +148,7 @@ export const ChatArea = memo(({
               userAvatarSrc={userAvatarSrc}
               userAvatarLetter={userAvatarLetter}
               onRegenerate={
-                msg.role === 'ai' && !isThinking
-                  ? () => onRegenerate?.()
-                  : undefined
+                msg.role === 'ai' && !msg.streaming && !isThinking ? onRegenerate : undefined
               }
               onEditResend={msg.role === 'user' && !isThinking ? onEditResend : undefined}
             />

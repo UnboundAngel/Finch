@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -60,20 +60,15 @@ export const ParameterZone = ({
         </motion.div>
       )}
     </button>
-    <AnimatePresence initial={false}>
-      {isOpen && (
-        <motion.div
-          initial={{ height: 0 }}
-          animate={{ height: "auto" }}
-          exit={{ height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="overflow-hidden"
-        >
-          <div className="px-5 pb-5 pt-3 space-y-4">
-            {children}
-          </div>
-        </motion.div>
+    <div
+      className={cn(
+        "overflow-hidden transition-all duration-200",
+        isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
       )}
-    </AnimatePresence>
+    >
+      <div className="px-5 pb-5 pt-3 space-y-4">
+        {children}
+      </div>
+    </div>
   </div>
 );

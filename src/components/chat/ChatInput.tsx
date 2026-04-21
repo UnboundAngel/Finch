@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Paperclip, Send, Square, Mic, MicOff, Headphones, ChevronDown } from 'lucide-react';
@@ -57,6 +57,7 @@ export const ChatInput = ({
   setIsListening,
 }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const rafRef = useRef<number | null>(null);
   const micMenuRef = useRef<HTMLDivElement>(null);
   const micPillRef = useRef<HTMLDivElement>(null);
   const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
@@ -71,7 +72,7 @@ export const ChatInput = ({
   const [selectedDevice, setSelectedDevice] = useState<string>('');
   const [meterLevel, setMeterLevel] = useState(0);
 
-  const fetchDevices = async () => {
+  const fetchDevices = useCallback(async () => {
     try {
       const devices = await invoke<string[]>('list_audio_devices');
       setAudioDevices(devices);
@@ -81,7 +82,7 @@ export const ChatInput = ({
     } catch (err) {
       console.error("Failed to list audio devices:", err);
     }
-  };
+  }, [selectedDevice]);
 
   const {
     installedModels,
@@ -106,7 +107,7 @@ export const ChatInput = ({
       toast.success("Transcription added!");
     } else {
       // No audio detected guard
-      toast.error("Bro, I heard nothing but vibes, so try that again.", { 
+      toast.error("No audio detected!", { 
         duration: 2500,
         position: 'bottom-center'
       });
@@ -117,11 +118,20 @@ export const ChatInput = ({
   const isTranscribing = status === 'transcribing';
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '56px'; 
-      const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${scrollHeight}px`;
-    }
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const el = textareaRef.current;
+      if (!el) return;
+      el.style.height = '56px';
+      el.style.height = `${el.scrollHeight}px`;
+    });
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
   }, [input, isTranscribing]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -131,7 +141,7 @@ export const ChatInput = ({
     }
   };
 
-  const handleAttachClick = async () => {
+  const handleAttachClick = useCallback(async () => {
     if (isTauri()) {
       try {
         const result = await openFilePicker({
@@ -146,9 +156,9 @@ export const ChatInput = ({
         // Dialog system error — silently ignore
       }
     }
-  };
+  }, [setAttachedFile]);
 
-  const handleMicClick = () => {
+  const handleMicClick = useCallback(() => {
     if (holdToRecord) return;
     if (!isMicEnabled) {
       setIsMarketplaceOpen(true);
@@ -161,9 +171,9 @@ export const ChatInput = ({
         setIsListening?.(true);
       }
     }
-  };
+  }, [holdToRecord, isMicEnabled, isListening, startRecording, stopRecording, setIsListening, setIsMarketplaceOpen]);
 
-  const startVoiceCapture = () => {
+  const startVoiceCapture = useCallback(() => {
     if (!isMicEnabled) {
       setIsMarketplaceOpen(true);
       return;
@@ -172,14 +182,24 @@ export const ChatInput = ({
       startRecording();
       setIsListening?.(true);
     }
-  };
+  }, [isMicEnabled, isListening, startRecording, setIsListening, setIsMarketplaceOpen]);
 
-  const stopVoiceCapture = () => {
+  const stopVoiceCapture = useCallback(() => {
     if (isListening) {
       stopRecording();
       setIsListening?.(false);
     }
-  };
+  }, [isListening, stopRecording, setIsListening]);
+
+  const handleMicSettingsToggle = useCallback(() => {
+    if (!isMicEnabled) return;
+    if (isMicMenuOpen) {
+      setIsMicMenuOpen(false);
+    } else {
+      fetchDevices();
+      setIsMicMenuOpen(true);
+    }
+  }, [isMicEnabled, isMicMenuOpen, fetchDevices]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -201,7 +221,7 @@ export const ChatInput = ({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [holdToRecord, isMicEnabled, isListening]);
+  }, [holdToRecord, isMicEnabled, isListening, startVoiceCapture, stopVoiceCapture]);
 
   useEffect(() => {
     if (!isMicMenuOpen) {
@@ -248,32 +268,8 @@ export const ChatInput = ({
     };
   }, [isMicMenuOpen]);
 
-  // Theme helper for skeleton colors
-  const getSkeletonStyles = () => {
-    if (isPinkMode) {
-      return { base: '#fda4af', highlight: '#fecdd3' }; 
-    }
-    if (isDark) {
-      return { base: '#3a3a3a', highlight: '#555555' };
-    }
-    return { base: '#dedede', highlight: '#f5f5f5' };
-  };
-
-  const skeletonColors = getSkeletonStyles();
-
   return (
     <div className="flex-shrink-0 w-full z-20 transition-all bg-transparent">
-      <style>{`
-        @keyframes shimmer-sweep {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        .skeleton-line {
-          background: linear-gradient(90deg, ${skeletonColors.base} 25%, ${skeletonColors.highlight} 50%, ${skeletonColors.base} 75%);
-          background-size: 200% 100%;
-          animation: shimmer-sweep 1.5s infinite linear;
-        }
-      `}</style>
       <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
         {/* Waveform pill ONLY during active recording */}
         <VoiceIndicator isActive={(isListening && !isTranscribing) || false} isPinkMode={isPinkMode} />
@@ -318,9 +314,15 @@ export const ChatInput = ({
             
             {isTranscribing ? (
               /* SKELETON INSIDE THE MESSAGE BUBBLE/INPUT BOX */
-              <div className="w-full flex flex-col gap-2.5 px-4 py-5 pointer-events-none min-h-[56px]">
-                <div className="h-2 w-3/4 rounded-full skeleton-line" />
-                <div className="h-2 w-1/2 rounded-full skeleton-line" />
+              <div
+                className="w-full flex flex-col gap-2.5 px-4 py-5 pointer-events-none min-h-[56px]"
+                style={{
+                  '--sk-base': isPinkMode ? '#fda4af' : (isDark ? '#3a3a3a' : '#dedede'),
+                  '--sk-hi': isPinkMode ? '#fecdd3' : (isDark ? '#555555' : '#f5f5f5'),
+                } as React.CSSProperties}
+              >
+                <div className="h-2 w-3/4 rounded-full skeleton-shimmer" />
+                <div className="h-2 w-1/2 rounded-full skeleton-shimmer" />
               </div>
             ) : (
               <textarea
@@ -335,178 +337,39 @@ export const ChatInput = ({
               />
             )}
 
-            <div className="flex items-center justify-between px-3 pb-3 pt-1">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-8 w-8 rounded-lg transition-colors ${attachedFile ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                  onClick={handleAttachClick}
-                >
-                  <Paperclip className="h-4 w-4" />
-                </Button>
-                
-                <WebSearchControl
-                  isWebSearchActive={isWebSearchActive}
-                  setIsWebSearchActive={setIsWebSearchActive}
-                  isPinkMode={isPinkMode}
-                  isDark={isDark}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                {!input.trim() && (
-                <div
-                  className="inline-flex relative items-center gap-1"
-                  onMouseEnter={() => setIsMicHovering(true)}
-                  onMouseLeave={() => setIsMicHovering(false)}
-                >
-                  {/* Custom mic settings popover — rendered in a portal to escape overflow:hidden ancestors */}
-                  {isMicMenuOpen && micMenuPos && createPortal(
-                    <div
-                      ref={micMenuRef}
-                      style={{ position: 'fixed', bottom: micMenuPos.bottom, right: micMenuPos.right }}
-                      className="w-80 z-[9999] rounded-xl bg-background/85 backdrop-blur-xl border border-white/10 p-2 shadow-2xl"
-                    >
-                      <div className="px-2 pt-3 pb-2 mb-1">
-                        <div className="flex items-center gap-2">
-                          <Mic className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-blue-500 transition-all duration-75"
-                              style={{ width: `${Math.round(meterLevel * 100)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="px-1">
-                        <div className="text-[11px] text-muted-foreground px-2 py-2">
-                          Microphone input
-                        </div>
-                        {audioDevices.length > 0 ? (
-                          audioDevices.map((device) => {
-                            const isSelected = device === selectedDevice;
-                            const isDefaultAlias = device.startsWith("Default - ");
-                            return (
-                              <button
-                                key={device}
-                                type="button"
-                                className={cn(
-                                  "relative flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm cursor-pointer h-9 outline-none",
-                                  "hover:bg-accent hover:text-accent-foreground",
-                                  isSelected && "text-foreground"
-                                )}
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={async () => {
-                                  try {
-                                    await invoke('set_audio_device', { name: device });
-                                    setSelectedDevice(device);
-                                    toast.success(`Microphone set to ${device}`);
-                                  } catch (e: any) {
-                                    toast.error(`Bro, mic switch failed this round: ${e}`);
-                                  }
-                                }}
-                              >
-                                <Headphones className="h-3.5 w-3.5 shrink-0" />
-                                <span className={cn("truncate flex-1 text-left", isDefaultAlias && "font-semibold")}>
-                                  {device}
-                                </span>
-                                {isSelected && <CheckIcon className="h-3.5 w-3.5 shrink-0 ml-auto" />}
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <div className="text-[11px] text-muted-foreground px-2 py-2 italic text-center">
-                            No devices found
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-2 border-t border-border/50 pt-3 px-3 flex items-center justify-between gap-3 min-w-0">
-                        <span className="text-sm text-muted-foreground truncate">Hold to record</span>
-                        <Switch className="shrink-0" checked={holdToRecord} onCheckedChange={setHoldToRecord} />
-                      </div>
-                    </div>,
-                    document.body
-                  )}
-
-                  <div ref={micPillRef} className="inline-flex relative items-center rounded-xl bg-muted/40 px-1 border border-border/50">
-                    {(isMicHovering || isMicMenuOpen) && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-6 rounded-md text-muted-foreground transition-all"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          if (!isMicEnabled) return;
-                          if (isMicMenuOpen) {
-                            setIsMicMenuOpen(false);
-                          } else {
-                            fetchDevices();
-                            setIsMicMenuOpen(true);
-                          }
-                        }}
-                        aria-label="Microphone settings"
-                      >
-                        <ChevronDown
-                          className="h-3.5 w-3.5 transition-transform duration-200"
-                          style={{ transform: isMicMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                        />
-                      </Button>
-                    )}
-                    <Tooltip>
-                      <TooltipTrigger render={(props) => (
-                        <Button
-                          {...props}
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "h-8 w-8 rounded-lg transition-all relative overflow-hidden",
-                            !isMicEnabled
-                              ? "text-destructive hover:bg-destructive/10"
-                              : (isListening ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")
-                          )}
-                          onClick={handleMicClick}
-                          onMouseDown={(e) => {
-                            if (!holdToRecord) return;
-                            e.preventDefault();
-                            startVoiceCapture();
-                          }}
-                          onMouseUp={() => {
-                            if (!holdToRecord) return;
-                            stopVoiceCapture();
-                          }}
-                          onMouseLeave={() => {
-                            if (!holdToRecord) return;
-                            stopVoiceCapture();
-                          }}
-                        >
-                          {isMicEnabled ? (
-                            <Mic className={cn("h-4 w-4", isListening && "animate-pulse")} />
-                          ) : (
-                            <MicOff className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )} />
-                      <TooltipContent side="top" className="text-[11px] leading-relaxed whitespace-pre-line py-2 px-3">
-                        {"Press and hold to record\nCtrl+D for voice input"}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-                )}
-                {(isThinking || input.trim()) && (
-                  <Button
-                    size="icon"
-                    className={`h-8 w-8 rounded-lg transition-all ${isThinking
-                        ? 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90'
-                        : 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
-                      }`}
-                    onClick={isThinking ? onStop : () => handleSend()}
-                  >
-                    {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
-                  </Button>
-                )}
-              </div>
-            </div>
+            <ChatInputControls
+              hasText={!!input.trim()}
+              isThinking={isThinking}
+              onSend={handleSend}
+              onStop={onStop}
+              attachedFile={attachedFile}
+              onAttachClick={handleAttachClick}
+              isWebSearchActive={isWebSearchActive}
+              setIsWebSearchActive={setIsWebSearchActive}
+              isPinkMode={isPinkMode}
+              isDark={isDark}
+              isModelLoaded={isModelLoaded}
+              isMicEnabled={isMicEnabled}
+              isListening={isListening}
+              holdToRecord={holdToRecord}
+              setHoldToRecord={setHoldToRecord}
+              audioDevices={audioDevices}
+              selectedDevice={selectedDevice}
+              setSelectedDevice={setSelectedDevice}
+              meterLevel={meterLevel}
+              isMicMenuOpen={isMicMenuOpen}
+              setIsMicMenuOpen={setIsMicMenuOpen}
+              isMicHovering={isMicHovering}
+              setIsMicHovering={setIsMicHovering}
+              micMenuPos={micMenuPos}
+              micMenuRef={micMenuRef}
+              micPillRef={micPillRef}
+              onMicClick={handleMicClick}
+              onMicMouseDown={startVoiceCapture}
+              onMicMouseUp={stopVoiceCapture}
+              onMicMouseLeave={stopVoiceCapture}
+              onMicSettingsToggle={handleMicSettingsToggle}
+            />
           </div>
         </div>
         <div className="text-center mt-1">
@@ -518,3 +381,243 @@ export const ChatInput = ({
     </div>
   );
 };
+
+// ─── Memoized toolbar ────────────────────────────────────────────────────────
+// Receives hasText (boolean) instead of the full input string so it only
+// re-renders when the input transitions between empty and non-empty — never
+// on every individual keystroke.
+interface ChatInputControlsProps {
+  hasText: boolean;
+  isThinking: boolean;
+  onSend: (bypassCheck?: boolean) => void;
+  onStop?: () => void;
+  attachedFile: { name: string; path: string } | null;
+  onAttachClick: () => void;
+  isWebSearchActive: boolean;
+  setIsWebSearchActive: (val: boolean) => void;
+  isPinkMode?: boolean;
+  isDark?: boolean;
+  isModelLoaded?: boolean;
+  isMicEnabled: boolean;
+  isListening?: boolean;
+  holdToRecord: boolean;
+  setHoldToRecord: (val: boolean) => void;
+  audioDevices: string[];
+  selectedDevice: string;
+  setSelectedDevice: (val: string) => void;
+  meterLevel: number;
+  isMicMenuOpen: boolean;
+  setIsMicMenuOpen: (val: boolean) => void;
+  isMicHovering: boolean;
+  setIsMicHovering: (val: boolean) => void;
+  micMenuPos: { bottom: number; right: number } | null;
+  micMenuRef: React.RefObject<HTMLDivElement>;
+  micPillRef: React.RefObject<HTMLDivElement>;
+  onMicClick: () => void;
+  onMicMouseDown: () => void;
+  onMicMouseUp: () => void;
+  onMicMouseLeave: () => void;
+  onMicSettingsToggle: () => void;
+}
+
+const ChatInputControls = React.memo(({
+  hasText,
+  isThinking,
+  onSend,
+  onStop,
+  attachedFile,
+  onAttachClick,
+  isWebSearchActive,
+  setIsWebSearchActive,
+  isPinkMode,
+  isDark,
+  isMicEnabled,
+  isListening,
+  holdToRecord,
+  setHoldToRecord,
+  audioDevices,
+  selectedDevice,
+  setSelectedDevice,
+  meterLevel,
+  isMicMenuOpen,
+  setIsMicMenuOpen,
+  isMicHovering,
+  setIsMicHovering,
+  micMenuPos,
+  micMenuRef,
+  micPillRef,
+  onMicClick,
+  onMicMouseDown,
+  onMicMouseUp,
+  onMicMouseLeave,
+  onMicSettingsToggle,
+}: ChatInputControlsProps) => {
+  return (
+    <div className="flex items-center justify-between px-3 pb-3 pt-1">
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-8 w-8 rounded-lg transition-colors ${attachedFile ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+          onClick={onAttachClick}
+        >
+          <Paperclip className="h-4 w-4" />
+        </Button>
+
+        <WebSearchControl
+          isWebSearchActive={isWebSearchActive}
+          setIsWebSearchActive={setIsWebSearchActive}
+          isPinkMode={isPinkMode}
+          isDark={isDark}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        {!hasText && (
+          <div
+            className="inline-flex relative items-center gap-1"
+            onMouseEnter={() => setIsMicHovering(true)}
+            onMouseLeave={() => setIsMicHovering(false)}
+          >
+            {/* Custom mic settings popover — rendered in a portal to escape overflow:hidden ancestors */}
+            {isMicMenuOpen && micMenuPos && createPortal(
+              <div
+                ref={micMenuRef}
+                style={{ position: 'fixed', bottom: micMenuPos.bottom, right: micMenuPos.right }}
+                className="w-80 z-[9999] rounded-xl bg-background/85 backdrop-blur-xl border border-white/10 p-2 shadow-2xl"
+              >
+                <div className="px-2 pt-3 pb-2 mb-1">
+                  <div className="flex items-center gap-2">
+                    <Mic className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-blue-500 transition-all duration-75"
+                        style={{ width: `${Math.round(meterLevel * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="px-1">
+                  <div className="text-[11px] text-muted-foreground px-2 py-2">
+                    Microphone input
+                  </div>
+                  {audioDevices.length > 0 ? (
+                    audioDevices.map((device) => {
+                      const isSelected = device === selectedDevice;
+                      const isDefaultAlias = device.startsWith("Default - ");
+                      return (
+                        <button
+                          key={device}
+                          type="button"
+                          className={cn(
+                            "relative flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm cursor-pointer h-9 outline-none",
+                            "hover:bg-accent hover:text-accent-foreground",
+                            isSelected && "text-foreground"
+                          )}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={async () => {
+                            try {
+                              await invoke('set_audio_device', { name: device });
+                              setSelectedDevice(device);
+                              toast.success(`Microphone set to ${device}`);
+                            } catch (e: any) {
+                              toast.error(`Mic switch failed. ${e}`);
+                            }
+                          }}
+                        >
+                          <Headphones className="h-3.5 w-3.5 shrink-0" />
+                          <span className={cn("truncate flex-1 text-left", isDefaultAlias && "font-semibold")}>
+                            {device}
+                          </span>
+                          {isSelected && <CheckIcon className="h-3.5 w-3.5 shrink-0 ml-auto" />}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-[11px] text-muted-foreground px-2 py-2 italic text-center">
+                      No devices found
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2 border-t border-border/50 pt-3 px-3 flex items-center justify-between gap-3 min-w-0">
+                  <span className="text-sm text-muted-foreground truncate">Hold to record</span>
+                  <Switch className="shrink-0" checked={holdToRecord} onCheckedChange={setHoldToRecord} />
+                </div>
+              </div>,
+              document.body
+            )}
+
+            <div ref={micPillRef} className="inline-flex relative items-center rounded-xl bg-muted/40 px-1 border border-border/50">
+              {(isMicHovering || isMicMenuOpen) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-6 rounded-md text-muted-foreground transition-all"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onMicSettingsToggle();
+                  }}
+                  aria-label="Microphone settings"
+                >
+                  <ChevronDown
+                    className="h-3.5 w-3.5 transition-transform duration-200"
+                    style={{ transform: isMicMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                  />
+                </Button>
+              )}
+              <Tooltip>
+                <TooltipTrigger render={(props) => (
+                  <Button
+                    {...props}
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 rounded-lg transition-all relative overflow-hidden",
+                      !isMicEnabled
+                        ? "text-destructive hover:bg-destructive/10"
+                        : (isListening ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")
+                    )}
+                    onClick={onMicClick}
+                    onMouseDown={(e) => {
+                      if (!holdToRecord) return;
+                      e.preventDefault();
+                      onMicMouseDown();
+                    }}
+                    onMouseUp={() => {
+                      if (!holdToRecord) return;
+                      onMicMouseUp();
+                    }}
+                    onMouseLeave={() => {
+                      if (!holdToRecord) return;
+                      onMicMouseLeave();
+                    }}
+                  >
+                    {isMicEnabled ? (
+                      <Mic className={cn("h-4 w-4", isListening && "animate-pulse")} />
+                    ) : (
+                      <MicOff className="h-4 w-4" />
+                    )}
+                  </Button>
+                )} />
+                <TooltipContent side="top" className="text-[11px] leading-relaxed whitespace-pre-line py-2 px-3">
+                  {"Press and hold to record\nCtrl+D for voice input"}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+        {(isThinking || hasText) && (
+          <Button
+            size="icon"
+            className={`h-8 w-8 rounded-lg transition-all ${isThinking
+                ? 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90'
+                : 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
+              }`}
+            onClick={isThinking ? onStop : () => onSend()}
+          >
+            {isThinking ? <Square className="h-4 w-4 fill-current" /> : <Send className="h-4 w-4" />}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+});

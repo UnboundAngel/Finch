@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useModelParams } from '@/src/store';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +49,7 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [dragIndex, setDragIndex] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (isDragging) {
@@ -58,27 +58,51 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
     }
   }, [isDragging]);
 
-  const handlePan = (info: { point: { x: number } }) => {
-    if (!containerRef.current) return;
+  const getIndexFromPointer = (clientX: number): number | null => {
+    if (!containerRef.current) return null;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = info.point.x - rect.left;
+    const x = clientX - rect.left;
     const progress = Math.max(0, Math.min(1, x / rect.width));
-    const index = Math.floor(progress * visiblePresets.length);
-    const clampedIndex = Math.min(index, visiblePresets.length - 1);
-    handlePresetClick(visiblePresets[clampedIndex] as number | 'Max');
+    return Math.min(Math.floor(progress * visiblePresets.length), visiblePresets.length - 1);
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    const idx = getIndexFromPointer(e.clientX);
+    if (idx !== null) setDragIndex(idx);
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const idx = getIndexFromPointer(e.clientX);
+    if (idx !== null) setDragIndex(idx);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (dragIndex !== null) {
+      handlePresetClick(visiblePresets[dragIndex] as number | 'Max');
+      setDragIndex(null);
+    }
+  };
+
+  const handlePointerCancel = () => {
+    setIsDragging(false);
+    setDragIndex(null);
   };
 
   return (
     <div className="space-y-4 w-full pt-1">
       {/* Hardware Segmented Track */}
-      <motion.div 
+      <div
         ref={containerRef}
-        onPan={(_, info) => handlePan(info)}
-        onPanStart={(_, info) => {
-          setIsDragging(true);
-          handlePan(info);
-        }}
-        onPanEnd={() => setIsDragging(false)}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
         className={cn(
           "relative flex p-1 rounded-xl border transition-all shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)]",
           borderColor,
@@ -88,7 +112,9 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
       >
         {visiblePresets.map((preset, idx) => {
             const zone = getZoneColor(preset as number | 'Max');
-            const isSelected = preset === 'Max' ? maxTokens === model_max : maxTokens === preset;
+            const isVisuallySelected = isDragging && dragIndex !== null
+              ? idx === dragIndex
+              : (preset === 'Max' ? maxTokens === model_max : maxTokens === preset);
             
             return (
               <React.Fragment key={preset}>
@@ -97,14 +123,14 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
                 onClick={() => handlePresetClick(preset as number | 'Max')}
                 className={cn(
                     "relative flex-1 py-1.5 px-1 rounded-md text-[9px] font-bold transition-all uppercase tracking-wide z-10",
-                    isSelected ? "text-white" : mutedTextColor,
-                    isDragging ? "pointer-events-none" : (isSelected ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"),
+                    isVisuallySelected ? "text-white" : mutedTextColor,
+                    isDragging ? "pointer-events-none" : (isVisuallySelected ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"),
                     "hover:text-white/80 transition-colors"
                 )}
                 >
                   <span className={cn(
                     "relative z-10 transition-all duration-300",
-                    isSelected && contrast === 'light' && "drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] [text-shadow:0_0_1px_rgba(0,0,0,0.5)]"
+                    isVisuallySelected && contrast === 'light' && "drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] [text-shadow:0_0_1px_rgba(0,0,0,0.5)]"
                   )}>
                     {preset}
                   </span>
@@ -115,17 +141,14 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
                       zone === 'emerald' ? "bg-emerald-500" : 
                       zone === 'amber' ? "bg-amber-500" : 
                       "bg-rose-500",
-                      isSelected && "opacity-0" // Hide tick when selected to avoid bleed
+                      isVisuallySelected && "opacity-0" // Hide tick when selected to avoid bleed
                   )} />
 
                   {/* Sliding Selection Pill */}
-                  {isSelected && (
-                      <motion.div
-                      layoutId="active-pill"
-                      layout="position"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                  {isVisuallySelected && (
+                      <div
                       className={cn(
-                          "absolute inset-0 rounded-md shadow-sm z-0",
+                          "absolute inset-0 rounded-md shadow-sm z-0 transition-opacity duration-150",
                           zone === 'emerald' ? "bg-emerald-500" : 
                           zone === 'amber' ? "bg-amber-500" : 
                           "bg-rose-500"
@@ -139,7 +162,7 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
               </React.Fragment>
             );
         })}
-      </motion.div>
+      </div>
 
       {/* Status Legend (Quiet Dashboard Style) */}
       <div className="space-y-2">
@@ -157,18 +180,12 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
           </div>
         </div>
         
-        <AnimatePresence>
-          {maxTokens === model_max && (
-            <motion.p
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="text-[9px] italic leading-tight text-rose-400/80 px-1"
-            >
-              'Max' tokens might exceed hardware VRAM or context limits.
-            </motion.p>
-          )}
-        </AnimatePresence>
+        <p className={cn(
+          "text-[9px] italic leading-tight text-rose-400/80 px-1 overflow-hidden transition-all duration-200",
+          maxTokens === model_max ? "max-h-8 opacity-100" : "max-h-0 opacity-0"
+        )}>
+          'Max' tokens might exceed hardware VRAM or context limits.
+        </p>
       </div>
     </div>
   );

@@ -11,7 +11,9 @@ import { useProfileStore } from './store';
 import StartupScreen from './components/startup/StartupScreen';
 
 export default function App() {
-  const { activeProfile, loadProfiles, setActiveProfile } = useProfileStore();
+  const activeProfile = useProfileStore(state => state.activeProfile);
+  const loadProfiles = useProfileStore(state => state.loadProfiles);
+  const setActiveProfile = useProfileStore(state => state.setActiveProfile);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {

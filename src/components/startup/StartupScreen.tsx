@@ -7,7 +7,12 @@ import { Profile } from '../../types/chat';
 import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
 
 export default function StartupScreen() {
-  const { profiles, loadProfiles, saveProfile, deleteProfile, setActiveProfile, isLoading } = useProfileStore();
+  const profiles = useProfileStore(state => state.profiles);
+  const isLoading = useProfileStore(state => state.isLoading);
+  const loadProfiles = useProfileStore(state => state.loadProfiles);
+  const saveProfile = useProfileStore(state => state.saveProfile);
+  const deleteProfile = useProfileStore(state => state.deleteProfile);
+  const setActiveProfile = useProfileStore(state => state.setActiveProfile);
   const resetChat = useChatStore(state => state.reset);
   
   const [view, setView] = useState<'selection' | 'creation' | 'editing'>('selection');

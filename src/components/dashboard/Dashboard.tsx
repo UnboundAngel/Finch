@@ -53,6 +53,13 @@ function DashboardContent({
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
 
+  // Refs so handleSend (wrapped in useCallback) can read latest values without
+  // needing them as deps — avoids recreating handleSend on every keystroke.
+  const inputRef = useRef(input);
+  inputRef.current = input;
+  const attachedFileRef = useRef(attachedFile);
+  attachedFileRef.current = attachedFile;
+
   const { openOverflowModal, setIsProfileOpen, setIsSettingsOpen } = useModals();
   const { streamMessage, abort, isStreaming } = useAIStreaming();
 
@@ -132,6 +139,9 @@ function DashboardContent({
     setRecentChats,
     activeProfileId: activeProfile?.id ?? null,
   });
+
+  const messagesRef = useRef<Message[]>([]);
+  messagesRef.current = session.messages;
 
   useEffect(() => {
     chatSessionActionsRef.current = {
@@ -301,38 +311,46 @@ function DashboardContent({
         });
         setIsThinking(false);
       },
-      (err) => { setIsThinking(false); toast.error(`Bro, that reply tripped over a cable: ${err}`); },
+      (err) => { setIsThinking(false); toast.error(`That reply went sideways: ${err}`); },
       { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive },
       historyWithUserMsg,
       attachmentPath ? [{ path: attachmentPath }] : undefined,
     );
-  }, [selectedModel, selectedProvider, isWebSearchActive, streamMessage, session, wasAbortedRef, updateActiveSessionInList]);
+  }, [selectedModel, selectedProvider, isWebSearchActive, streamMessage, session.setMessages, updateActiveSessionInList]);
 
-  const handleSend = async (bypassCheck = false) => {
-    if (!input.trim() || isThinking || isStreaming) return;
-    const { systemPrompt, temperature, topP, maxTokens, contextIntelligence: ci } = useModelParams.getState();
+  // Refs for stable callbacks used across send/autoName — updated each render so
+  // useCallback deps stay narrow without stale closures.
+  const handleSendRef = useRef<(bypassCheck?: boolean) => Promise<void>>(async () => {});
+  const autoNameChatRef = useRef<(msg: string) => Promise<void>>(async () => {});
+
+  const handleSend = useCallback(async (bypassCheck = false) => {
+    const currentInput = inputRef.current;
+    if (!currentInput.trim() || isThinking || isStreaming) return;
+    const { maxTokens, contextIntelligence: ci } = useModelParams.getState();
     if (!bypassCheck && maxTokens > (ci?.hardware_safe_limit || 8192)) {
-      openOverflowModal(ci?.hardware_safe_limit || 8192, maxTokens, () => handleSend(true));
+      openOverflowModal(ci?.hardware_safe_limit || 8192, maxTokens, () => handleSendRef.current(true));
       return;
     }
-    const userMessage = input.trim();
+    const userMessage = currentInput.trim();
     setInput('');
     setResearchEvents([]);
-    const isFirstMessage = session.messages.length === 0;
-    const updatedMessages: Message[] = [...session.messages, { id: crypto.randomUUID(), role: 'user', content: userMessage }];
+    const msgs = messagesRef.current;
+    const isFirstMessage = msgs.length === 0;
+    const updatedMessages: Message[] = [...msgs, { id: crypto.randomUUID(), role: 'user', content: userMessage }];
     session.setMessages(updatedMessages);
     await updateActiveSessionInList(updatedMessages);
     if (isFirstMessage) {
-      void autoNameChat(userMessage);
+      void autoNameChatRef.current(userMessage);
     }
-    const attachmentPath = attachedFile?.path;
+    const attachmentPath = attachedFileRef.current?.path;
     setAttachedFile(null);
     invokeStream(userMessage, updatedMessages, attachmentPath);
-  };
+  }, [isThinking, isStreaming, openOverflowModal, session.setMessages, updateActiveSessionInList, invokeStream, setAttachedFile]);
+  handleSendRef.current = handleSend;
 
   const handleRegenerate = useCallback(async (messageId?: string) => {
     if (isThinking || isStreaming) return;
-    const msgs = session.messages;
+    const msgs = messagesRef.current;
     
     let lastUserIdx = -1;
     if (messageId) {
@@ -359,11 +377,11 @@ function DashboardContent({
     setResearchEvents([]);
     await updateActiveSessionInList(truncated);
     invokeStream(userMsg.content, truncated);
-  }, [isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
+  }, [isThinking, isStreaming, invokeStream, session.setMessages, updateActiveSessionInList]);
 
   const handleEditResend = useCallback(async (messageId: string, newContent: string) => {
     if (isThinking || isStreaming) return;
-    const msgs = session.messages;
+    const msgs = messagesRef.current;
     const idx = msgs.findIndex(m => m.id === messageId);
     if (idx === -1) return;
     const editedMessage: Message = { ...msgs[idx], content: newContent };
@@ -372,7 +390,7 @@ function DashboardContent({
     setResearchEvents([]);
     await updateActiveSessionInList(truncated);
     invokeStream(newContent, truncated);
-  }, [isThinking, isStreaming, invokeStream, session, updateActiveSessionInList]);
+  }, [isThinking, isStreaming, invokeStream, session.setMessages, updateActiveSessionInList]);
 
   const autoNameChat = useCallback(async (userMessage: string) => {
     const sessionId = session.activeSessionIdRef.current;
@@ -400,6 +418,7 @@ function DashboardContent({
       // Silent fail — fallback title already set
     }
   }, [selectedModel, selectedProvider, session.activeSessionIdRef, setRecentChats]);
+  autoNameChatRef.current = autoNameChat;
 
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
@@ -418,7 +437,6 @@ function DashboardContent({
               backgroundRepeat: 'no-repeat',
             }
           : {}),
-        ...(showPinkMode ? { background: 'linear-gradient(to bottom, #fff5f7, #ffe4e8)' } : {})
       }}
     >
       {!isIncognito && !(isDark ? customBgDark : customBgLight) && (
@@ -507,7 +525,7 @@ export function Dashboard() {
       });
       toast.success('Backgrounds cleared');
     } catch (e) {
-      toast.error(`Bro, your wallpapers would not clear this round: ${e}`);
+      toast.error(`Your wallpapers are having a hard time clearing right now: ${e}`);
     }
   };
 

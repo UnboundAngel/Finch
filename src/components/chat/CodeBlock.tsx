@@ -8,6 +8,7 @@ interface CodeBlockProps {
   children: string;
   language: string;
   isDark: boolean;
+  streaming?: boolean;
 }
 
 // Global highlighter instance to avoid re-initialization
@@ -20,17 +21,24 @@ const highlighterPromise = createHighlighter({
   return h;
 });
 
-export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
+export const CodeBlock = ({ children, language, isDark, streaming }: CodeBlockProps) => {
   const [copied, setCopied] = useState(false);
   const [highlightedHtml, setHighlightedHtml] = useState<string>('');
   const [isLoaded, setIsLoaded] = useState(!!highlighterInstance);
-  
+
   // Track the current request to avoid race conditions
   const renderId = useRef(0);
 
   useEffect(() => {
+    // Skip expensive Shiki work while the message is still streaming — show plain
+    // pre/code instead and highlight once the stream finalises (streaming goes false).
+    if (streaming) {
+      setHighlightedHtml('');
+      return;
+    }
+
     const currentRenderId = ++renderId.current;
-    
+
     const highlight = async () => {
       const h = highlighterInstance || (await highlighterPromise);
       if (currentRenderId !== renderId.current) return;
@@ -41,13 +49,12 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
           lang: language || 'text',
           theme: isDark ? 'github-dark' : 'github-light',
         });
-        
+
         if (currentRenderId === renderId.current) {
           setHighlightedHtml(html);
         }
       } catch (e) {
         console.error('Shiki highlighting failed:', e);
-        // Fallback to plain text if language not supported
         const fallbackHtml = h.codeToHtml(children, {
           lang: 'text',
           theme: isDark ? 'github-dark' : 'github-light',
@@ -59,7 +66,7 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
     };
 
     highlight();
-  }, [children, language, isDark]);
+  }, [children, language, isDark, streaming]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(children);
@@ -122,26 +129,13 @@ export const CodeBlock = ({ children, language, isDark }: CodeBlockProps) => {
               <code>{children}</code>
             </pre>
           ) : (
-            <div 
+            <div
               className="shiki-container p-8 text-[13px] leading-relaxed overflow-x-auto selection:bg-primary/20"
               dangerouslySetInnerHTML={{ __html: highlightedHtml }}
             />
           )}
         </div>
       </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .shiki-container pre {
-          margin: 0 !important;
-          padding: 0 !important;
-          background: transparent !important;
-        }
-        .shiki-container code {
-          background: transparent !important;
-          padding: 0 !important;
-          border-radius: 0 !important;
-        }
-      `}} />
     </motion.div>
   );
 };

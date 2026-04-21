@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'motion/react';
-import { SidebarProvider, SidebarInset, useSidebar } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { BackgroundPlus } from '@/components/ui/background-plus';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { ChatSidebar } from '@/src/components/sidebar/ChatSidebar';
@@ -48,7 +47,7 @@ interface DashboardMainProps {
   isThinking: boolean;
   researchEvents: any[];
   selectedModel: string;
-  stableSetInput: (val: string) => void;
+  stableSetInput: (val: string | ((prev: string) => string)) => void;
   hasCustomBgValue: boolean;
   voiceStatus: any;
   input: string;
@@ -72,24 +71,18 @@ interface DashboardMainProps {
   onEditResend: (messageId: string, newContent: string) => void;
 }
 
-const SidebarIncognitoController = ({ isIncognito, children }: { isIncognito: boolean, children: React.ReactNode }) => {
-  const { setOpen } = useSidebar();
-  useEffect(() => {
-    if (isIncognito) setOpen(false);
-  }, [isIncognito, setOpen]);
-  return <>{children}</>;
-};
 
 const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDark, isIncognito, rightSidebarContrast }: any) => {
   const isRightSidebarOpen = useChatStore(state => state.isRightSidebarOpen);
   const [isFullyOpen, setIsFullyOpen] = useState(false);
+  const RIGHT_SIDEBAR_WIDTH = 220;
 
   useEffect(() => {
     if (!isRightSidebarOpen) setIsFullyOpen(false);
   }, [isRightSidebarOpen]);
 
   const panelClass = showPinkMode
-    ? "bg-gradient-to-b from-pink-100/75 to-rose-100/75 backdrop-blur-2xl"
+    ? "bg-[#fff5f7]/85 backdrop-blur-2xl"
     : isIncognito
       ? (isDark ? "bg-[#111]/85 backdrop-blur-xl" : "bg-[#fefaf0]/85 backdrop-blur-xl")
       : !isIncognito && (isDark ? customBgDark : customBgLight)
@@ -99,20 +92,21 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
           : "bg-[#efefef]/85 backdrop-blur-xl";
 
   return (
-    <motion.div
-      initial={false}
-      animate={{
-        width: isRightSidebarOpen ? 312 : 0,
-        opacity: isRightSidebarOpen ? 1 : 0
-      }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      onAnimationComplete={() => {
-        if (isRightSidebarOpen) setIsFullyOpen(true);
-      }}
-      className="flex-shrink-0 relative z-30 overflow-hidden"
-    >
-      <div className="absolute inset-0 pt-3 pb-3 pr-3">
-        <div className={`h-full rounded-xl overflow-hidden shadow-xl ${panelClass}`}>
+    <div className="absolute inset-y-0 right-0 z-40 overflow-visible pointer-events-none">
+      <div
+        className={`absolute top-3 bottom-20 right-0 pr-3 transition-[transform,opacity] duration-300 ease-in-out ${
+          isRightSidebarOpen
+            ? 'translate-x-0 opacity-100 pointer-events-auto'
+            : 'translate-x-[calc(100%+1.5rem)] opacity-0 pointer-events-none'
+        }`}
+        style={{ width: RIGHT_SIDEBAR_WIDTH }}
+        onTransitionEnd={(event) => {
+          if (event.propertyName === 'transform' && isRightSidebarOpen) {
+            setIsFullyOpen(true);
+          }
+        }}
+      >
+        <div className={`h-full rounded-xl overflow-hidden shadow-xl border border-black/15 dark:border-black/35 ${panelClass}`}>
           <RightSidebar
             isOpen={isRightSidebarOpen}
             readyToFetch={isFullyOpen}
@@ -121,13 +115,13 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
           />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
 export function DashboardMain(props: DashboardMainProps) {
   const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
-  const { setIsLeftSidebarOpen } = useChatStore();
+  const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
   const MIN_LEFT_SIDEBAR_WIDTH = 200;
   const MAX_LEFT_SIDEBAR_WIDTH = 420;
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(220);
@@ -232,186 +226,191 @@ export function DashboardMain(props: DashboardMainProps) {
     setIsLeftSidebarOpen(false);
   };
 
+  // Close left sidebar when entering incognito (replaces SidebarIncognitoController)
+  useEffect(() => {
+    if (isIncognito) setIsLeftSidebarOpen(false);
+  }, [isIncognito, setIsLeftSidebarOpen]);
+
+  const leftSidebarPanelClass = showPinkMode
+    ? "bg-[#fff5f7]/85 backdrop-blur-2xl"
+    : !isIncognito && (isDark ? customBgDark : customBgLight)
+      ? "bg-background/20 backdrop-blur-2xl"
+      : isIncognito
+        ? (isDark ? "bg-[#111]/85 backdrop-blur-xl" : "bg-[#fefaf0]/85 backdrop-blur-xl")
+        : isDark
+          ? "bg-[#303030]/90 backdrop-blur-xl"
+          : "bg-[#efefef]/85 backdrop-blur-xl";
+
   return (
     <div className="flex flex-1 overflow-hidden relative">
-      <SidebarProvider
-        ref={sidebarProviderRef}
-        open={isLeftSidebarOpen}
-        onOpenChange={setIsLeftSidebarOpen}
-        className="h-full min-h-0"
-        style={{ '--sidebar-width': `${leftSidebarWidth}px` } as React.CSSProperties}
-      >
-        <ChatSidebar
-          recentChats={recentChats}
-          activeSessionId={activeSessionId}
-          handleSwitchSession={handleSwitchSession}
-          setActiveSessionId={setActiveSessionId as any}
-          setMessages={setMessages}
-          setRecentChats={setRecentChats}
-          handleNewChat={handleNewChat}
-          profileName={profileName}
-          setProfileName={setProfileName}
-          profileEmail={profileEmail}
-          setProfileEmail={setProfileEmail}
-          isIncognito={isIncognito}
-          setIsIncognito={setIsIncognito}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          editingSessionId={editingSessionId}
-          setEditingSessionId={setEditingSessionId}
-          editingTitle={editingTitle}
-          setEditingTitle={setEditingTitle}
-          handleRenameKeyDown={handleRenameKeyDown}
-          handleRenameCommit={handleRenameCommit}
-          handlePinChat={handlePinChat}
-          handleDeleteChat={handleDeleteChat}
-          setIsProfileOpen={setIsProfileOpen}
-          setIsSettingsOpen={setIsSettingsOpen}
-          className={
-            showPinkMode
-              ? "bg-gradient-to-b from-pink-100/75 to-rose-100/75 backdrop-blur-2xl"
-              : !isIncognito && (isDark ? customBgDark : customBgLight)
-                ? "bg-background/20 backdrop-blur-2xl"
-                : isIncognito
-                  ? (isDark ? "bg-[#111]/85 backdrop-blur-xl" : "bg-[#fefaf0]/85 backdrop-blur-xl")
-                  : isDark
-                    ? "bg-[#303030]/90 backdrop-blur-xl"
-                    : "bg-[#efefef]/85 backdrop-blur-xl"
-          }
-          contrast={sidebarContrast}
-          isPinkMode={showPinkMode}
-        />
-        {isLeftSidebarOpen && (
-          <div
-            className="absolute top-0 bottom-0 z-40 w-0 pointer-events-none"
-            style={{ left: 'calc(var(--sidebar-width) + 0.75rem)' }}
-          >
-            <button
-              type="button"
-              onMouseDown={startResize}
-              onClick={handleRailClick}
-              onMouseMove={(e) => {
-                if (resizeRef.current.isDragging) return;
-                const t = railTooltipRef.current;
-                if (t) {
-                  t.style.left = `${e.clientX + 18}px`;
-                  t.style.top = `${e.clientY - 44}px`;
-                  t.style.opacity = '1';
-                }
-              }}
-              onMouseEnter={(e) => {
-                if (resizeRef.current.isDragging) return;
-                const t = railTooltipRef.current;
-                if (t) {
-                  t.style.left = `${e.clientX + 18}px`;
-                  t.style.top = `${e.clientY - 44}px`;
-                  t.style.opacity = '1';
-                }
-              }}
-              onMouseLeave={() => {
-                const t = railTooltipRef.current;
-                if (t) t.style.opacity = '0';
-              }}
-              className="pointer-events-auto group/rail absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 cursor-col-resize touch-none select-none flex items-center justify-center"
-              aria-label="Resize or collapse sidebar"
-            >
-              <span
-                className="h-10 w-[4px] rounded-full opacity-0 group-hover/rail:opacity-100 transition-opacity duration-150 bg-foreground/30 dark:bg-white/35 group-hover/rail:bg-foreground/50 dark:group-hover/rail:bg-white/60 group-active/rail:bg-foreground/70 dark:group-active/rail:bg-white/80"
-                aria-hidden
+      {/* Full-width chat area — transparent so the root background shows everywhere */}
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden relative">
+        <main
+          className={`flex-1 flex flex-col min-w-0 min-h-0 relative overflow-hidden text-foreground ${
+            isIncognito
+              ? (isDark
+                ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]"
+                : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
+              : "bg-transparent"
+          }`}
+        >
+          <ContextMenu>
+            <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
+              {!isIncognito && (
+                <div className="absolute inset-0 pointer-events-none z-[1]">
+                  <div className={`absolute inset-0 transition-opacity duration-500 ${(isDark ? customBgDark : customBgLight) ? 'opacity-20 bg-black' : 'opacity-0'}`} />
+                </div>
+              )}
+
+              <BackgroundPlus
+                plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
+                className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.2]" : "opacity-[0.12] dark:opacity-[0.15]"}`}
+                fade={true}
+                plusSize={40}
               />
-            </button>
-          </div>
-        )}
 
-        <SidebarInset className={`flex flex-col min-w-0 min-h-0 relative bg-transparent border-none`}>
-          <SidebarIncognitoController isIncognito={isIncognito}>
-            <main
-              className={`flex-1 flex flex-col min-w-0 min-h-0 relative transition-all duration-300 ease-in-out overflow-hidden ${isIncognito
-                ? (isDark
-                  ? "bg-[#0a0a0a] border-[4px] border-[#222] text-[#e5e5e5] m-4 rounded-[24px]"
-                  : "bg-[#fcfaf2] border-[4px] border-black text-[#333] m-4 rounded-[24px]")
-                : showPinkMode
-                  ? "bg-gradient-to-br from-rose-50/90 to-pink-50/90 shadow-none"
-                  : (!isIncognito && (isDark ? customBgDark : customBgLight) ? "bg-transparent shadow-none" : "bg-background")
-                } text-foreground`}
-            >
-                  <ContextMenu>
-                <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
-                  {!isIncognito && (
-                    <div className="absolute inset-0 pointer-events-none z-[1]">
-                      {/* Atmospheric Overlays */}
-                      <div className={`absolute inset-0 transition-opacity duration-500 ${(isDark ? customBgDark : customBgLight) ? 'opacity-20 bg-black' : 'opacity-0'}`} />
-                    </div>
-                  )}
-
-                  <BackgroundPlus
-                    plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
-                    className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.2]" : "opacity-[0.12] dark:opacity-[0.15]"}`}
-                    fade={true}
-                    plusSize={40}
+              <div className="flex-1 relative z-10 flex flex-col min-h-0">
+                <ChatArea
+                  messages={messages}
+                  isThinking={isThinking}
+                  researchEvents={researchEvents}
+                  selectedModel={selectedModel}
+                  isDark={isDark}
+                  setInput={stableSetInput}
+                  isIncognito={isIncognito}
+                  hasCustomBg={hasCustomBgValue}
+                  isPinkMode={showPinkMode}
+                  voiceStatus={voiceStatus}
+                  userAvatarSrc={userAvatarSrc}
+                  userAvatarLetter={userAvatarLetter}
+                  onRegenerate={onRegenerate}
+                  onEditResend={onEditResend}
+                />
+                <div className="relative z-20">
+                  <ChatInput
+                    input={input}
+                    setInput={stableSetInput}
+                    handleSend={handleSend}
+                    onStop={abort}
+                    isThinking={isThinking || isStreaming}
+                    attachedFile={attachedFile}
+                    setAttachedFile={setAttachedFile}
+                    isWebSearchActive={isWebSearchActive}
+                    setIsWebSearchActive={setIsWebSearchActive}
+                    enterToSend={enterToSend}
+                    isIncognito={isIncognito}
+                    isDark={isDark}
+                    hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
+                    isPinkMode={showPinkMode}
+                    isModelLoaded={selectedModel ? isModelLoaded : true}
+                    onFocus={handleInputFocus}
+                    isListening={isListening}
+                    setIsListening={setIsListening}
                   />
+                </div>
+              </div>
+            </ContextMenuTrigger>
 
-                  <div className="flex-1 relative z-10 flex flex-col min-h-0">
-                    <ChatArea
-                      messages={messages}
-                      isThinking={isThinking}
-                      researchEvents={researchEvents}
-                      selectedModel={selectedModel}
-                      isDark={isDark}
-                      setInput={stableSetInput}
-                      isIncognito={isIncognito}
-                      hasCustomBg={hasCustomBgValue}
-                      isPinkMode={showPinkMode}
-                      voiceStatus={voiceStatus}
-                      userAvatarSrc={userAvatarSrc}
-                      userAvatarLetter={userAvatarLetter}
-                      onRegenerate={onRegenerate}
-                      onEditResend={onEditResend}
-                    />
+            <ContextMenuContent className="w-56">
+              <ContextMenuItem onClick={handleChangeBackground}>
+                Change Background
+              </ContextMenuItem>
+              {(isDark ? customBgDark : customBgLight) && (
+                <ContextMenuItem
+                  onClick={() => isDark ? setCustomBgDark('') : setCustomBgLight('')}
+                  className="text-destructive"
+                >
+                  Remove Background
+                </ContextMenuItem>
+              )}
+            </ContextMenuContent>
+          </ContextMenu>
+        </main>
+      </div>
 
-                    <div className="relative z-20">
-                      <ChatInput
-                        input={input}
-                        setInput={stableSetInput}
-                        handleSend={handleSend}
-                        onStop={abort}
-                        isThinking={isThinking || isStreaming}
-                        attachedFile={attachedFile}
-                        setAttachedFile={setAttachedFile}
-                        isWebSearchActive={isWebSearchActive}
-                        setIsWebSearchActive={setIsWebSearchActive}
-                        enterToSend={enterToSend}
-                        isIncognito={isIncognito}
-                        isDark={isDark}
-                        hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
-                        isPinkMode={showPinkMode}
-                        isModelLoaded={selectedModel ? isModelLoaded : true}
-                        onFocus={handleInputFocus}
-                        isListening={isListening}
-                        setIsListening={setIsListening}
-                      />
-                    </div>
-                  </div>
-                </ContextMenuTrigger>
+      {/* Left sidebar — absolute overlay, no layout push */}
+      <div className="absolute inset-0 pointer-events-none z-30">
+        <SidebarProvider
+          ref={sidebarProviderRef}
+          open={isLeftSidebarOpen}
+          onOpenChange={setIsLeftSidebarOpen}
+          className="h-full min-h-0 bg-transparent"
+          style={{ '--sidebar-width': `${leftSidebarWidth}px` } as React.CSSProperties}
+        >
+          <ChatSidebar
+            recentChats={recentChats}
+            activeSessionId={activeSessionId}
+            handleSwitchSession={handleSwitchSession}
+            setActiveSessionId={setActiveSessionId as any}
+            setMessages={setMessages}
+            setRecentChats={setRecentChats}
+            handleNewChat={handleNewChat}
+            profileName={profileName}
+            setProfileName={setProfileName}
+            profileEmail={profileEmail}
+            setProfileEmail={setProfileEmail}
+            isIncognito={isIncognito}
+            setIsIncognito={setIsIncognito}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            editingSessionId={editingSessionId}
+            setEditingSessionId={setEditingSessionId}
+            editingTitle={editingTitle}
+            setEditingTitle={setEditingTitle}
+            handleRenameKeyDown={handleRenameKeyDown}
+            handleRenameCommit={handleRenameCommit}
+            handlePinChat={handlePinChat}
+            handleDeleteChat={handleDeleteChat}
+            setIsProfileOpen={setIsProfileOpen}
+            setIsSettingsOpen={setIsSettingsOpen}
+            className={`pointer-events-auto ${leftSidebarPanelClass}`}
+            contrast={sidebarContrast}
+            isPinkMode={showPinkMode}
+          />
+          {isLeftSidebarOpen && (
+            <div
+              className="absolute top-0 bottom-0 z-40 w-0 pointer-events-none"
+              style={{ left: 'calc(var(--sidebar-width) + 0.75rem)' }}
+            >
+              <button
+                type="button"
+                onMouseDown={startResize}
+                onClick={handleRailClick}
+                onMouseMove={(e) => {
+                  if (resizeRef.current.isDragging) return;
+                  const t = railTooltipRef.current;
+                  if (t) {
+                    t.style.left = `${e.clientX + 18}px`;
+                    t.style.top = `${e.clientY - 44}px`;
+                    t.style.opacity = '1';
+                  }
+                }}
+                onMouseEnter={(e) => {
+                  if (resizeRef.current.isDragging) return;
+                  const t = railTooltipRef.current;
+                  if (t) {
+                    t.style.left = `${e.clientX + 18}px`;
+                    t.style.top = `${e.clientY - 44}px`;
+                    t.style.opacity = '1';
+                  }
+                }}
+                onMouseLeave={() => {
+                  const t = railTooltipRef.current;
+                  if (t) t.style.opacity = '0';
+                }}
+                className="pointer-events-auto group/rail absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-4 cursor-col-resize touch-none select-none flex items-center justify-center"
+                aria-label="Resize or collapse sidebar"
+              >
+                <span
+                  className="h-10 w-[4px] rounded-full opacity-0 group-hover/rail:opacity-100 transition-opacity duration-150 bg-foreground/30 dark:bg-white/35 group-hover/rail:bg-foreground/50 dark:group-hover/rail:bg-white/60 group-active/rail:bg-foreground/70 dark:group-active/rail:bg-white/80"
+                  aria-hidden
+                />
+              </button>
+            </div>
+          )}
+        </SidebarProvider>
+      </div>
 
-                <ContextMenuContent className="w-56">
-                  <ContextMenuItem onClick={handleChangeBackground}>
-                    Change Background
-                  </ContextMenuItem>
-                  {(isDark ? customBgDark : customBgLight) && (
-                    <ContextMenuItem
-                      onClick={() => isDark ? setCustomBgDark('') : setCustomBgLight('')}
-                      className="text-destructive"
-                    >
-                      Remove Background
-                    </ContextMenuItem>
-                  )}
-                </ContextMenuContent>
-              </ContextMenu>
-            </main>
-          </SidebarIncognitoController>
-        </SidebarInset>
-      </SidebarProvider>
       <RightSidebarContainer
         showPinkMode={showPinkMode}
         customBgDark={customBgDark}

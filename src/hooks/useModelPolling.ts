@@ -38,8 +38,6 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
           modelId: selectedModel
         });
 
-        console.log(`[POLL] Provider: ${selectedProvider} Model: ${selectedModel} Loaded: ${status}`);
-
         setIsModelLoaded(status);
       } catch (e) {
         console.error('[POLL ERROR]', e);

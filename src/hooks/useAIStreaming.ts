@@ -31,9 +31,20 @@ export function useAIStreaming() {
   const startTime = useRef(0);
   const channelRef = useRef<Channel<string> | null>(null);
   const abortedRef = useRef(false);
+  const textBufferRef = useRef('');
+  const rafRef = useRef<number | null>(null);
 
-  const abort = useCallback(async () => {
+  const abort = useCallback(async (onToken?: (token: string) => void) => {
     abortedRef.current = true;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    // Flush any buffered text before aborting so no tokens are silently dropped
+    if (textBufferRef.current && onToken) {
+      onToken(textBufferRef.current);
+      textBufferRef.current = '';
+    }
     if (channelRef.current) {
       channelRef.current.onmessage = null as any;
       channelRef.current = null;
@@ -66,6 +77,11 @@ export function useAIStreaming() {
     setStats(null);
     tokenCount.current = 0;
     startTime.current = performance.now();
+    textBufferRef.current = '';
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
 
     // Prepare conversation history for Rust
     // 1. Slice up to (but not including) the last message
@@ -107,6 +123,15 @@ export function useAIStreaming() {
       channelRef.current = channel;
       let finalStats: AIStats | undefined;
 
+      // Flush the accumulated text buffer immediately (called from rAF or before ordering-sensitive events)
+      const flushTextBuffer = () => {
+        rafRef.current = null;
+        if (textBufferRef.current) {
+          onToken(textBufferRef.current);
+          textBufferRef.current = '';
+        }
+      };
+
       channel.onmessage = (eventJson) => {
         if (abortedRef.current) return;
         try {
@@ -114,16 +139,30 @@ export function useAIStreaming() {
 
           switch (event.type) {
             case "text":
-              onToken(event.data);
+              textBufferRef.current += event.data;
+              if (rafRef.current === null) {
+                rafRef.current = requestAnimationFrame(flushTextBuffer);
+              }
               break;
 
             case "search_start":
             case "search_source":
             case "search_done":
+              // Flush pending text before search events to preserve ordering
+              if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                flushTextBuffer();
+              }
               onResearch?.(event);
               break;
 
             case "stats": {
+              // Flush any remaining text before finalising
+              if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                flushTextBuffer();
+              }
+
               const rawStats = event.data;
               const wallClockDurationMs = performance.now() - startTime.current;
 
@@ -171,6 +210,16 @@ export function useAIStreaming() {
         ...params,
         ...(attachments && attachments.length > 0 ? { attachments } : {}),
       });
+
+      // Cancel any pending rAF and flush remaining buffer before completing
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        if (textBufferRef.current) {
+          onToken(textBufferRef.current);
+          textBufferRef.current = '';
+        }
+      }
 
       // Ensure we have final duration if it hasn't been set by stats sentinel yet
       if (!finalStats) {

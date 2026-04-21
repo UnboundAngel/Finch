@@ -340,3 +340,31 @@ input[type="range"]:active::-webkit-slider-thumb {
   height: 120px;
   opacity: 1;
 }
+
+@keyframes shimmer-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Shiki code block resets — applied once globally instead of per CodeBlock render */
+.shiki-container pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+.shiki-container code {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--sk-base, #dedede) 25%,
+    var(--sk-hi, #f5f5f5) 50%,
+    var(--sk-base, #dedede) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.5s infinite linear;
+}

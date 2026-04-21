@@ -65,7 +65,7 @@ export function DashboardHeader({
       className={`h-14 flex items-center justify-between px-4 sticky top-0 z-50 transition-none shrink-0 ${isIncognito
         ? 'bg-transparent'
         : showPinkMode
-          ? 'bg-gradient-to-r from-pink-300/30 via-rose-200/30 to-fuchsia-200/30 backdrop-blur-xl'
+          ? 'bg-[#fff5f7]/80 backdrop-blur-xl'
           : 'bg-transparent'
         }`}
     >
@@ -109,10 +109,10 @@ export function DashboardHeader({
                     provider: selectedProvider,
                     modelId: selectedModel
                   });
-                  toast.success('Model ejected successfully');
+                  toast.success('Model is going to sleep now');
                 } catch (err) {
                   console.error('Failed to eject model:', err);
-                  toast.error('Bro, that model refused to eject, so run it back.');
+                  toast.error('That model is having a hard time going to sleep.');
                 }
               }}
             >

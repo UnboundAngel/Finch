@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Binoculars, Check, Clock, ChevronDown, ChevronUp, ExternalLink as ExternalLinkIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { ExternalLink } from '@/src/components/ui/ExternalLink';
 
@@ -69,15 +69,13 @@ export const SearchStatus = ({ events, isThinking }: SearchStatusProps) => {
         </div>
 
         {/* Content Log */}
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="px-4 pb-4 space-y-2 border-t border-white/5 pt-3">
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-200",
+            isExpanded ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="px-4 pb-4 space-y-2 border-t border-white/5 pt-3">
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground pb-1">
                   <div className="h-1 w-1 rounded-full bg-blue-400 animate-ping" />
                   <span>Activity Log</span>
@@ -101,16 +99,22 @@ export const SearchStatus = ({ events, isThinking }: SearchStatusProps) => {
                         <div className="flex items-center gap-2 overflow-hidden">
                           <div className="h-5 w-5 rounded flex items-center justify-center bg-white/5 shrink-0 overflow-hidden">
                             {domain ? (
-                              <img 
-                                src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
-                                className="h-3.5 w-3.5 object-contain"
-                                alt=""
-                                onError={(e) => {
-                                  // Fallback to check icon on error
-                                  (e.target as any).style.display = 'none';
-                                  (e.target as any).parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check text-emerald-400"><path d="M20 6L9 17l-5-5"/></svg>';
-                                }}
-                              />
+                              <>
+                                <img
+                                  src={`https://icons.duckduckgo.com/ip3/${domain}.ico`}
+                                  className="h-3.5 w-3.5 object-contain"
+                                  alt=""
+                                  onError={(e) => {
+                                    const img = e.target as HTMLImageElement;
+                                    img.style.display = 'none';
+                                    const fallback = img.nextSibling as HTMLElement | null;
+                                    if (fallback) fallback.style.display = '';
+                                  }}
+                                />
+                                <span style={{ display: 'none' }}>
+                                  <Check className="h-3 w-3 text-emerald-400" />
+                                </span>
+                              </>
                             ) : (
                               <Check className="h-3 w-3 text-emerald-400" />
                             )}
@@ -142,10 +146,8 @@ export const SearchStatus = ({ events, isThinking }: SearchStatusProps) => {
                     </div>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        </div>
       </div>
     </div>
   );

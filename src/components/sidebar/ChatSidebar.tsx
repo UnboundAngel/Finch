@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useDeferredValue, useTransition } from 'react';
 import { cn } from '@/lib/utils';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -103,6 +103,21 @@ export const ChatSidebar = ({
   const setActiveProfile = useProfileStore(state => state.setActiveProfile);
   const activeProfile = useProfileStore(state => state.activeProfile);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const deferredQuery = useDeferredValue(debouncedSearchQuery);
+  const [, startTransition] = useTransition();
+
+  const { pinnedChats, unpinnedChats } = useMemo(() => {
+    const filtered = recentChats.filter(chat => {
+      if (!deferredQuery.trim()) return true;
+      const query = deferredQuery.toLowerCase();
+      if (chat.title.toLowerCase().includes(query)) return true;
+      return chat.messages.some(m => m.content.toLowerCase().includes(query));
+    });
+    return {
+      pinnedChats: filtered.filter(c => c.pinned),
+      unpinnedChats: filtered.filter(c => !c.pinned),
+    };
+  }, [recentChats, deferredQuery]);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to switch profiles? This will end your current session.')) {
@@ -114,7 +129,7 @@ export const ChatSidebar = ({
 
   return (
     <Sidebar variant="sidebar" className={cn(
-      "!absolute !top-3 !bottom-3 !left-3 !h-auto border-none !rounded-xl !overflow-hidden shadow-xl",
+      "!absolute !top-3 !bottom-20 !left-3 !h-auto !rounded-xl !overflow-hidden shadow-xl border border-black/15 dark:border-black/35",
       className
     )}>
       <SidebarHeader className="p-4 select-none">
@@ -142,19 +157,8 @@ export const ChatSidebar = ({
         </div>
       </SidebarHeader>
       <SidebarContent className="scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
-        {(() => {
-          const filteredChats = recentChats.filter(chat => {
-            if (!debouncedSearchQuery.trim()) return true;
-            const query = debouncedSearchQuery.toLowerCase();
-            if (chat.title.toLowerCase().includes(query)) return true;
-            return chat.messages.some(m => m.content.toLowerCase().includes(query));
-          });
-          const pinnedChats = filteredChats.filter(c => c.pinned);
-          const unpinnedChats = filteredChats.filter(c => !c.pinned);
-
-          return (
-            <>
-              {pinnedChats.length > 0 && (
+        <>
+          {pinnedChats.length > 0 && (
                 <SidebarGroup className={isIncognito ? 'opacity-50 pointer-events-none' : ''}>
                   <SidebarGroupLabel className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</SidebarGroupLabel>
                   <SidebarGroupContent>
@@ -271,13 +275,11 @@ export const ChatSidebar = ({
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
-              )}
-            </>
-          );
-        })()}
+          )}
+        </>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="px-4 py-2">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={(props) => (
@@ -303,11 +305,11 @@ export const ChatSidebar = ({
             )}
           />
           <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg border-muted-foreground/20">
-            <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => setIsProfileOpen(true)}>
+            <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => startTransition(() => setIsProfileOpen(true))}>
               <User className="h-4 w-4 text-muted-foreground" />
               <span>Profile Settings</span>
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => setIsSettingsOpen(true)}>
+            <DropdownMenuItem className="gap-2 p-2 cursor-pointer rounded-lg" onClick={() => startTransition(() => setIsSettingsOpen(true))}>
               <Settings className="h-4 w-4 text-muted-foreground" />
               <span>App Settings</span>
             </DropdownMenuItem>

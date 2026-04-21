@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Sliders, HelpCircle, Trash2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useModelParams } from '@/src/store';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -136,18 +135,13 @@ export const SamplingSection = ({
               "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border shadow-md"
             )}
           />
-          <AnimatePresence>
-            {getTemperatureWarning(temperature) && (
-              <motion.p
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 4 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                className={cn("text-[9px] italic leading-tight px-1", isPinkMode ? (temperature > 1.8 || temperature < 0.3 ? "text-rose-500" : "text-amber-500") : (temperature > 1.8 || temperature < 0.3 ? "text-rose-400/80" : "text-amber-400/80"))}
-              >
-                {getTemperatureWarning(temperature)}
-              </motion.p>
-            )}
-          </AnimatePresence>
+          <p className={cn(
+            "text-[9px] italic leading-tight px-1 overflow-hidden transition-all duration-200",
+            getTemperatureWarning(temperature) ? "max-h-10 opacity-100 mt-1" : "max-h-0 opacity-0 mt-0",
+            isPinkMode ? (temperature > 1.8 || temperature < 0.3 ? "text-rose-500" : "text-amber-500") : (temperature > 1.8 || temperature < 0.3 ? "text-rose-400/80" : "text-amber-400/80")
+          )}>
+            {getTemperatureWarning(temperature)}
+          </p>
         </div>
 
         {/* Focus (Top P) */}
@@ -220,18 +214,13 @@ export const SamplingSection = ({
               "[&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border shadow-md"
             )}
           />
-          <AnimatePresence>
-            {getTopPWarning(topP) && (
-              <motion.p
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: "auto", marginTop: 4 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                className={cn("text-[9px] italic leading-tight px-1", isPinkMode ? (topP < 0.2 ? "text-rose-500" : "text-amber-500") : (topP < 0.2 ? "text-rose-400/80" : "text-amber-400/80"))}
-              >
-                {getTopPWarning(topP)}
-              </motion.p>
-            )}
-          </AnimatePresence>
+          <p className={cn(
+            "text-[9px] italic leading-tight px-1 overflow-hidden transition-all duration-200",
+            getTopPWarning(topP) ? "max-h-10 opacity-100 mt-1" : "max-h-0 opacity-0 mt-0",
+            isPinkMode ? (topP < 0.2 ? "text-rose-500" : "text-amber-500") : (topP < 0.2 ? "text-rose-400/80" : "text-amber-400/80")
+          )}>
+            {getTopPWarning(topP)}
+          </p>
         </div>
       </div>
     </ParameterZone>

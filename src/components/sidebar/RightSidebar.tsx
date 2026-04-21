@@ -39,8 +39,7 @@ export const RightSidebar = ({ isOpen, readyToFetch, isPinkMode, contrast }: Rig
   return (
     <aside
       className={cn(
-        "h-full w-full flex flex-col transition-opacity duration-300 ease-in-out relative overflow-hidden",
-        isOpen ? "opacity-100" : "opacity-0",
+        "h-full w-full flex flex-col relative overflow-hidden",
         borderColor
       )}
     >

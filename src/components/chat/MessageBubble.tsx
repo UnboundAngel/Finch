@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Files, Check, Square, RefreshCw, Pencil } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -12,6 +12,8 @@ import { MetadataRow } from './MetadataRow';
 import { CodeBlock } from './CodeBlock';
 import { ExternalLink } from '@/src/components/ui/ExternalLink';
 
+const remarkPlugins = [remarkGfm];
+
 interface MessageBubbleProps {
   msg: Message;
   selectedModel: string;
@@ -22,11 +24,11 @@ interface MessageBubbleProps {
   isPinkMode?: boolean;
   userAvatarSrc: string;
   userAvatarLetter: string;
-  onRegenerate?: () => void;
+  onRegenerate?: (messageId?: string) => void;
   onEditResend?: (messageId: string, newContent: string) => void;
 }
 
-export const MessageBubble = ({
+export const MessageBubble = memo(function MessageBubble({
   msg,
   selectedModel,
   isDark,
@@ -38,7 +40,7 @@ export const MessageBubble = ({
   userAvatarLetter,
   onRegenerate,
   onEditResend,
-}: MessageBubbleProps) => {
+}: MessageBubbleProps) {
   const [copied, setCopied] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState('');
@@ -56,6 +58,50 @@ export const MessageBubble = ({
     }
     setIsEditing(false);
   };
+
+  const isStreaming = !!msg.streaming;
+  const isUserMsg = msg.role === 'user';
+
+  const markdownComponents = useMemo(() => ({
+    h1: ({ node, ...props }: any) => <h1 className="text-xl font-bold mb-4" {...props} />,
+    h2: ({ node, ...props }: any) => <h2 className="text-lg font-bold mb-3" {...props} />,
+    h3: ({ node, ...props }: any) => <h3 className="text-base font-bold mb-2" {...props} />,
+    h4: ({ node, ...props }: any) => <h4 className="text-sm font-bold mb-2" {...props} />,
+    h5: ({ node, ...props }: any) => <h5 className="text-sm font-semibold mb-1" {...props} />,
+    h6: ({ node, ...props }: any) => <h6 className="text-xs font-semibold mb-1" {...props} />,
+    ul: ({ node, ...props }: any) => <ul className="list-disc pl-6 mb-4 space-y-1" {...props} />,
+    ol: ({ node, ...props }: any) => <ol className="list-decimal pl-6 mb-4 space-y-1" {...props} />,
+    li: ({ node, ...props }: any) => <li className="mb-1" {...props} />,
+    table: ({ node, ...props }: any) => (
+      <div className="overflow-x-auto my-4 rounded-lg border border-muted-foreground/10">
+        <table className="min-w-full divide-y divide-muted-foreground/10" {...props} />
+      </div>
+    ),
+    thead: ({ node, ...props }: any) => <thead className="bg-muted/50" {...props} />,
+    th: ({ node, ...props }: any) => <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider" {...props} />,
+    td: ({ node, ...props }: any) => <td className="px-4 py-2 text-sm border-t border-muted-foreground/10" {...props} />,
+    a: ({ node, href, children, ...props }: any) => (
+      <ExternalLink href={href || ''} {...props}>
+        {children}
+      </ExternalLink>
+    ),
+    code(props: any) {
+      const { children, className, node, ...rest } = props;
+      const match = /language-(\w+)/.exec(className || '');
+      return match ? (
+        <CodeBlock
+          children={String(children).replace(/\n$/, '')}
+          language={match[1]}
+          isDark={isDark}
+          streaming={isStreaming}
+        />
+      ) : (
+        <code className={`px-1.5 py-0.5 rounded text-sm font-mono font-medium ${isUserMsg ? 'bg-white/20' : 'bg-muted/80'}`} {...rest}>
+          {children}
+        </code>
+      );
+    },
+  }), [isDark, isStreaming, isUserMsg]);
 
   return (
     <div className="flex gap-4 w-full group">
@@ -114,46 +160,8 @@ export const MessageBubble = ({
                 {msg.reasoning && <ThinkingBox content={msg.reasoning} />}
                 <div className={`prose prose-sm dark:prose-invert max-w-none ${msg.role === 'user' ? 'text-primary-foreground' : 'text-foreground/90'}`}>
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ node, ...props }) => <h1 className="text-xl font-bold mb-4" {...props} />,
-                    h2: ({ node, ...props }) => <h2 className="text-lg font-bold mb-3" {...props} />,
-                    h3: ({ node, ...props }) => <h3 className="text-base font-bold mb-2" {...props} />,
-                    h4: ({ node, ...props }) => <h4 className="text-sm font-bold mb-2" {...props} />,
-                    h5: ({ node, ...props }) => <h5 className="text-sm font-semibold mb-1" {...props} />,
-                    h6: ({ node, ...props }) => <h6 className="text-xs font-semibold mb-1" {...props} />,
-                    ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-1" {...props} />,
-                    ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-1" {...props} />,
-                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                    table: ({ node, ...props }) => (
-                      <div className="overflow-x-auto my-4 rounded-lg border border-muted-foreground/10">
-                        <table className="min-w-full divide-y divide-muted-foreground/10" {...props} />
-                      </div>
-                    ),
-                    thead: ({ node, ...props }) => <thead className="bg-muted/50" {...props} />,
-                    th: ({ node, ...props }) => <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider" {...props} />,
-                    td: ({ node, ...props }) => <td className="px-4 py-2 text-sm border-t border-muted-foreground/10" {...props} />,
-                    a: ({ node, href, children, ...props }) => (
-                      <ExternalLink href={href || ''} {...props}>
-                        {children}
-                      </ExternalLink>
-                    ),
-                    code(props) {
-                      const { children, className, node, ...rest } = props
-                      const match = /language-(\w+)/.exec(className || '')
-                      return match ? (
-                        <CodeBlock
-                          children={String(children).replace(/\n$/, '')}
-                          language={match[1]}
-                          isDark={isDark}
-                        />
-                      ) : (
-                        <code className={`px-1.5 py-0.5 rounded text-sm font-mono font-medium ${msg.role === 'user' ? 'bg-white/20' : 'bg-muted/80'}`} {...rest}>
-                          {children}
-                        </code>
-                      )
-                    }
-                  }}
+                  remarkPlugins={remarkPlugins}
+                  components={markdownComponents}
                 >
                   {msg.content}
                 </ReactMarkdown>
@@ -243,7 +251,7 @@ export const MessageBubble = ({
                 <TooltipProvider delay={400}>
                   <Tooltip>
                     <TooltipTrigger
-                      onClick={onRegenerate}
+                      onClick={() => onRegenerate?.(msg.id)}
                       className={cn(
                         "p-1.5 rounded-md transition-all active:scale-90",
                         "text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/50"
@@ -291,4 +299,4 @@ export const MessageBubble = ({
       </div>
     </div>
   );
-};
+});
