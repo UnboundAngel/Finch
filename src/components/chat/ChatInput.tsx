@@ -6,13 +6,14 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { VoiceIndicator } from './VoiceIndicator';
 import { ModelMarketplace } from './ModelMarketplace';
-import { useVoiceTranscription } from '@/src/hooks/useVoiceTranscription';
 import { CheckIcon } from 'lucide-react';
 import { WebSearchControl } from '@/src/components/chat/WebSearchControl';
-import { open as openFilePicker } from '@tauri-apps/plugin-dialog';
-import { getTauriInvoke, isTauri } from '@/src/lib/tauri-utils';
+import { ArtifactControl } from '@/src/components/chat/ArtifactControl';
+import { getTauriInvoke } from '@/src/lib/tauri-utils';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { FilePreviewModal, type PreviewFile } from '@/src/components/chat/FilePreviewModal';
+import { useFileDrop } from '@/src/hooks/useFileDrop';
+import { useMicController } from '@/src/hooks/useMicController';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -26,6 +27,8 @@ interface ChatInputProps {
   setAttachedFile: (file: { name: string; path: string } | null) => void;
   isWebSearchActive: boolean;
   setIsWebSearchActive: (val: boolean) => void;
+  isArtifactToolActive: boolean;
+  setIsArtifactToolActive: (val: boolean) => void;
   enterToSend: boolean;
   isIncognito?: boolean;
   isDark?: boolean;
@@ -47,14 +50,6 @@ const TEXT_EXTS = new Set([
   'yaml', 'toml', 'xml',
 ]);
 
-const SUPPORTED_DROP_EXTS = new Set([
-  'png', 'jpg', 'jpeg', 'gif', 'webp',
-  'pdf',
-  'txt', 'md', 'csv', 'rtf', 'html', 'json',
-  'py', 'js', 'ts', 'jsx', 'tsx', 'rs', 'go', 'java', 'cpp', 'c', 'cs', 'rb', 'php',
-  'yaml', 'yml', 'toml', 'xml', 'sql', 'css', 'sh', 'bash',
-  'docx', 'xlsx', 'pptx',
-]);
 
 function getFileTypeLabel(name: string): string {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -146,6 +141,46 @@ function AttachmentCard({ file, onRemove, onPreview }: {
   );
 }
 
+function getComposerShellClassName({
+  isWebSearchActive,
+  isArtifactToolActive,
+  isIncognito,
+  isDark,
+  isPinkMode,
+  hasCustomBg,
+}: {
+  isWebSearchActive: boolean;
+  isArtifactToolActive: boolean;
+  isIncognito?: boolean;
+  isDark?: boolean;
+  isPinkMode?: boolean;
+  hasCustomBg?: boolean;
+}): string {
+  if (isWebSearchActive) {
+    return 'border-blue-500/50 bg-background shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]';
+  }
+
+  if (isArtifactToolActive) {
+    return 'border-violet-500/45 bg-background shadow-[0_0_15px_-3px_rgba(139,92,246,0.12)]';
+  }
+
+  if (isIncognito) {
+    return isDark
+      ? 'bg-neutral-900/90 backdrop-blur-xl border-neutral-800 focus-within:border-neutral-700 shadow-2xl'
+      : 'bg-white/80 backdrop-blur-xl border-neutral-200/50 shadow-lg focus-within:border-neutral-300/50';
+  }
+
+  if (isPinkMode) {
+    return 'bg-white/80 backdrop-blur-xl border-rose-200 focus-within:ring-1 focus-within:ring-rose-300 focus-within:border-rose-300 shadow-sm';
+  }
+
+  if (hasCustomBg) {
+    return 'bg-background/20 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-lg focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50';
+  }
+
+  return 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50';
+}
+
 export const ChatInput = ({
   input,
   setInput,
@@ -156,6 +191,8 @@ export const ChatInput = ({
   setAttachedFile,
   isWebSearchActive,
   setIsWebSearchActive,
+  isArtifactToolActive,
+  setIsArtifactToolActive,
   enterToSend,
   isIncognito,
   isDark,
@@ -168,75 +205,46 @@ export const ChatInput = ({
 }: ChatInputProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const rafRef = useRef<number | null>(null);
-  const micMenuRef = useRef<HTMLDivElement>(null);
-  const micPillRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragCounterRef = useRef(0);
-  const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
   const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [dragFileName, setDragFileName] = useState<string>('');
-  const [dragPointer, setDragPointer] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-
-  // Controlled Menu States
-  const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
-  const [isMicHovering, setIsMicHovering] = useState(false);
-  const [holdToRecord, setHoldToRecord] = useState(true);
   
-  // Mic Data
-  const [audioDevices, setAudioDevices] = useState<string[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>('');
-  const [meterLevel, setMeterLevel] = useState(0);
-
-  const fetchDevices = useCallback(async () => {
-    try {
-      const invoke = await getTauriInvoke();
-      if (!invoke) {
-        setAudioDevices([]);
-        return;
-      }
-      const devices = await invoke<string[]>('list_audio_devices');
-      setAudioDevices(devices);
-      if (!selectedDevice && devices.length > 0) {
-        setSelectedDevice(devices[0]);
-      }
-    } catch (err) {
-      console.error("Failed to list audio devices:", err);
-    }
-  }, [selectedDevice]);
+  const {
+    isDragOver,
+    dragFileName,
+    dragPointer,
+    handleDragEnter,
+    handleDragLeave,
+    handleDragOver,
+    handleDrop,
+    handleAttachClick,
+    fileInputRef,
+  } = useFileDrop(setAttachedFile);
 
   const {
+    audioDevices,
+    selectedDevice,
+    setSelectedDevice,
+    meterLevel,
+    isMicMenuOpen,
+    setIsMicMenuOpen,
+    isMicHovering,
+    setIsMicHovering,
+    holdToRecord,
+    setHoldToRecord,
+    micMenuPos,
+    micMenuRef,
+    micPillRef,
+    handleMicClick,
+    startVoiceCapture,
+    stopVoiceCapture,
+    handleMicSettingsToggle,
     installedModels,
     downloadingModels,
     isMarketplaceOpen,
     setIsMarketplaceOpen,
     downloadModel,
-    startRecording,
-    stopRecording,
-    status
-  } = useVoiceTranscription((text) => {
-    const trimmedText = text?.trim();
-    // Guard against empty results, blank audio sentinels, or hallucinatory chirping
-    const isBlank = !trimmedText || 
-                    trimmedText === '[BLANK_AUDIO]' || 
-                    trimmedText === '{empty-audio}' || 
-                    trimmedText.includes('[Birds chirping]');
-
-    if (!isBlank) {
-      // Append text WITHOUT triggering auto-send
-      setInput(prev => prev ? `${prev} ${trimmedText}` : trimmedText);
-      toast.success("Transcription added!");
-    } else {
-      // No audio detected guard
-      toast.error("No audio detected!", { 
-        duration: 2500,
-        position: 'bottom-center'
-      });
-    }
-  });
-
-  const isMicEnabled = installedModels.length > 0;
-  const isTranscribing = status === 'transcribing';
+    isMicEnabled,
+    isTranscribing,
+  } = useMicController(setInput, isListening, setIsListening);
 
   useEffect(() => {
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -262,243 +270,14 @@ export const ChatInput = ({
     }
   };
 
-  const handleAttachClick = useCallback(async () => {
-    if (isTauri()) {
-      try {
-        const result = await openFilePicker({
-          multiple: true,
-          filters: [{
-            name: 'Files',
-            extensions: [
-              'png', 'jpg', 'jpeg', 'gif', 'webp',
-              'pdf',
-              'txt', 'md', 'csv', 'rtf', 'html', 'json',
-              'py', 'js', 'ts', 'jsx', 'tsx', 'rs', 'go', 'java', 'cpp', 'c', 'cs', 'rb', 'php', 'yaml', 'toml', 'xml',
-              'docx', 'xlsx', 'pptx',
-            ],
-          }],
-        });
-        const paths = Array.isArray(result) ? result : (result ? [result] : []);
-        if (paths.length > 0) {
-          const firstPath = paths[0] as string;
-          const parts = firstPath.replace(/\\/g, '/').split('/');
-          setAttachedFile({ name: parts[parts.length - 1], path: firstPath });
-        }
-      } catch {
-        // Dialog system error — silently ignore
-      }
-    } else {
-      fileInputRef.current?.click();
-    }
-  }, [setAttachedFile]);
-
-  // ── Tauri v2: native OS file drag-drop ──────────────────────────────────────
-  // Tauri intercepts native file drags at the webview level — HTML drag events
-  // never fire for files dragged from the OS. We use the Tauri webview API and
-  // fall back to HTML drag handlers in browser mode.
-  useEffect(() => {
-    if (!isTauri()) return;
-    let unlisten: (() => void) | undefined;
-
-    const setup = async () => {
-      const { getCurrentWebview } = await import('@tauri-apps/api/webview');
-      unlisten = await getCurrentWebview().onDragDropEvent((event) => {
-        const payload = event.payload as any;
-        const { type } = payload;
-        const paths: string[] = payload.paths ?? [];
-        const firstPath = paths[0] as string | undefined;
-        const inferredName = firstPath?.replace(/\\/g, '/').split('/').pop() ?? '';
-        const pos = payload.position ?? payload.pos ?? payload.cursor ?? {};
-        const x = typeof pos.x === 'number' ? pos.x : (typeof payload.x === 'number' ? payload.x : null);
-        const y = typeof pos.y === 'number' ? pos.y : (typeof payload.y === 'number' ? payload.y : null);
-        if (x !== null && y !== null) setDragPointer({ x, y });
-
-        if (type === 'enter') {
-          setIsDragOver(true);
-          setDragFileName(inferredName);
-        } else if (type === 'over') {
-          setIsDragOver(true);
-          if (inferredName) setDragFileName(inferredName);
-        } else if (type === 'leave') {
-          setIsDragOver(false);
-          setDragFileName('');
-        } else if (type === 'drop') {
-          setIsDragOver(false);
-          setDragFileName('');
-          if (paths.length === 0) return;
-          const filePath = paths[0];
-          const name = filePath.replace(/\\/g, '/').split('/').pop() ?? 'file';
-          const ext = name.split('.').pop()?.toLowerCase() ?? '';
-          if (!SUPPORTED_DROP_EXTS.has(ext)) {
-            toast.error(`".${ext}" files are not supported`, { duration: 2500, position: 'bottom-center' });
-            return;
-          }
-          setAttachedFile({ name, path: filePath });
-        }
-      });
-    };
-
-    setup().catch(console.error);
-    return () => { unlisten?.(); };
-  }, [setAttachedFile]);
-
-  // ── Browser fallback: HTML drag events (no-ops in Tauri) ─────────────────
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    if (isTauri()) return;
-    e.preventDefault();
-    dragCounterRef.current += 1;
-    if (dragCounterRef.current === 1) setIsDragOver(true);
-    setDragPointer({ x: e.clientX, y: e.clientY });
-    const first = e.dataTransfer.files?.[0];
-    if (first?.name) setDragFileName(first.name);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    if (isTauri()) return;
-    dragCounterRef.current -= 1;
-    if (dragCounterRef.current === 0) {
-      setIsDragOver(false);
-      setDragFileName('');
-    }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (isTauri()) return;
-    e.preventDefault();
-    setDragPointer({ x: e.clientX, y: e.clientY });
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    if (isTauri()) return;
-    e.preventDefault();
-    dragCounterRef.current = 0;
-    setIsDragOver(false);
-    setDragFileName('');
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-    if (!SUPPORTED_DROP_EXTS.has(ext)) {
-      toast.error(`".${ext}" files are not supported`, { duration: 2500, position: 'bottom-center' });
-      return;
-    }
-    const path = URL.createObjectURL(file);
-    setAttachedFile({ name: file.name, path });
-  }, [setAttachedFile]);
-
-  const handleMicClick = useCallback(() => {
-    if (holdToRecord) return;
-    if (!isMicEnabled) {
-      setIsMarketplaceOpen(true);
-    } else {
-      if (isListening) {
-        stopRecording();
-        setIsListening?.(false);
-      } else {
-        startRecording();
-        setIsListening?.(true);
-      }
-    }
-  }, [holdToRecord, isMicEnabled, isListening, startRecording, stopRecording, setIsListening, setIsMarketplaceOpen]);
-
-  const startVoiceCapture = useCallback(() => {
-    if (!isMicEnabled) {
-      setIsMarketplaceOpen(true);
-      return;
-    }
-    if (!isListening) {
-      startRecording();
-      setIsListening?.(true);
-    }
-  }, [isMicEnabled, isListening, startRecording, setIsListening, setIsMarketplaceOpen]);
-
-  const stopVoiceCapture = useCallback(() => {
-    if (isListening) {
-      stopRecording();
-      setIsListening?.(false);
-    }
-  }, [isListening, stopRecording, setIsListening]);
-
-  const handleMicSettingsToggle = useCallback(() => {
-    if (!isMicEnabled) return;
-    if (isMicMenuOpen) {
-      setIsMicMenuOpen(false);
-    } else {
-      fetchDevices();
-      setIsMicMenuOpen(true);
-    }
-  }, [isMicEnabled, isMicMenuOpen, fetchDevices]);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (!holdToRecord || !isMicEnabled) return;
-      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        startVoiceCapture();
-      }
-    };
-    const onKeyUp = (e: KeyboardEvent) => {
-      if (!holdToRecord || !isMicEnabled) return;
-      if (e.key.toLowerCase() === 'd') {
-        stopVoiceCapture();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-    };
-  }, [holdToRecord, isMicEnabled, isListening, startVoiceCapture, stopVoiceCapture]);
-
-  useEffect(() => {
-    if (!isMicMenuOpen) {
-      setMicMenuPos(null);
-      return;
-    }
-    if (micPillRef.current) {
-      const rect = micPillRef.current.getBoundingClientRect();
-      setMicMenuPos({
-        bottom: window.innerHeight - rect.top + 8,
-        right: window.innerWidth - rect.right,
-      });
-    }
-    const handler = (e: MouseEvent) => {
-      if (
-        micMenuRef.current && !micMenuRef.current.contains(e.target as Node) &&
-        micPillRef.current && !micPillRef.current.contains(e.target as Node)
-      ) {
-        setIsMicMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [isMicMenuOpen]);
-
-  useEffect(() => {
-    if (!isMicMenuOpen) {
-      setMeterLevel(0);
-      void getTauriInvoke().then((invoke) => invoke?.('stop_voice_preview'));
-      return;
-    }
-    void getTauriInvoke().then((invoke) => invoke?.('start_voice_preview')).catch((e) => console.error('[voice preview] start failed:', e));
-    const id = window.setInterval(async () => {
-      try {
-        const invoke = await getTauriInvoke();
-        if (!invoke) {
-          setMeterLevel(0);
-          return;
-        }
-        const level = await invoke<number>('get_voice_meter_level');
-        setMeterLevel(Number.isFinite(level) ? Math.max(0, Math.min(1, level)) : 0);
-      } catch {
-        setMeterLevel(0);
-      }
-    }, 60);
-    return () => {
-      window.clearInterval(id);
-      void getTauriInvoke().then((invoke) => invoke?.('stop_voice_preview'));
-    };
-  }, [isMicMenuOpen]);
+  const composerShellClassName = getComposerShellClassName({
+    isWebSearchActive,
+    isArtifactToolActive,
+    isIncognito,
+    isDark,
+    isPinkMode,
+    hasCustomBg,
+  });
 
   return (
     <>
@@ -519,7 +298,7 @@ export const ChatInput = ({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
+      <div className="chat-content-frame relative pb-4 md:pb-6">
         {/* Waveform pill ONLY during active recording */}
         <VoiceIndicator isActive={(isListening && !isTranscribing) || false} isPinkMode={isPinkMode} />
         
@@ -546,18 +325,12 @@ export const ChatInput = ({
           }}
         />
 
-        <div className={`relative flex items-end w-full rounded-2xl transition-all duration-300 overflow-hidden border-[1.5px] ${isWebSearchActive
-            ? 'border-blue-500/50 bg-background shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]'
-            : (isIncognito
-                ? (isDark
-                  ? 'bg-neutral-900/90 backdrop-blur-xl border-neutral-800 focus-within:border-neutral-700 shadow-2xl'
-                  : 'bg-white/80 backdrop-blur-xl border-neutral-200/50 shadow-lg focus-within:border-neutral-300/50')
-                : (isPinkMode
-                  ? 'bg-white/80 backdrop-blur-xl border-rose-200 focus-within:ring-1 focus-within:ring-rose-300 focus-within:border-rose-300 shadow-sm'
-                  : (hasCustomBg
-                    ? 'bg-background/20 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-lg focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50'
-                    : 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50')))
-          }`}>
+        <div
+          className={cn(
+            'relative flex items-end w-full rounded-2xl transition-all duration-300 overflow-hidden border-[1.5px]',
+            composerShellClassName,
+          )}
+        >
           <div className="flex flex-col w-full min-h-[56px] relative">
             {isDragOver && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-500 bg-blue-500/5 pointer-events-none select-none">
@@ -609,6 +382,8 @@ export const ChatInput = ({
               onAttachClick={handleAttachClick}
               isWebSearchActive={isWebSearchActive}
               setIsWebSearchActive={setIsWebSearchActive}
+              isArtifactToolActive={isArtifactToolActive}
+              setIsArtifactToolActive={setIsArtifactToolActive}
               isPinkMode={isPinkMode}
               isDark={isDark}
               isModelLoaded={isModelLoaded}
@@ -664,6 +439,8 @@ interface ChatInputControlsProps {
   onAttachClick: () => void;
   isWebSearchActive: boolean;
   setIsWebSearchActive: (val: boolean) => void;
+  isArtifactToolActive: boolean;
+  setIsArtifactToolActive: (val: boolean) => void;
   isPinkMode?: boolean;
   isDark?: boolean;
   isModelLoaded?: boolean;
@@ -698,6 +475,8 @@ const ChatInputControls = React.memo(({
   onAttachClick,
   isWebSearchActive,
   setIsWebSearchActive,
+  isArtifactToolActive,
+  setIsArtifactToolActive,
   isPinkMode,
   isDark,
   isMicEnabled,
@@ -738,6 +517,10 @@ const ChatInputControls = React.memo(({
           setIsWebSearchActive={setIsWebSearchActive}
           isPinkMode={isPinkMode}
           isDark={isDark}
+        />
+        <ArtifactControl
+          isArtifactToolActive={isArtifactToolActive}
+          setIsArtifactToolActive={setIsArtifactToolActive}
         />
       </div>
       <div className="flex items-center gap-2">

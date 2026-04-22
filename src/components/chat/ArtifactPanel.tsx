@@ -1,9 +1,13 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
-import { X, Copy, Check, Code2, Eye, Download } from 'lucide-react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import { X, Copy, Check, Code2, Eye, Download, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import { createHighlighter, type Highlighter } from 'shiki';
-import type { Artifact, ArtifactKind } from '@/src/types/chat';
+import type { Artifact } from '@/src/types/chat';
+import { artifactKindSupportsPreview } from '@/src/lib/artifactTooling';
 
 // Reuse the same global highlighter from CodeBlock to avoid double init cost.
 let panelHighlighter: Highlighter | null = null;
@@ -19,17 +23,12 @@ const panelHighlighterPromise = createHighlighter({
   return h;
 });
 
-const PREVIEW_KINDS: ArtifactKind[] = ['html', 'svg', 'react'];
-
-/** Builds a self-contained HTML document that renders a React component via CDN Babel. */
+/** Builds a self-contained HTML document that renders a React component using bundled local runtime. */
 function buildReactPreviewHtml(content: string, isDark: boolean): string {
   // Strip ES-module imports that can't run in a plain script context.
   const stripped = content
     .replace(/import\s+React\s*(?:,\s*\{[^}]*\})?\s+from\s+['"]react['"];?\n?/g, '')
-    .replace(
-      /import\s+\{([^}]+)\}\s+from\s+['"]react['"];?\n?/g,
-      (_, names: string) => `const { ${names.split(',').map((n: string) => n.trim()).join(', ')} } = React;\n`,
-    )
+    .replace(/import\s+\{[^}]+\}\s+from\s+['"]react['"];?\n?/g, '')
     .replace(/import\s+.*from\s+['"][^'"]+['"];?\n?/g, '')
     .replace(/export\s+default\s+function\s+(\w+)/, 'var __RC = function $1')
     .replace(/export\s+default\s+class\s+(\w+)/, 'var __RC = class $1')
@@ -44,9 +43,9 @@ function buildReactPreviewHtml(content: string, isDark: boolean): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="/artifact-runtime/react.production.min.js"></script>
+<script src="/artifact-runtime/react-dom.production.min.js"></script>
+<script src="/artifact-runtime/babel.min.js"></script>
 <style>
 *{box-sizing:border-box}
 body{
@@ -68,18 +67,33 @@ button {
 button:hover {
   background: ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
 }
+.preview-error{
+  padding:16px;
+  border-radius:8px;
+  background:${isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.08)'};
+  border:1px solid rgba(239,68,68,0.3);
+  color:${isDark ? '#fca5a5' : '#dc2626'};
+  font-family:monospace;
+  font-size:13px;
+  white-space:pre-wrap;
+}
 </style>
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
+<script type="text/babel" data-presets="react">
+try {
 const {useState,useEffect,useRef,useCallback,useMemo,useReducer,useContext,createContext,forwardRef,memo}=React;
 var __RC;
 ${stripped}
 const _candidates=["App","Page","Component","Main","Root","Index"];
 const _root=__RC||(()=>{for(const k of _candidates){try{if(typeof eval(k)==="function")return eval(k);}catch(_){}}return null;})();
 if(_root){ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(_root));}
-else{document.getElementById("root").textContent="Could not detect a React component to render.";}
+else{document.getElementById("root").innerHTML='<div class="preview-error">Could not detect a React component to render.\\nExport a default component named App, Page, Component, Main, Root, or Index.</div>';}
+} catch(e) {
+  const lines = (e && e.message ? e.message : String(e)).split('\\n').slice(0,3).join('\\n');
+  document.getElementById("root").innerHTML='<div class="preview-error">Preview error:\\n' + lines.replace(/</g,'&lt;') + '</div>';
+}
 </script>
 </body>
 </html>`;
@@ -144,8 +158,99 @@ const PanelCodeView = ({
   );
 };
 
+const MARKDOWN_REMARK_PLUGINS = [remarkGfm];
+
+function getArtifactDownloadExtension(artifact: Artifact): string {
+  if (artifact.language) {
+    return `.${artifact.language}`;
+  }
+
+  return artifact.kind === 'html' ? '.html' : '.txt';
+}
+
+const MarkdownPreview = ({
+  content,
+  isDark,
+}: {
+  content: string;
+  isDark: boolean;
+}) => {
+  const components = useMemo(() => ({
+    h1: ({ node, ...props }: any) => <h1 className="text-3xl font-bold tracking-tight mb-5" {...props} />,
+    h2: ({ node, ...props }: any) => <h2 className="text-2xl font-semibold tracking-tight mb-4 mt-8" {...props} />,
+    h3: ({ node, ...props }: any) => <h3 className="text-xl font-semibold mb-3 mt-6" {...props} />,
+    h4: ({ node, ...props }: any) => <h4 className="text-lg font-semibold mb-2 mt-5" {...props} />,
+    p: ({ node, ...props }: any) => <p className="mb-4 leading-7 text-foreground/90" {...props} />,
+    ul: ({ node, ...props }: any) => <ul className="list-disc pl-6 mb-4 space-y-1.5" {...props} />,
+    ol: ({ node, ...props }: any) => <ol className="list-decimal pl-6 mb-4 space-y-1.5" {...props} />,
+    li: ({ node, ...props }: any) => <li className="leading-7" {...props} />,
+    blockquote: ({ node, ...props }: any) => (
+      <blockquote
+        className={cn(
+          'mb-4 border-l-2 pl-4 italic',
+          isDark ? 'border-white/15 text-white/75' : 'border-black/15 text-black/70',
+        )}
+        {...props}
+      />
+    ),
+    table: ({ node, ...props }: any) => (
+      <div className="overflow-x-auto my-5 rounded-xl border border-muted-foreground/10">
+        <table className="min-w-full border-collapse text-sm" {...props} />
+      </div>
+    ),
+    thead: ({ node, ...props }: any) => <thead className="bg-muted/40" {...props} />,
+    th: ({ node, ...props }: any) => <th className="px-4 py-2 text-left font-semibold border-b border-muted-foreground/10" {...props} />,
+    td: ({ node, ...props }: any) => <td className="px-4 py-2 border-b border-muted-foreground/10 align-top" {...props} />,
+    a: ({ node, href, children, ...props }: any) => (
+      <a
+        href={href || '#'}
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline underline-offset-2 decoration-primary/40 hover:decoration-primary"
+        {...props}
+      >
+        {children}
+      </a>
+    ),
+    code({ children, className, inline, ...props }: any) {
+      const text = String(children).replace(/\n$/, '');
+      if (inline) {
+        return (
+          <code
+            className={cn(
+              'rounded px-1.5 py-0.5 font-mono text-[0.9em]',
+              isDark ? 'bg-white/10 text-white/90' : 'bg-black/5 text-black/85',
+            )}
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+      const match = /language-(\w+)/.exec(className || '');
+      return <PanelCodeView content={text} language={match?.[1] || 'markdown'} isDark={isDark} />;
+    },
+  }), [isDark]);
+
+  return (
+    <div className="h-full overflow-auto">
+      <div className="mx-auto max-w-3xl px-8 py-7">
+        <div className="prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown remarkPlugins={MARKDOWN_REMARK_PLUGINS} components={components}>
+            {content}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /** Renders an HTML or SVG artifact in a sandboxed iframe / inline element. */
 const PreviewPane = ({ artifact, isDark }: { artifact: Artifact; isDark: boolean }) => {
+  if (artifact.kind === 'markdown') {
+    return <MarkdownPreview content={artifact.content} isDark={isDark} />;
+  }
+
   if (artifact.kind === 'svg') {
     return (
       <div className="flex items-center justify-center h-full p-8 overflow-auto">
@@ -157,30 +262,16 @@ const PreviewPane = ({ artifact, isDark }: { artifact: Artifact; isDark: boolean
     );
   }
 
-  const [url, setUrl] = useState<string>('');
-
-  useEffect(() => {
-    const htmlSource =
-      artifact.kind === 'react'
-        ? buildReactPreviewHtml(artifact.content, isDark)
-        : artifact.content;
-
-    const blob = new Blob([htmlSource], { type: 'text/html' });
-    const newUrl = URL.createObjectURL(blob);
-    setUrl(newUrl);
-
-    return () => {
-      URL.revokeObjectURL(newUrl);
-    };
-  }, [artifact.content, artifact.kind, isDark]);
-
-  if (!url) return null;
+  const htmlSource =
+    artifact.kind === 'react'
+      ? buildReactPreviewHtml(artifact.content, isDark)
+      : artifact.content;
 
   return (
     <iframe
-      key={`${url}-${isDark}`}
-      src={url}
-      sandbox="allow-scripts allow-same-origin"
+      key={`${artifact.id}-${artifact.version}-${isDark}`}
+      srcDoc={htmlSource}
+      sandbox="allow-scripts"
       className="w-full h-full border-0"
       title={artifact.title}
     />
@@ -198,7 +289,7 @@ export const ArtifactPanel = memo(function ArtifactPanel({
   const [copied, setCopied] = useState(false);
 
   const isOpen = artifact !== null;
-  const canPreview = artifact ? PREVIEW_KINDS.includes(artifact.kind) : false;
+  const canPreview = artifact ? artifactKindSupportsPreview(artifact.kind) : false;
 
   useEffect(() => {
     setActiveTab('code');
@@ -213,7 +304,7 @@ export const ArtifactPanel = memo(function ArtifactPanel({
 
   const handleDownload = () => {
     if (!artifact) return;
-    const ext = artifact.language ? `.${artifact.language}` : artifact.kind === 'html' ? '.html' : '.txt';
+    const ext = getArtifactDownloadExtension(artifact);
     const filename = artifact.title.includes('.') ? artifact.title : `${artifact.title}${ext}`;
     const blob = new Blob([artifact.content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -224,8 +315,33 @@ export const ArtifactPanel = memo(function ArtifactPanel({
     URL.revokeObjectURL(url);
   };
 
+  const handleOpenInEditor = async () => {
+    if (!artifact?.filePath) {
+      toast.error('File not yet saved to disk. Try again in a moment.');
+      return;
+    }
+    try {
+      const { openPath } = await import('@tauri-apps/plugin-opener');
+      await openPath(artifact.filePath);
+    } catch (err) {
+      toast.error(`Could not open in editor: ${err}`);
+    }
+  };
+
   const panelBg = isDark ? 'bg-[#171717]' : 'bg-[#ffffff]';
   const headerBorder = isDark ? 'border-white/5' : 'border-black/5';
+  const panelActionButtonClass = cn(
+    'p-2.5 rounded-full border transition-all active:scale-95 hover:shadow-md',
+    isDark
+      ? 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
+      : 'bg-black/5 border-black/10 hover:bg-black/10 text-neutral-900',
+  );
+  const closeButtonClass = cn(
+    'p-2.5 rounded-full border transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-95',
+    isDark
+      ? 'bg-white/5 border-white/10 text-white'
+      : 'bg-black/5 border-black/10 text-neutral-900',
+  );
 
   return (
     <AnimatePresence>
@@ -272,10 +388,7 @@ export const ArtifactPanel = memo(function ArtifactPanel({
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={handleCopy}
-                  className={cn(
-                    "p-2.5 rounded-full border transition-all active:scale-95 hover:shadow-md",
-                    isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-black/5 border-black/10 hover:bg-black/10 text-neutral-900"
-                  )}
+                  className={panelActionButtonClass}
                   title="Copy content"
                 >
                   <AnimatePresence mode="wait" initial={false}>
@@ -292,20 +405,25 @@ export const ArtifactPanel = memo(function ArtifactPanel({
                 </button>
                 <button
                   onClick={handleDownload}
-                  className={cn(
-                    "p-2.5 rounded-full border transition-all active:scale-95 hover:shadow-md",
-                    isDark ? "bg-white/5 border-white/10 hover:bg-white/10 text-white" : "bg-black/5 border-black/10 hover:bg-black/10 text-neutral-900"
-                  )}
+                  className={panelActionButtonClass}
                   title="Download"
                 >
                   <Download className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={onClose}
+                  onClick={handleOpenInEditor}
+                  disabled={!artifact?.filePath}
                   className={cn(
-                    "p-2.5 rounded-full border transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-95",
-                    isDark ? "bg-white/5 border-white/10 text-white" : "bg-black/5 border-black/10 text-neutral-900"
+                    panelActionButtonClass,
+                    !artifact?.filePath && 'opacity-40 cursor-not-allowed',
                   )}
+                  title={artifact?.filePath ? "Open in editor" : "Saving to disk…"}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={onClose}
+                  className={closeButtonClass}
                   title="Close"
                 >
                   <X className="h-4 w-4" />

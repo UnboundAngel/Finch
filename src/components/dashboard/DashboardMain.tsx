@@ -61,6 +61,8 @@ interface DashboardMainProps {
   setAttachedFile: (val: { name: string; path: string } | null) => void;
   isWebSearchActive: boolean;
   setIsWebSearchActive: (val: boolean) => void;
+  isArtifactToolActive: boolean;
+  setIsArtifactToolActive: (val: boolean) => void;
   enterToSend: boolean;
   isModelLoaded: boolean;
   handleInputFocus: () => void;
@@ -147,7 +149,7 @@ export function DashboardMain(props: DashboardMainProps) {
     showPinkMode, isDark, customBgDark, customBgLight, sidebarContrast, rightSidebarContrast,
     messages, isThinking, researchEvents, selectedModel, stableSetInput, hasCustomBgValue,
     voiceStatus, input, handleSend, abort, isStreaming, attachedFile,
-    setAttachedFile, isWebSearchActive, setIsWebSearchActive, enterToSend, isModelLoaded,
+    setAttachedFile, isWebSearchActive, setIsWebSearchActive, isArtifactToolActive, setIsArtifactToolActive, enterToSend, isModelLoaded,
     handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight,
     userAvatarSrc, userAvatarLetter, onRegenerate, onEditResend,
     activeArtifact, onArtifactClick, onArtifactClose,
@@ -280,7 +282,7 @@ export function DashboardMain(props: DashboardMainProps) {
                 plusSize={40}
               />
 
-              <div className="flex-1 relative z-10 flex flex-col min-h-0">
+              <div className="flex-1 relative z-10 flex flex-col min-h-0 px-4">
                 <ChatArea
                   messages={messages}
                   isThinking={isThinking}
@@ -309,6 +311,8 @@ export function DashboardMain(props: DashboardMainProps) {
                     setAttachedFile={setAttachedFile}
                     isWebSearchActive={isWebSearchActive}
                     setIsWebSearchActive={setIsWebSearchActive}
+                    isArtifactToolActive={isArtifactToolActive}
+                    setIsArtifactToolActive={setIsArtifactToolActive}
                     enterToSend={enterToSend}
                     isIncognito={isIncognito}
                     isDark={isDark}
