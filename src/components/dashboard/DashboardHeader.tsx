@@ -8,6 +8,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { useChatStore } from '@/src/store';
 import { RightSidebarToggleGated } from './RightSidebarToggle';
+import { isLocalInferenceProvider } from '@/src/lib/providers';
 
 interface DashboardHeaderProps {
   sidebarContrast: 'light' | 'dark';
@@ -21,6 +22,9 @@ interface DashboardHeaderProps {
   isDark: boolean;
   handleThemeChange: (checked: boolean) => void;
   showPinkMode: boolean;
+  isModelLoaded: boolean;
+  isModelLoading: boolean;
+  modelLoadProgress: number;
 }
 
 export function DashboardHeader({
@@ -34,7 +38,10 @@ export function DashboardHeader({
   headerContrast,
   isDark,
   handleThemeChange,
-  showPinkMode
+  showPinkMode,
+  isModelLoaded: _isModelLoaded,
+  isModelLoading,
+  modelLoadProgress,
 }: DashboardHeaderProps) {
   const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
   const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
@@ -78,6 +85,8 @@ export function DashboardHeader({
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
             contrast={headerContrast}
+            showLoadRing={isLocalInferenceProvider(selectedProvider) && isModelLoading}
+            loadProgress={modelLoadProgress}
           />
           {!isIncognito && selectedProvider.startsWith('local_') && (
             <Button

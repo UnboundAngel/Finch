@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import type { Message, ChatSession } from '../../types/chat';
+import type { Message, ChatSession, WebSearchResearchEvent } from '../../types/chat';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
 import { useKeyboardShortcuts } from '@/src/hooks/useKeyboardShortcuts';
@@ -54,6 +54,8 @@ function DashboardContent({
   const setSelectedModel = useChatStore(state => state.setSelectedModel);
   const isIncognito = useChatStore(state => state.isIncognito);
   const isModelLoaded = useChatStore(state => state.isModelLoaded);
+  const isModelLoading = useChatStore(state => state.isModelLoading);
+  const modelLoadProgress = useChatStore(state => state.modelLoadProgress);
   const voiceStatus = useChatStore(state => state.voiceStatus);
   const activeProfile = useProfileStore((s) => s.activeProfile);
   const profiles = useProfileStore((s) => s.profiles);
@@ -64,7 +66,8 @@ function DashboardContent({
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
-  const [researchEvents, setResearchEvents] = useState<any[]>([]);
+  const [researchEvents, setResearchEvents] = useState<WebSearchResearchEvent[]>([]);
+  const researchEventsRef = useRef<WebSearchResearchEvent[]>([]);
   const [attachedFile, setAttachedFile] = useState<{ name: string; path: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -314,9 +317,13 @@ function DashboardContent({
         if (isFirstToken) {
           setIsThinking(false);
           isFirstToken = false;
+          const snapshottedEvents = [...researchEventsRef.current];
           session.setMessages(prev => [...prev, {
             id: aiMessageId, role: 'ai', content: token, streaming: true,
-            metadata: { timestamp: new Date(), model: selectedModel }
+            metadata: {
+              timestamp: new Date(), model: selectedModel,
+              ...(snapshottedEvents.length > 0 ? { researchEvents: snapshottedEvents } : {}),
+            }
           }]);
         } else {
           session.setMessages(prev => {
@@ -326,7 +333,22 @@ function DashboardContent({
           });
         }
       },
-      (ev) => setResearchEvents(prev => [...prev, ev]),
+      (ev: WebSearchResearchEvent) => {
+        researchEventsRef.current = [...researchEventsRef.current, ev];
+        setResearchEvents(researchEventsRef.current);
+        // If an AI streaming message already exists (search event after first token), patch its metadata too
+        session.setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === 'ai' && last.streaming) {
+            const existing = last.metadata?.researchEvents ?? [];
+            return [...prev.slice(0, -1), {
+              ...last,
+              metadata: { ...last.metadata, researchEvents: [...existing, ev] }
+            }];
+          }
+          return prev;
+        });
+      },
       (stats) => {
         session.setMessages(prev => {
           const last = prev[prev.length - 1];
@@ -335,6 +357,7 @@ function DashboardContent({
             wasAbortedRef.current = false;
             const mergedStats = { ...(stats || {}) };
             if (wasAborted) mergedStats.stopReason = 'user_stopped';
+            // Preserve researchEvents from the streaming message — stats payload never includes it
             const final = [...prev.slice(0, -1), { ...last, streaming: false, metadata: { ...last.metadata, ...mergedStats } }];
             setTimeout(() => updateActiveSessionInList(final), 0);
             return final;
@@ -366,9 +389,11 @@ function DashboardContent({
       openOverflowModal(ci?.hardware_safe_limit || 8192, maxTokens, () => handleSendRef.current(true));
       return;
     }
+
     const userMessage = currentInput.trim();
     setInput('');
     setResearchEvents([]);
+    researchEventsRef.current = [];
     const msgs = messagesRef.current;
     const isFirstMessage = msgs.length === 0;
     const pendingAttach = attachedFileRef.current;
@@ -420,6 +445,7 @@ function DashboardContent({
     const truncated = msgs.slice(0, lastUserIdx + 1);
     session.setMessages(truncated);
     setResearchEvents([]);
+    researchEventsRef.current = [];
     setIsThinking(true);
     await updateActiveSessionInList(truncated);
     invokeStream(userMsg.content, truncated);
@@ -434,6 +460,7 @@ function DashboardContent({
     const truncated = [...msgs.slice(0, idx), editedMessage];
     session.setMessages(truncated);
     setResearchEvents([]);
+    researchEventsRef.current = [];
     setIsThinking(true);
     await updateActiveSessionInList(truncated);
     invokeStream(newContent, truncated);
@@ -515,6 +542,9 @@ function DashboardContent({
         setSelectedProvider={setSelectedProvider} selectedModel={selectedModel}
         setSelectedModel={setSelectedModel} headerContrast={headerContrast}
         isDark={isDark} handleThemeChange={handleThemeChange} showPinkMode={showPinkMode}
+        isModelLoaded={isModelLoaded}
+        isModelLoading={isModelLoading}
+        modelLoadProgress={modelLoadProgress}
       />
       <DashboardMain
         {...session}

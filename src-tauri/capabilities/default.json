@@ -32,6 +32,7 @@
     "allow-save-chat",
     "allow-delete-chat",
     "allow-eject-model",
+    "allow-preload-model",
     "allow-set-background-image",
     "allow-import-user-media",
     "allow-remove-imported-media",

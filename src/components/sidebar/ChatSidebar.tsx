@@ -151,12 +151,12 @@ export const ChatSidebar = ({
             <Plus className="h-4 w-4" />
             <span>New chat</span>
           </Button>
-          <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="mt-4 relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 pointer-events-none transition-colors duration-200 group-focus-within:text-muted-foreground" />
             <Input
               id="sidebar-search-input"
               placeholder="Search chats..."
-              className={`pl-9 h-9 rounded-lg border-transparent focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : (contrast === 'light' ? 'bg-white/5 placeholder:text-white/40' : 'bg-muted/50')}`}
+              className={`pl-9 h-9 rounded-lg border-transparent transition-[background-color,border-color,box-shadow] duration-200 ease-out focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : (contrast === 'light' ? 'bg-white/5 placeholder:text-white/40' : 'bg-muted/50')}`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isIncognito}

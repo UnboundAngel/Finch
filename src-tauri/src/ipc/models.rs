@@ -1,8 +1,41 @@
 use tauri::{AppHandle, command};
 use crate::types::{ProviderConfig, ContextIntelligence};
 use std::env;
+use serde_json::Value;
 use tauri_plugin_store::StoreExt;
 use sysinfo::System;
+
+fn normalize_model_base(model_id: &str) -> &str {
+    model_id.split(':').next().unwrap_or(model_id)
+}
+
+fn lmstudio_loaded_instance_ids(models_json: &Value, model_id: &str) -> Vec<String> {
+    let requested_base = normalize_model_base(model_id).to_lowercase();
+    let requested_full = model_id.to_lowercase();
+    let mut matches: Vec<String> = Vec::new();
+
+    if let Some(models) = models_json.get("data").and_then(|m| m.as_array()) {
+        for entry in models {
+            let Some(state) = entry.get("state").and_then(|s| s.as_str()) else {
+                continue;
+            };
+            if state != "loaded" {
+                continue;
+            }
+
+            let Some(id) = entry.get("id").and_then(|i| i.as_str()) else {
+                continue;
+            };
+            let id_lower = id.to_lowercase();
+            let id_base = normalize_model_base(id).to_lowercase();
+            if id_lower == requested_full || id_base == requested_base {
+                matches.push(id.to_string());
+            }
+        }
+    }
+
+    matches
+}
 
 #[command]
 pub async fn list_local_models(endpoint: String, provider: String) -> Result<Vec<String>, String> {
@@ -169,16 +202,46 @@ pub async fn eject_model(handle: AppHandle, provider: String, model_id: String) 
     match provider.as_str() {
         "local_lmstudio" => {
             let endpoint = config.and_then(|c| c.lmstudio_endpoint).ok_or("LM Studio endpoint not configured")?;
-            let url = format!("{}/api/v1/models/unload", endpoint.trim_end_matches('/'));
-            let _resp = client.post(url)
-                .header("Content-Type", "application/json")
-                .json(&serde_json::json!({ "instance_id": model_id }))
+            let base = endpoint.trim_end_matches('/');
+            let list_url = format!("{}/api/v0/models", base);
+            let unload_url = format!("{}/api/v1/models/unload", base);
+
+            let list_resp = client
+                .get(list_url)
                 .send()
                 .await
                 .map_err(|e| e.to_string())?
                 .error_for_status()
                 .map_err(|e| e.to_string())?;
-            
+            let models_json: Value = list_resp.json().await.map_err(|e| e.to_string())?;
+            let instance_ids = lmstudio_loaded_instance_ids(&models_json, &model_id);
+
+            if instance_ids.is_empty() {
+                // Fallback for older behavior where caller already passes a concrete instance ID.
+                client
+                    .post(unload_url)
+                    .header("Content-Type", "application/json")
+                    .json(&serde_json::json!({ "instance_id": model_id }))
+                    .send()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .error_for_status()
+                    .map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+
+            for instance_id in instance_ids {
+                client
+                    .post(&unload_url)
+                    .header("Content-Type", "application/json")
+                    .json(&serde_json::json!({ "instance_id": instance_id }))
+                    .send()
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .error_for_status()
+                    .map_err(|e| e.to_string())?;
+            }
+
             Ok(())
         },
         "local_ollama" => {
@@ -199,13 +262,116 @@ pub async fn eject_model(handle: AppHandle, provider: String, model_id: String) 
     }
 }
 
+/// Fire-and-forget preload: tells the local server to load the model into memory.
+/// Returns Ok(()) regardless of outcome — callers should not block on this.
+#[command]
+pub async fn preload_model(
+    handle: AppHandle,
+    provider: String,
+    model_id: String,
+) -> Result<(), String> {
+    // #region agent log
+    {
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("debug-69f910.log") {
+            let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H3\",\"location\":\"models.rs:preload_model\",\"message\":\"preload_model entered\",\"data\":{{\"provider\":\"{}\",\"model_id\":\"{}\"}},\"timestamp\":0}}", provider, model_id);
+        }
+    }
+    // #endregion
+
+    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
+    let config_val = store.get("provider_config");
+    let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
+
+    // #region agent log
+    {
+        use std::io::Write;
+        let has_config = config.is_some();
+        let endpoint_check = match provider.as_str() {
+            "local_lmstudio" => config.as_ref().and_then(|c| c.lmstudio_endpoint.as_deref().map(|s| s.to_string())).unwrap_or_else(|| "MISSING".to_string()),
+            "local_ollama" => config.as_ref().and_then(|c| c.ollama_endpoint.as_deref().map(|s| s.to_string())).unwrap_or_else(|| "MISSING".to_string()),
+            _ => "n/a".to_string(),
+        };
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("debug-69f910.log") {
+            let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H3\",\"location\":\"models.rs:preload_model\",\"message\":\"config read\",\"data\":{{\"has_config\":{},\"endpoint\":\"{}\"}},\"timestamp\":0}}", has_config, endpoint_check);
+        }
+    }
+    // #endregion
+
+    // Long timeout: large models can take several minutes to load.
+    let client = reqwest::ClientBuilder::new()
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .unwrap_or_default();
+
+    match provider.as_str() {
+        "local_ollama" => {
+            let endpoint = config
+                .and_then(|c| c.ollama_endpoint)
+                .ok_or("Ollama endpoint not configured")?;
+            let url = format!("{}/api/generate", endpoint.trim_end_matches('/'));
+            // Include an empty prompt to satisfy Ollama's generate contract while still
+            // warming the model in memory without producing user-visible output.
+            client
+                .post(url)
+                .json(&serde_json::json!({
+                    "model": model_id,
+                    "prompt": "",
+                    "stream": false,
+                    "keep_alive": "5m"
+                }))
+                .send()
+                .await
+                .map_err(|e| e.to_string())?
+                .error_for_status()
+                .map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        "local_lmstudio" => {
+            let endpoint = config
+                .and_then(|c| c.lmstudio_endpoint)
+                .ok_or("LM Studio endpoint not configured")?;
+            // Use LM Studio's explicit model load endpoint so selecting a model
+            // preloads it immediately (before the user sends a message).
+            let url = format!("{}/api/v1/models/load", endpoint.trim_end_matches('/'));
+            // #region agent log
+            {
+                use std::io::Write;
+                if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("debug-69f910.log") {
+                    let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H4\",\"location\":\"models.rs:preload_model\",\"message\":\"about to POST load\",\"data\":{{\"url\":\"{}\",\"model_id\":\"{}\"}},\"timestamp\":0}}", url, model_id);
+                }
+            }
+            // #endregion
+            let resp =             client
+                .post(url)
+                .json(&serde_json::json!({
+                    "model": model_id
+                }))
+                .send()
+                .await
+                .map_err(|e| e.to_string())?;
+            let status = resp.status();
+            // #region agent log
+            {
+                use std::io::Write;
+                if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("debug-69f910.log") {
+                    let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H4\",\"location\":\"models.rs:preload_model\",\"message\":\"POST load response\",\"data\":{{\"status\":{}}},\"timestamp\":0}}", status.as_u16());
+                }
+            }
+            // #endregion
+            resp.error_for_status().map_err(|e| e.to_string())?;
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 #[command]
 pub async fn get_model_loaded_status(
     handle: AppHandle,
     provider: String,
     model_id: String
 ) -> Result<bool, String> {
-    println!("[DEBUG] Rust: get_model_loaded_status called for {} / {}", provider, model_id);
     let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
@@ -254,28 +420,49 @@ pub async fn get_model_loaded_status(
                 return Err(format!("LM Studio error: {}", resp.status()));
             }
 
-            let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
-            let model_id_lower = model_id.to_lowercase();
-            
-            if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
-                for m in models {
-                    if let Some(id) = m.get("id").and_then(|i| i.as_str()) {
-                        let id_lower = id.to_lowercase();
-                        let is_match = id_lower == model_id_lower;
-                        
-                        if is_match {
-                            if let Some(state) = m.get("state").and_then(|s| s.as_str()) {
-                                if state == "loaded" {
-                                    return Ok(true);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Ok(false)
+            let json: Value = resp.json().await.map_err(|e| e.to_string())?;
+            Ok(!lmstudio_loaded_instance_ids(&json, &model_id).is_empty())
         },
         _ => Ok(true)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::lmstudio_loaded_instance_ids;
+    use serde_json::json;
+
+    #[test]
+    fn matches_loaded_instances_by_base_model_id() {
+        let payload = json!({
+            "data": [
+                { "id": "llama-3.2-3b-instruct:2", "state": "loaded" },
+                { "id": "llama-3.2-3b-instruct:3", "state": "loaded" },
+                { "id": "qwen/qwen3.5-9b", "state": "not-loaded" }
+            ]
+        });
+
+        let result = lmstudio_loaded_instance_ids(&payload, "llama-3.2-3b-instruct");
+        assert_eq!(
+            result,
+            vec![
+                "llama-3.2-3b-instruct:2".to_string(),
+                "llama-3.2-3b-instruct:3".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn ignores_not_loaded_instances() {
+        let payload = json!({
+            "data": [
+                { "id": "llama-3.2-3b-instruct:2", "state": "not-loaded" },
+                { "id": "llama-3.2-3b-instruct:3", "state": "loaded" }
+            ]
+        });
+
+        let result = lmstudio_loaded_instance_ids(&payload, "llama-3.2-3b-instruct");
+        assert_eq!(result, vec!["llama-3.2-3b-instruct:3".to_string()]);
     }
 }
 

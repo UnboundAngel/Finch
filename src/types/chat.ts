@@ -1,3 +1,8 @@
+export type WebSearchResearchEvent = {
+  type: 'search_start' | 'search_source' | 'search_done';
+  data?: any;
+};
+
 export type MessageMetadata = {
   promptTokens?: number;
   completionTokens?: number;
@@ -8,6 +13,7 @@ export type MessageMetadata = {
   model?: string;
   stopReason?: string;
   timestamp?: Date;
+  researchEvents?: WebSearchResearchEvent[];
 };
 
 export type Message = {

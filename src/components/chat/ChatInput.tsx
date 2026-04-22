@@ -12,6 +12,7 @@ import { WebSearchControl } from '@/src/components/chat/WebSearchControl';
 import { open as openFilePicker } from '@tauri-apps/plugin-dialog';
 import { getTauriInvoke, isTauri } from '@/src/lib/tauri-utils';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
+import { FilePreviewModal, type PreviewFile } from '@/src/components/chat/FilePreviewModal';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -67,7 +68,11 @@ const FILE_BADGE_NEUTRAL =
 
 const DISMISS_BTN = "absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-background border border-muted-foreground/30 shadow flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 transition-all opacity-0 group-hover:opacity-100";
 
-function AttachmentCard({ file, onRemove }: { file: { name: string; path: string }; onRemove: () => void }) {
+function AttachmentCard({ file, onRemove, onPreview }: {
+  file: { name: string; path: string };
+  onRemove: () => void;
+  onPreview: () => void;
+}) {
   const isImage = IMAGE_EXTS.test(file.name);
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   const [lineCount, setLineCount] = useState<number | null>(null);
@@ -84,13 +89,19 @@ function AttachmentCard({ file, onRemove }: { file: { name: string; path: string
 
   if (isImage) {
     return (
-      <div className="relative inline-block shrink-0 group">
+      <div
+        className="relative inline-block shrink-0 group cursor-pointer"
+        onClick={onPreview}
+      >
         <img
           src={resolveMediaSrc(file.path)}
           alt={file.name}
           className="h-28 w-28 object-cover rounded-xl border border-muted-foreground/20 shadow-sm"
         />
-        <button onClick={onRemove} className={DISMISS_BTN}>
+        <button
+          onClick={e => { e.stopPropagation(); onRemove(); }}
+          className={DISMISS_BTN}
+        >
           <X className="h-3 w-3" />
         </button>
       </div>
@@ -100,7 +111,10 @@ function AttachmentCard({ file, onRemove }: { file: { name: string; path: string
   const label = getFileTypeLabel(file.name);
 
   return (
-    <div className="relative flex h-28 w-28 shrink-0 flex-col rounded-xl border border-muted-foreground/20 bg-muted/50 p-2.5 shadow-sm group">
+    <div
+      className="relative flex h-28 w-28 shrink-0 flex-col rounded-xl border border-muted-foreground/20 bg-muted/50 p-2.5 shadow-sm group cursor-pointer"
+      onClick={onPreview}
+    >
       <div className="min-h-0 flex-1 overflow-hidden flex flex-col gap-1">
         <p className="text-[11px] font-semibold leading-snug text-foreground line-clamp-2 break-words">
           {file.name}
@@ -112,7 +126,11 @@ function AttachmentCard({ file, onRemove }: { file: { name: string; path: string
       <div className="mt-2 shrink-0 border-t border-muted-foreground/15 pt-2">
         <span className={FILE_BADGE_NEUTRAL}>{label}</span>
       </div>
-      <button type="button" onClick={onRemove} className={DISMISS_BTN}>
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); onRemove(); }}
+        className={DISMISS_BTN}
+      >
         <X className="h-3 w-3" />
       </button>
     </div>
@@ -145,7 +163,8 @@ export const ChatInput = ({
   const micPillRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
-  
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
+
   // Controlled Menu States
   const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
   const [isMicHovering, setIsMicHovering] = useState(false);
@@ -376,6 +395,7 @@ export const ChatInput = ({
   }, [isMicMenuOpen]);
 
   return (
+    <>
     <div className="flex-shrink-0 w-full z-20 transition-all bg-transparent">
       <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
         {/* Waveform pill ONLY during active recording */}
@@ -404,24 +424,26 @@ export const ChatInput = ({
           }}
         />
 
-        <div className={`relative flex items-end w-full rounded-2xl transition-all duration-300 overflow-hidden border-[1.5px] ${!isModelLoaded
-            ? 'border-destructive/50 bg-background shadow-[0_0_15px_-3px_rgba(239,68,68,0.15)] ring-1 ring-destructive/20'
-            : (isWebSearchActive
-                ? 'border-blue-500/50 bg-background shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]'
-                : (isIncognito
-                  ? (isDark
-                    ? 'bg-neutral-900/90 backdrop-blur-xl border-neutral-800 focus-within:border-neutral-700 shadow-2xl'
-                    : 'bg-white/80 backdrop-blur-xl border-neutral-200/50 shadow-lg focus-within:border-neutral-300/50')
-                  : (isPinkMode 
-                    ? 'bg-white/80 backdrop-blur-xl border-rose-200 focus-within:ring-1 focus-within:ring-rose-300 focus-within:border-rose-300 shadow-sm' 
-                    : (hasCustomBg 
-                      ? 'bg-background/20 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-lg focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50' 
-                      : 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50'))))
+        <div className={`relative flex items-end w-full rounded-2xl transition-all duration-300 overflow-hidden border-[1.5px] ${isWebSearchActive
+            ? 'border-blue-500/50 bg-background shadow-[0_0_15px_-3px_rgba(59,130,246,0.1)]'
+            : (isIncognito
+                ? (isDark
+                  ? 'bg-neutral-900/90 backdrop-blur-xl border-neutral-800 focus-within:border-neutral-700 shadow-2xl'
+                  : 'bg-white/80 backdrop-blur-xl border-neutral-200/50 shadow-lg focus-within:border-neutral-300/50')
+                : (isPinkMode
+                  ? 'bg-white/80 backdrop-blur-xl border-rose-200 focus-within:ring-1 focus-within:ring-rose-300 focus-within:border-rose-300 shadow-sm'
+                  : (hasCustomBg
+                    ? 'bg-background/20 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-lg focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50'
+                    : 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50')))
           }`}>
           <div className="flex flex-col w-full min-h-[56px] relative">
             {attachedFile && (
               <div className="px-4 pt-3 pb-1">
-                <AttachmentCard file={attachedFile} onRemove={() => setAttachedFile(null)} />
+                <AttachmentCard
+                  file={attachedFile}
+                  onRemove={() => setAttachedFile(null)}
+                  onPreview={() => setPreviewFile(attachedFile)}
+                />
               </div>
             )}
             
@@ -492,6 +514,12 @@ export const ChatInput = ({
         </div>
       </div>
     </div>
+    <FilePreviewModal
+      file={previewFile}
+      onClose={() => setPreviewFile(null)}
+      isDark={isDark ?? false}
+    />
+    </>
   );
 };
 

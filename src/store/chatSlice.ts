@@ -10,6 +10,8 @@ export interface ChatState {
   contextWindowSize: number | null;
   voiceStatus: 'idle' | 'recording' | 'transcribing';
   isModelLoaded: boolean;
+  isModelLoading: boolean;
+  modelLoadProgress: number;
   isDark: boolean;
   isLeftSidebarOpen: boolean;
 
@@ -21,6 +23,8 @@ export interface ChatState {
   setContextWindowSize: (size: number | null) => void;
   setVoiceStatus: (status: 'idle' | 'recording' | 'transcribing') => void;
   setIsModelLoaded: (isLoaded: boolean) => void;
+  setIsModelLoading: (isLoading: boolean) => void;
+  setModelLoadProgress: (progress: number) => void;
   setIsDark: (isDark: boolean | ((prev: boolean) => boolean)) => void;
   setIsLeftSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
   reset: () => void;
@@ -35,6 +39,8 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   contextWindowSize: getContextWindowSize('claude-3-5-sonnet-20240620'),
   voiceStatus: 'idle',
   isModelLoaded: true,
+  isModelLoading: false,
+  modelLoadProgress: 0,
   isDark: false,
   isLeftSidebarOpen: true,
 
@@ -51,6 +57,10 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   setContextWindowSize: (size) => set({ contextWindowSize: size }),
   setVoiceStatus: (voiceStatus) => set({ voiceStatus }),
   setIsModelLoaded: (isModelLoaded) => set({ isModelLoaded }),
+  setIsModelLoading: (isModelLoading) => set({ isModelLoading }),
+  setModelLoadProgress: (modelLoadProgress) => set({
+    modelLoadProgress: Math.max(0, Math.min(100, modelLoadProgress)),
+  }),
   setIsDark: (isDark) => set((state) => ({ 
     isDark: typeof isDark === 'function' ? isDark(state.isDark) : isDark 
   })),
@@ -60,6 +70,8 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   reset: () => set({
     tokensUsed: 0,
     isModelLoaded: true,
+    isModelLoading: false,
+    modelLoadProgress: 0,
     isIncognito: false,
   }),
 });

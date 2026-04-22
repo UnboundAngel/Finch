@@ -17,8 +17,6 @@ export function useChatSession({
 }: UseChatSessionProps) {
   const isIncognito = useChatStore(state => state.isIncognito);
   const setIsIncognito = useChatStore(state => state.setIsIncognito);
-  const setSelectedModel = useChatStore(state => state.setSelectedModel);
-  const setSelectedProvider = useChatStore(state => state.setSelectedProvider);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -50,13 +48,11 @@ export function useChatSession({
     const session = recentChats.find(c => c.id === id);
     if (session) {
       if (isIncognito) setIsIncognito(false);
-      setSelectedModel(session.model);
-      setSelectedProvider(session.provider);
       setActiveSessionId(id);
       setMessages(session.messages || []);
       toast(`Opened chat: ${session.title}`);
     }
-  }, [recentChats, isIncognito, setIsIncognito, setSelectedModel, setSelectedProvider]);
+  }, [recentChats, isIncognito, setIsIncognito]);
 
   const handleNewChat = useCallback(() => {
     setActiveSessionId(null);

@@ -69,6 +69,11 @@ description = "Allows the eject_model command"
 commands.allow = ["eject_model"]
 
 [[permission]]
+identifier = "allow-preload-model"
+description = "Allows the preload_model command"
+commands.allow = ["preload_model"]
+
+[[permission]]
 identifier = "allow-set-background-image"
 description = "Allows the set_background_image command"
 commands.allow = ["set_background_image"]

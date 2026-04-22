@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Files, Check, Square, RefreshCw, Pencil } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -7,12 +7,14 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Message } from '../../types/chat';
+import { SearchStatus } from './SearchStatus';
 import { ThinkingBox } from './ThinkingBox';
 import { MetadataRow } from './MetadataRow';
 import { CodeBlock } from './CodeBlock';
 import { ExternalLink } from '@/src/components/ui/ExternalLink';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { useModelParams } from '@/src/store';
+import { FilePreviewModal, type PreviewFile } from '@/src/components/chat/FilePreviewModal';
 
 function isImageFileName(name: string) {
   return /\.(png|jpe?g|gif|webp)$/i.test(name);
@@ -50,6 +52,7 @@ export const MessageBubble = memo(function MessageBubble({
   const [copied, setCopied] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState('');
+  const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
   const showMessageStats = useModelParams(state => state.showMessageStats);
 
   const handleCopy = () => {
@@ -111,6 +114,7 @@ export const MessageBubble = memo(function MessageBubble({
   }), [isDark, isStreaming, isUserMsg]);
 
   return (
+    <>
     <div className="flex gap-4 w-full group">
       {msg.role === 'user' ? (
         <Avatar className="h-8 w-8 shrink-0 mt-0.5 rounded-lg border border-muted-foreground/20">
@@ -124,6 +128,10 @@ export const MessageBubble = memo(function MessageBubble({
       )}
       <div className="flex-1 space-y-2 text-wrap">
         <div className="font-medium text-sm px-1">{msg.role === 'user' ? 'You' : selectedModel}</div>
+
+        {msg.role === 'ai' && msg.metadata?.researchEvents && msg.metadata.researchEvents.length > 0 && (
+          <SearchStatus events={msg.metadata.researchEvents} />
+        )}
 
         <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors ${msg.role === 'user'
             ? 'bg-primary text-primary-foreground'
@@ -171,10 +179,14 @@ export const MessageBubble = memo(function MessageBubble({
                       <img
                         src={resolveMediaSrc(msg.attachment.path)}
                         alt={msg.attachment.name}
-                        className="max-h-44 w-auto max-w-full rounded-lg border border-white/25 object-contain"
+                        className="max-h-44 w-auto max-w-full cursor-pointer rounded-lg border border-white/25 object-contain transition-opacity hover:opacity-90"
+                        onClick={() => setPreviewFile(msg.attachment!)}
                       />
                     ) : (
-                      <div className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs">
+                      <div
+                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs transition-opacity hover:opacity-80"
+                        onClick={() => setPreviewFile(msg.attachment!)}
+                      >
                         <Files className="h-4 w-4 shrink-0 opacity-90" />
                         <span className="truncate font-medium">{msg.attachment.name}</span>
                       </div>
@@ -319,5 +331,11 @@ export const MessageBubble = memo(function MessageBubble({
         )}
       </div>
     </div>
+    <FilePreviewModal
+      file={previewFile}
+      onClose={() => setPreviewFile(null)}
+      isDark={isDark}
+    />
+    </>
   );
 });

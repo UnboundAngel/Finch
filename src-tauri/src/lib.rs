@@ -57,6 +57,7 @@ pub fn run() {
             ipc::models::list_openai_models,
             ipc::models::list_gemini_models,
             ipc::models::eject_model,
+            ipc::models::preload_model,
             ipc::models::get_model_loaded_status,
             ipc::models::get_context_intelligence,
             ipc::sessions::list_chats,

@@ -2,7 +2,7 @@
 
 Items are ordered by priority. Close all **Baseline** items before touching **Differentiator** items.
 
-**Next focus:** Baseline is closed. Start with **Polish** (web search persistence, then favicon privacy, search bar polish, settings cleanup).
+**Next focus:** Baseline is closed. Polish queue is complete; continue with prioritized Differentiators.
 
 ---
 
@@ -33,30 +33,22 @@ Items are ordered by priority. Close all **Baseline** items before touching **Di
 
 ## 🟡 Polish — After Baseline
 
-### [ ] Web Search Result Persistence Bug
-**Issue:** Search results (links, sources) disappear from UI the moment the AI starts responding.
-- `isThinking` set to `false` on first token → `SearchStatus` unmounts
-- `researchEvents` cleared on each new message
+### [x] Web Search Result Persistence + SearchStatus UX
+**Shipped (2026-04):**
+- `researchEvents` copied into assistant `metadata` on first token + stream end; `SearchStatus` rendered from `MessageBubble` via `msg.metadata.researchEvents` so sources persist during reply, after completion, and in saved chats (`Dashboard.tsx`, `MessageBubble.tsx`, `chat.ts`).
+- Pre–first-token UI unchanged in `ChatArea` (thinking row).
+- **SearchStatus polish:** removed Activity Log row; stable `rounded-2xl` (no pill/circle border jump); auto-collapse when research completes; gray binoculars without tinted icon box.
 
-**Fix:** Attach `researchEvents` array to the AI message's `metadata` object when saving. Render `SearchStatus` from message metadata so it persists post-response.
-
-**Files:** `SearchStatus.tsx`, `ChatArea.tsx`, `Dashboard.tsx`
 
 ---
 
-### [ ] Favicon Privacy (Web Search Icons)
-**Issue:** Fetches favicons from `icons.duckduckgo.com` — unreliable and leaks visited domains to a third party.
-**Fix:** Generate local fallback icons: deterministic HSL color from domain name hash + first-letter initial. Zero external pings, always works.
-
----
-
-### [ ] Search Bar UI Polish
+### [x] Search Bar UI Polish
 **Issue:** Search bar in left sidebar works but animations and UI are rough.
-**Fix:** Polish animations and transitions. No functional changes needed.
+**Shipped (2026-04):** Added coordinated focus/blur transitions for the sidebar search field and icon (`group` + `group-focus-within`, `transition-[background-color,border-color,box-shadow]`, icon color easing, and `pointer-events-none` on the icon). No search behavior changes.
 
 ---
 
-### [ ] Settings Cleanup
+### [x] Settings Cleanup
 **Issue:** Settings has theme/background toggles that duplicate controls already in the top bar.
 **Fix:** Remove duplicate toggles. Consolidate into the new Advanced tab if applicable.
 
@@ -64,15 +56,14 @@ Items are ordered by priority. Close all **Baseline** items before touching **Di
 
 ## 🟢 Differentiators — Build After All Above Is Done
 
-### [ ] File Attachment Preview Modal
-Clicking an attached file (in the input or in a sent message) opens a preview modal — similar to Claude's implementation:
-
-- **PDFs:** Render first page via `<iframe src={convertFileSrc(path)}>` (WebView has a built-in PDF renderer). Show filename at top, page count at bottom. On hover: card tilts slightly left, page count swaps to a Download arrow, clicking opens the file in the system browser (not a download).
-- **Images:** Lightbox with `<img src={convertFileSrc(path)}>`.
-- **Code/text files:** Read contents via Tauri `fs` plugin, display with Shiki syntax highlighting (already used in `CodeBlock.tsx`).
-- **Other docs:** Filename + file size + type icon.
-
-The tilt + label-swap hover effect is pure CSS `transform: rotate(-2deg)` + conditional render on hover state.
+### [x] File Attachment Preview Modal
+**Shipped (2026-04):** `FilePreviewModal.tsx` — clicking an attached file (input card or sent message) opens a fixed full-screen modal:
+- **Images:** Lightbox via `resolveMediaSrc` — centered `<img>` with max dimensions.
+- **PDFs:** `<iframe src={resolveMediaSrc(path)}>` inside a hoverable card; on hover the card rotates `-2deg` (CSS transform) and the filename footer swaps to a "Open in system viewer" label + `Download` icon; clicking calls `openPath(file.path)` via `@tauri-apps/plugin-opener` (falls back to `window.open` in browser).
+- **Code / text files:** Content fetched via `fetch(resolveMediaSrc(path))`; highlighted with the Shiki singleton (`github-dark` / `github-light` themes, 20+ languages).
+- **Other docs:** Filename + type badge centered with `Files` icon.
+- Escape key + backdrop click close the modal; Motion `AnimatePresence` handles enter/exit.
+- Wired into `AttachmentCard` (ChatInput, with `e.stopPropagation()` on the dismiss X) and into image/file renders in `MessageBubble`. Zero behavior changes outside file attachment UX.
 
 ---
 
