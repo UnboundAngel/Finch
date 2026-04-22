@@ -280,26 +280,16 @@ function PdfPreview({ file, onClose }: { file: PreviewFile; onClose: () => void 
   }, [file.path]);
 
   async function openInSystem() {
-    // Open in the user's native browser (outside in-app webview).
     if (isTauri()) {
+      // Blob URLs have no filesystem path — came from a web drag-drop, can't open externally.
+      if (file.path.startsWith('blob:')) return;
       try {
-        const { openUrl } = await import('@tauri-apps/plugin-opener');
-        const normalized = file.path.replace(/\\/g, '/');
-        const fileUrl = file.path.startsWith('file://')
-          ? file.path
-          : encodeURI(`file:///${normalized.replace(/^\/+/, '')}`);
-        await openUrl(fileUrl);
-        return;
+        const { openPath } = await import('@tauri-apps/plugin-opener');
+        await openPath(file.path);
       } catch (e) {
-        console.error('[preview] openUrl failed', e);
-        try {
-          const { openPath } = await import('@tauri-apps/plugin-opener');
-          await openPath(file.path);
-          return;
-        } catch (fallbackErr) {
-          console.error('[preview] openPath fallback failed', fallbackErr);
-        }
+        console.error('[preview] openPath failed', e);
       }
+      return;
     }
     window.open(resolveMediaSrc(file.path), '_blank', 'noopener,noreferrer');
   }
@@ -322,19 +312,20 @@ function PdfPreview({ file, onClose }: { file: PreviewFile; onClose: () => void 
 
         <div className="flex flex-1 items-center justify-center px-5 pb-2">
           <div
-            className="relative w-full max-w-[196px]"
+            className="relative w-full max-w-[196px] cursor-pointer"
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            onClick={openInSystem}
           >
             {/* Background card layering effect for multiple pages */}
             {pageCount !== null && pageCount > 1 && (
               <>
-                {/* Fourth card (furthest back) */}
+                {/* Fourth card (furthest back) — fans the most */}
                 <div
                   className="absolute inset-0 rounded-xl bg-[#8f939a] shadow-sm transition-transform duration-300"
                   style={{
-                    transform: hovered ? 'rotate(5deg)' : 'rotate(1.5deg)',
-                    transformOrigin: 'bottom right',
+                    transform: hovered ? 'translateX(9px) rotate(5.5deg)' : 'translateX(9px) rotate(1.5deg)',
+                    transformOrigin: '50% 100%',
                     zIndex: -1,
                   }}
                 />
@@ -342,17 +333,17 @@ function PdfPreview({ file, onClose }: { file: PreviewFile; onClose: () => void 
                 <div
                   className="absolute inset-0 rounded-xl bg-[#a7abb2] shadow-sm transition-transform duration-300"
                   style={{
-                    transform: hovered ? 'rotate(3deg)' : 'rotate(1deg)',
-                    transformOrigin: 'bottom right',
+                    transform: hovered ? 'translateX(6px) rotate(3deg)' : 'translateX(6px) rotate(1deg)',
+                    transformOrigin: '50% 100%',
                     zIndex: 0,
                   }}
                 />
-                {/* Second card */}
+                {/* Second card — fans the least */}
                 <div
                   className="absolute inset-0 rounded-xl bg-[#c3c7ce] shadow-md transition-transform duration-300"
                   style={{
-                    transform: hovered ? 'rotate(1.5deg)' : 'rotate(0.5deg)',
-                    transformOrigin: 'bottom right',
+                    transform: hovered ? 'translateX(3px) rotate(1.2deg)' : 'translateX(3px) rotate(0.4deg)',
+                    transformOrigin: '50% 100%',
                     zIndex: 1,
                   }}
                 />
@@ -361,12 +352,11 @@ function PdfPreview({ file, onClose }: { file: PreviewFile; onClose: () => void 
 
             {/* Main card */}
             <div
-              className="relative z-10 w-full cursor-pointer overflow-hidden rounded-xl bg-white transition-transform duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
+              className="relative z-10 w-full overflow-hidden rounded-xl bg-white transition-transform duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
               style={{
-                transform: hovered ? 'rotate(-2deg)' : 'rotate(0deg)',
-                transformOrigin: 'bottom left',
+                transform: hovered ? 'rotate(-1.5deg)' : 'rotate(0deg)',
+                transformOrigin: '50% 100%',
               }}
-              onClick={openInSystem}
             >
               <div className="relative aspect-[3/4] w-full overflow-hidden bg-white">
                 <iframe
