@@ -47,6 +47,15 @@ const TEXT_EXTS = new Set([
   'yaml', 'toml', 'xml',
 ]);
 
+const SUPPORTED_DROP_EXTS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'webp',
+  'pdf',
+  'txt', 'md', 'csv', 'rtf', 'html', 'json',
+  'py', 'js', 'ts', 'jsx', 'tsx', 'rs', 'go', 'java', 'cpp', 'c', 'cs', 'rb', 'php',
+  'yaml', 'yml', 'toml', 'xml', 'sql', 'css', 'sh', 'bash',
+  'docx', 'xlsx', 'pptx',
+]);
+
 function getFileTypeLabel(name: string): string {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
   if (ext === 'pdf') return 'PDF';
@@ -162,8 +171,10 @@ export const ChatInput = ({
   const micMenuRef = useRef<HTMLDivElement>(null);
   const micPillRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
   const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
   const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Controlled Menu States
   const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
@@ -277,6 +288,40 @@ export const ChatInput = ({
     } else {
       fileInputRef.current?.click();
     }
+  }, [setAttachedFile]);
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current += 1;
+    if (dragCounterRef.current === 1) setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) setIsDragOver(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+    if (!SUPPORTED_DROP_EXTS.has(ext)) {
+      toast.error(`".${ext}" files are not supported`, { duration: 2500, position: 'bottom-center' });
+      return;
+    }
+
+    // In Tauri the File object carries a real path; in the browser use a blob URL.
+    const path = (file as any).path || URL.createObjectURL(file);
+    setAttachedFile({ name: file.name, path });
   }, [setAttachedFile]);
 
   const handleMicClick = useCallback(() => {
@@ -396,7 +441,13 @@ export const ChatInput = ({
 
   return (
     <>
-    <div className="flex-shrink-0 w-full z-20 transition-all bg-transparent">
+    <div
+      className="flex-shrink-0 w-full z-20 transition-all bg-transparent"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="max-w-3xl mx-auto relative px-4 pb-4 md:px-6 md:pb-6">
         {/* Waveform pill ONLY during active recording */}
         <VoiceIndicator isActive={(isListening && !isTranscribing) || false} isPinkMode={isPinkMode} />
@@ -437,6 +488,12 @@ export const ChatInput = ({
                     : 'bg-background border-muted-foreground/20 shadow-sm focus-within:ring-1 focus-within:ring-primary/50 focus-within:border-primary/50')))
           }`}>
           <div className="flex flex-col w-full min-h-[56px] relative">
+            {isDragOver && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-500 bg-blue-500/5 pointer-events-none select-none">
+                <Paperclip className="h-5 w-5 text-blue-500" />
+                <span className="text-sm font-medium text-blue-500">Drop files here</span>
+              </div>
+            )}
             {attachedFile && (
               <div className="px-4 pt-3 pb-1">
                 <AttachmentCard
