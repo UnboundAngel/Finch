@@ -10,20 +10,7 @@
     "opener:default",
     {
       "identifier": "opener:allow-open-path",
-      "allow": [
-        {
-          "path": "$DOWNLOAD/**"
-        },
-        {
-          "path": "$DOCUMENT/**"
-        },
-        {
-          "path": "$DESKTOP/**"
-        },
-        {
-          "path": "$HOME/**"
-        }
-      ]
+      "allow": [{ "path": "**" }]
     },
     "core:window:allow-close",
     "core:window:allow-minimize",
