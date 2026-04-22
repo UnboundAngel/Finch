@@ -231,6 +231,15 @@
   -webkit-app-region: no-drag;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Custom Range Input Cursor (LM Studio Style) */
 input[type="range"] {
   cursor: grab;

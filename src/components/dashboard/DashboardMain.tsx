@@ -74,6 +74,7 @@ interface DashboardMainProps {
   activeArtifact: Artifact | null;
   onArtifactClick: (artifact: Artifact) => void;
   onArtifactClose: () => void;
+  allVersionsOfActive: Artifact[];
 }
 
 
@@ -150,6 +151,7 @@ export function DashboardMain(props: DashboardMainProps) {
     handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight,
     userAvatarSrc, userAvatarLetter, onRegenerate, onEditResend,
     activeArtifact, onArtifactClick, onArtifactClose,
+    allVersionsOfActive,
   } = props;
 
   useEffect(() => {
@@ -432,11 +434,13 @@ export function DashboardMain(props: DashboardMainProps) {
 
       {/* Artifact panel — slides in from the right over the chat area */}
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
-        <div className={`relative h-full w-full ${activeArtifact ? 'pointer-events-auto' : ''}`}>
+        <div className="relative h-full w-full">
           <ArtifactPanel
             artifact={activeArtifact}
             isDark={isDark}
             onClose={onArtifactClose}
+            allVersions={allVersionsOfActive}
+            onSelectVersion={onArtifactClick}
           />
         </div>
       </div>

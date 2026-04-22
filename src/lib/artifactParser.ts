@@ -94,7 +94,7 @@ export function parseContentSegments(content: string, isStreaming?: boolean): Co
     }
   }
 
-  if (remaining) {
+  if (remaining && remaining !== 'undefined') {
     segments.push({ type: 'text', content: remaining });
   }
 

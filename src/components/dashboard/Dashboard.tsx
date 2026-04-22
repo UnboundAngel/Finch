@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import type { Message, ChatSession, WebSearchResearchEvent, Artifact } from '../../types/chat';
@@ -20,6 +20,7 @@ import { fetchModelsMap, inferProviderForModel } from '@/src/lib/availableModels
 import { WallpaperPickerDialog } from '@/src/components/profile/WallpaperPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
+import { extractArtifacts } from '@/src/lib/artifactParser';
 
 // Cloud providers are rate-limited — avoid an extra API call just for the title.
 // Strip leading filler words and take the first 6 significant words of the message.
@@ -321,6 +322,7 @@ function DashboardContent({
     streamMessage(
       userMessage, selectedModel, selectedProvider,
       (token) => {
+        if (!token || token === 'undefined') return;
         if (isFirstToken) {
           setIsThinking(false);
           isFirstToken = false;
@@ -365,7 +367,15 @@ function DashboardContent({
             const mergedStats = { ...(stats || {}) };
             if (wasAborted) mergedStats.stopReason = 'user_stopped';
             // Preserve researchEvents from the streaming message — stats payload never includes it
-            const final = [...prev.slice(0, -1), { ...last, streaming: false, metadata: { ...last.metadata, ...mergedStats } }];
+            const final = [...prev.slice(0, -1), { 
+              ...last, 
+              streaming: false, 
+              metadata: { 
+                ...last.metadata, 
+                ...mergedStats, 
+                artifacts: extractArtifacts(last.content) 
+              } 
+            }];
             setTimeout(() => updateActiveSessionInList(final), 0);
             return final;
           }
@@ -516,6 +526,21 @@ function DashboardContent({
   }, [selectedModel, selectedProvider, session.activeSessionIdRef, applyTitle]);
   autoNameChatRef.current = autoNameChat;
 
+  const allVersionsOfActive = useMemo(() => {
+    if (!activeArtifact) return [];
+    const versions: Artifact[] = [];
+    session.messages.forEach((m) => {
+      m.metadata?.artifacts?.forEach((art) => {
+        // Versions are identified by having the same title and kind.
+        if (art.title === activeArtifact.title && art.kind === activeArtifact.kind) {
+          versions.push(art);
+        }
+      });
+    });
+    // Sort by version index (ascending)
+    return versions.sort((a, b) => a.version - b.version);
+  }, [session.messages, activeArtifact]);
+
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
       ? (isDark ? "bg-[#1a1a1a]" : "bg-[#fffcf0]") 
@@ -585,6 +610,7 @@ function DashboardContent({
         activeArtifact={activeArtifact}
         onArtifactClick={(art) => setActiveArtifact(art)}
         onArtifactClose={() => setActiveArtifact(null)}
+        allVersionsOfActive={allVersionsOfActive}
       />
     </div>
   );

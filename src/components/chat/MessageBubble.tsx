@@ -111,7 +111,7 @@ export const MessageBubble = memo(function MessageBubble({
           streaming={isStreaming}
         />
       ) : (
-        <code className={`px-1.5 py-0.5 rounded text-sm font-mono font-medium ${isUserMsg ? 'bg-white/20' : 'bg-muted/80'}`} {...rest}>
+        <code className={`px-1.5 py-0.5 rounded text-sm font-mono font-medium break-all whitespace-pre-wrap ${isUserMsg ? 'bg-white/20' : 'bg-muted/80'}`} {...rest}>
           {children}
         </code>
       );
@@ -210,8 +210,8 @@ export const MessageBubble = memo(function MessageBubble({
                           onClick={(art) => onArtifactClick?.(art)}
                         />
                       ) : (
-                        seg.content.trim() ? (
-                          <div key={i} className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 break-words overflow-x-auto">
+                        seg.content.trim() && seg.content !== 'undefined' ? (
+                          <div key={i} className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 break-words overflow-hidden">
                             <ReactMarkdown remarkPlugins={remarkPlugins} components={markdownComponents}>
                               {seg.content}
                             </ReactMarkdown>
@@ -221,7 +221,7 @@ export const MessageBubble = memo(function MessageBubble({
                     )}
                   </div>
                 ) : (
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-primary-foreground break-words overflow-x-auto">
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-primary-foreground break-words overflow-hidden">
                     <ReactMarkdown remarkPlugins={remarkPlugins} components={markdownComponents}>
                       {msg.content}
                     </ReactMarkdown>
