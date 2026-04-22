@@ -1,4 +1,4 @@
-import { useRef, useEffect, memo } from 'react';
+import { useRef, useEffect, useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Image as ImageIcon, Plus, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,6 +42,7 @@ export const ChatArea = memo(({
   onEditResend,
 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showQuickPrompts, setShowQuickPrompts] = useState(true);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
@@ -50,6 +51,23 @@ export const ChatArea = memo(({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isThinking]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const visibilityQuery = window.matchMedia('(max-width: 470px), (max-height: 720px)');
+
+    const updateVisibility = () => {
+      setShowQuickPrompts(!visibilityQuery.matches);
+    };
+
+    updateVisibility();
+    visibilityQuery.addEventListener('change', updateVisibility);
+
+    return () => {
+      visibilityQuery.removeEventListener('change', updateVisibility);
+    };
+  }, []);
 
   return (
     <div
@@ -104,32 +122,34 @@ export const ChatArea = memo(({
                   <h2 className="text-3xl font-semibold tracking-tight text-center text-foreground">How can I help you today?</h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-2xl mx-auto px-4 h-full min-h-[140px]">
-                  <Button
-                    variant="outline"
-                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
-                    onClick={() => { setInput('Analyze this image: '); toast('Added prompt to input'); }}
-                  >
-                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><ImageIcon className="h-4 w-4 text-purple-500" /> Analyze an image</span>
-                    <span className="text-xs text-muted-foreground font-normal leading-relaxed">Upload an image and ask questions about its contents.</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
-                    onClick={() => { setInput('Draft an email about: '); toast('Added prompt to input'); }}
-                  >
-                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><MessageSquare className="h-4 w-4 text-green-500" /> Draft an email</span>
-                    <span className="text-xs text-muted-foreground font-normal leading-relaxed">Get help writing a professional or casual email.</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-full min-h-[140px] p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
-                    onClick={() => { setInput('Brainstorm ideas for: '); toast('Added prompt to input'); }}
-                  >
-                    <span className="font-medium flex items-center gap-2 h-6 transition-transform group-hover:translate-x-1"><Plus className="h-4 w-4 text-orange-500" /> Brainstorm ideas</span>
-                    <span className="text-xs text-muted-foreground font-normal leading-relaxed">Generate creative ideas for your next project.</span>
-                  </Button>
-                </div>
+                {showQuickPrompts && (
+                  <div className="grid grid-cols-3 gap-3 w-full max-w-2xl mx-auto px-2 sm:px-4">
+                    <Button
+                      variant="outline"
+                      className="w-full h-full min-h-[140px] min-w-0 p-4 sm:p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
+                      onClick={() => { setInput('Analyze this image: '); toast('Added prompt to input'); }}
+                    >
+                      <span className="w-full font-medium flex items-center gap-2 min-h-6 transition-transform group-hover:translate-x-1"><ImageIcon className="h-4 w-4 shrink-0 text-purple-500" /> Analyze an image</span>
+                      <span className="w-full text-xs text-muted-foreground font-normal leading-relaxed">Upload an image and ask questions about its contents.</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full h-full min-h-[140px] min-w-0 p-4 sm:p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
+                      onClick={() => { setInput('Draft an email about: '); toast('Added prompt to input'); }}
+                    >
+                      <span className="w-full font-medium flex items-center gap-2 min-h-6 transition-transform group-hover:translate-x-1"><MessageSquare className="h-4 w-4 shrink-0 text-green-500" /> Draft an email</span>
+                      <span className="w-full text-xs text-muted-foreground font-normal leading-relaxed">Get help writing a professional or casual email.</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full h-full min-h-[140px] min-w-0 p-4 sm:p-5 justify-start text-left flex flex-col items-start gap-2 rounded-2xl border-muted-foreground/20 hover:bg-muted/50 hover:border-muted-foreground/30 transition-all shadow-sm flex-1 group whitespace-normal"
+                      onClick={() => { setInput('Brainstorm ideas for: '); toast('Added prompt to input'); }}
+                    >
+                      <span className="w-full font-medium flex items-center gap-2 min-h-6 transition-transform group-hover:translate-x-1"><Plus className="h-4 w-4 shrink-0 text-orange-500" /> Brainstorm ideas</span>
+                      <span className="w-full text-xs text-muted-foreground font-normal leading-relaxed">Generate creative ideas for your next project.</span>
+                    </Button>
+                  </div>
+                )}
               </div>
             )
           )}

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FileJson, HelpCircle, Loader2 } from 'lucide-react';
-import { useModelParams } from '@/src/store';
+import { useModelParams, useChatStore } from '@/src/store';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ParameterZone } from './ParameterZone';
 import { MaxTokensSlider } from '../MaxTokensSlider';
 import { useSidebarTheme } from '../hooks/useSidebarTheme';
+
+const CLOUD_PROVIDERS = new Set(['anthropic', 'openai', 'gemini']);
 
 interface OutputSectionProps {
   isOpen: boolean;
@@ -25,7 +27,9 @@ export const OutputSection = ({
   const setMaxTokens = useModelParams(state => state.setMaxTokens);
   const contextIntelligenceStatus = useModelParams(state => state.contextIntelligenceStatus);
   const contextIntelligence = useModelParams(state => state.contextIntelligence);
-  
+  const selectedProvider = useChatStore(state => state.selectedProvider);
+  const isCloudProvider = CLOUD_PROVIDERS.has(selectedProvider);
+
   const { mutedTextColor, inputBg, borderColor, iconColor } = useSidebarTheme(isPinkMode, contrast);
 
   const [localMaxTokens, setLocalMaxTokens] = useState(maxTokens.toString());
@@ -57,9 +61,9 @@ export const OutputSection = ({
       contrast={contrast}
       isPinkMode={isPinkMode}
     >
-      <div className="space-y-3 group px-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+      <div className={cn("space-y-3 group px-1", isCloudProvider && "opacity-70")}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-1 items-center gap-1.5 pr-2">
             <Label className={cn("text-[10px] font-bold uppercase tracking-wider transition-colors duration-300", mutedTextColor)}>Response Length</Label>
             <Tooltip>
               <TooltipTrigger render={(props) => (
@@ -68,11 +72,13 @@ export const OutputSection = ({
                 </div>
               )} />
               <TooltipContent side="left" className="max-w-[200px]">
-                Controls the maximum length of the model's reply.
+                {isCloudProvider
+                  ? 'Not applied to cloud models — they use their own output limits.'
+                  : "Controls the maximum length of the model's reply."}
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {contextIntelligenceStatus === 'loading' && <Loader2 className="h-3 w-3 animate-spin opacity-40" />}
             <input
               type="number"
@@ -90,8 +96,12 @@ export const OutputSection = ({
             />
           </div>
         </div>
-        {/* Max Tokens */}
         <MaxTokensSlider contrast={contrast} isPinkMode={isPinkMode} />
+        {isCloudProvider && (
+          <p className={cn("text-[9px] italic leading-tight px-0.5", mutedTextColor)}>
+            Local models only
+          </p>
+        )}
       </div>
     </ParameterZone>
   );

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { Paperclip, Send, Square, Mic, MicOff, Headphones, ChevronDown } from 'lucide-react';
+import { Paperclip, Send, Square, Mic, MicOff, Headphones, ChevronDown, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { VoiceIndicator } from './VoiceIndicator';
@@ -9,9 +9,9 @@ import { ModelMarketplace } from './ModelMarketplace';
 import { useVoiceTranscription } from '@/src/hooks/useVoiceTranscription';
 import { CheckIcon } from 'lucide-react';
 import { WebSearchControl } from '@/src/components/chat/WebSearchControl';
-import { invoke } from '@tauri-apps/api/core';
 import { open as openFilePicker } from '@tauri-apps/plugin-dialog';
-import { isTauri } from '@/src/lib/tauri-utils';
+import { getTauriInvoke, isTauri } from '@/src/lib/tauri-utils';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -35,7 +35,90 @@ interface ChatInputProps {
   isListening?: boolean;
   setIsListening?: (val: boolean) => void;
 }
- 
+
+// ─── File attachment card (must be above ChatInput for reliable init / HMR) ───
+
+const IMAGE_EXTS = /\.(png|jpe?g|gif|webp)$/i;
+
+const TEXT_EXTS = new Set([
+  'txt', 'md', 'csv', 'rtf', 'html', 'json',
+  'py', 'js', 'ts', 'jsx', 'tsx', 'rs', 'go', 'java', 'cpp', 'c', 'cs', 'rb', 'php',
+  'yaml', 'toml', 'xml',
+]);
+
+function getFileTypeLabel(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'pdf') return 'PDF';
+  if (['docx', 'doc'].includes(ext)) return 'DOCX';
+  if (['xlsx', 'xls'].includes(ext)) return 'XLSX';
+  if (['pptx', 'ppt'].includes(ext)) return 'PPTX';
+  if (ext === 'csv') return 'CSV';
+  if (ext === 'md') return 'MD';
+  if (['txt', 'rtf'].includes(ext)) return 'TXT';
+  if (ext === 'json') return 'JSON';
+  if (['yaml', 'toml', 'xml', 'html'].includes(ext)) return ext.toUpperCase();
+  if (['py', 'rb', 'go', 'rs', 'java', 'cpp', 'c', 'cs', 'php'].includes(ext)) return ext.toUpperCase();
+  if (['js', 'ts', 'jsx', 'tsx'].includes(ext)) return ext.toUpperCase();
+  return ext.toUpperCase() || 'FILE';
+}
+
+const FILE_BADGE_NEUTRAL =
+  'text-[10px] font-semibold px-1.5 py-0.5 rounded-md border border-muted-foreground/25 bg-muted/80 text-foreground';
+
+const DISMISS_BTN = "absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-background border border-muted-foreground/30 shadow flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-muted-foreground/60 transition-all opacity-0 group-hover:opacity-100";
+
+function AttachmentCard({ file, onRemove }: { file: { name: string; path: string }; onRemove: () => void }) {
+  const isImage = IMAGE_EXTS.test(file.name);
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const [lineCount, setLineCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isImage || !TEXT_EXTS.has(ext)) return;
+    let cancelled = false;
+    fetch(resolveMediaSrc(file.path))
+      .then(r => r.text())
+      .then(text => { if (!cancelled) setLineCount(text.split('\n').length); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [file.path, isImage, ext]);
+
+  if (isImage) {
+    return (
+      <div className="relative inline-block shrink-0 group">
+        <img
+          src={resolveMediaSrc(file.path)}
+          alt={file.name}
+          className="h-28 w-28 object-cover rounded-xl border border-muted-foreground/20 shadow-sm"
+        />
+        <button onClick={onRemove} className={DISMISS_BTN}>
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+    );
+  }
+
+  const label = getFileTypeLabel(file.name);
+
+  return (
+    <div className="relative flex h-28 w-28 shrink-0 flex-col rounded-xl border border-muted-foreground/20 bg-muted/50 p-2.5 shadow-sm group">
+      <div className="min-h-0 flex-1 overflow-hidden flex flex-col gap-1">
+        <p className="text-[11px] font-semibold leading-snug text-foreground line-clamp-2 break-words">
+          {file.name}
+        </p>
+        <p className="shrink-0 text-[10px] leading-tight text-muted-foreground">
+          {lineCount !== null ? `${lineCount} lines` : '\u00a0'}
+        </p>
+      </div>
+      <div className="mt-2 shrink-0 border-t border-muted-foreground/15 pt-2">
+        <span className={FILE_BADGE_NEUTRAL}>{label}</span>
+      </div>
+      <button type="button" onClick={onRemove} className={DISMISS_BTN}>
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
 export const ChatInput = ({
   input,
   setInput,
@@ -60,6 +143,7 @@ export const ChatInput = ({
   const rafRef = useRef<number | null>(null);
   const micMenuRef = useRef<HTMLDivElement>(null);
   const micPillRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
   
   // Controlled Menu States
@@ -74,6 +158,11 @@ export const ChatInput = ({
 
   const fetchDevices = useCallback(async () => {
     try {
+      const invoke = await getTauriInvoke();
+      if (!invoke) {
+        setAudioDevices([]);
+        return;
+      }
       const devices = await invoke<string[]>('list_audio_devices');
       setAudioDevices(devices);
       if (!selectedDevice && devices.length > 0) {
@@ -145,16 +234,29 @@ export const ChatInput = ({
     if (isTauri()) {
       try {
         const result = await openFilePicker({
-          multiple: false,
-          filters: [{ name: 'Images & Documents', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf'] }],
+          multiple: true,
+          filters: [{
+            name: 'Files',
+            extensions: [
+              'png', 'jpg', 'jpeg', 'gif', 'webp',
+              'pdf',
+              'txt', 'md', 'csv', 'rtf', 'html', 'json',
+              'py', 'js', 'ts', 'jsx', 'tsx', 'rs', 'go', 'java', 'cpp', 'c', 'cs', 'rb', 'php', 'yaml', 'toml', 'xml',
+              'docx', 'xlsx', 'pptx',
+            ],
+          }],
         });
-        if (result && typeof result === 'string') {
-          const parts = result.replace(/\\/g, '/').split('/');
-          setAttachedFile({ name: parts[parts.length - 1], path: result });
+        const paths = Array.isArray(result) ? result : (result ? [result] : []);
+        if (paths.length > 0) {
+          const firstPath = paths[0] as string;
+          const parts = firstPath.replace(/\\/g, '/').split('/');
+          setAttachedFile({ name: parts[parts.length - 1], path: firstPath });
         }
       } catch {
         // Dialog system error — silently ignore
       }
+    } else {
+      fileInputRef.current?.click();
     }
   }, [setAttachedFile]);
 
@@ -250,12 +352,17 @@ export const ChatInput = ({
   useEffect(() => {
     if (!isMicMenuOpen) {
       setMeterLevel(0);
-      void invoke('stop_voice_preview');
+      void getTauriInvoke().then((invoke) => invoke?.('stop_voice_preview'));
       return;
     }
-    invoke('start_voice_preview').catch((e) => console.error('[voice preview] start failed:', e));
+    void getTauriInvoke().then((invoke) => invoke?.('start_voice_preview')).catch((e) => console.error('[voice preview] start failed:', e));
     const id = window.setInterval(async () => {
       try {
+        const invoke = await getTauriInvoke();
+        if (!invoke) {
+          setMeterLevel(0);
+          return;
+        }
         const level = await invoke<number>('get_voice_meter_level');
         setMeterLevel(Number.isFinite(level) ? Math.max(0, Math.min(1, level)) : 0);
       } catch {
@@ -264,7 +371,7 @@ export const ChatInput = ({
     }, 60);
     return () => {
       window.clearInterval(id);
-      void invoke('stop_voice_preview');
+      void getTauriInvoke().then((invoke) => invoke?.('stop_voice_preview'));
     };
   }, [isMicMenuOpen]);
 
@@ -280,6 +387,21 @@ export const ChatInput = ({
           installedModels={installedModels}
           downloadingModels={downloadingModels}
           onDownload={downloadModel}
+        />
+
+        {/* Browser-only hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.md,.csv,.rtf,.html,.json,.py,.js,.ts,.jsx,.tsx,.rs,.go,.java,.cpp,.c,.cs,.rb,.php,.yaml,.toml,.xml,.docx,.xlsx,.pptx"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setAttachedFile({ name: file.name, path: URL.createObjectURL(file) });
+              e.target.value = '';
+            }
+          }}
         />
 
         <div className={`relative flex items-end w-full rounded-2xl transition-all duration-300 overflow-hidden border-[1.5px] ${!isModelLoaded
@@ -299,16 +421,7 @@ export const ChatInput = ({
           <div className="flex flex-col w-full min-h-[56px] relative">
             {attachedFile && (
               <div className="px-4 pt-3 pb-1">
-                <div className="inline-flex items-center gap-2 bg-muted/50 border border-muted-foreground/20 rounded-lg px-3 py-1.5 text-sm">
-                  <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="truncate max-w-[200px] font-medium">{attachedFile.name}</span>
-                  <button
-                    onClick={() => setAttachedFile(null)}
-                    className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    &times;
-                  </button>
-                </div>
+                <AttachmentCard file={attachedFile} onRemove={() => setAttachedFile(null)} />
               </div>
             )}
             
@@ -516,6 +629,11 @@ const ChatInputControls = React.memo(({
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={async () => {
                             try {
+                              const invoke = await getTauriInvoke();
+                              if (!invoke) {
+                                toast.error('Audio device selection is only available in desktop mode');
+                                return;
+                              }
                               await invoke('set_audio_device', { name: device });
                               setSelectedDevice(device);
                               toast.success(`Microphone set to ${device}`);

@@ -118,15 +118,17 @@ const StyledWrapper = styled.div`
     position: absolute;
     left: var(--circle-container-offset);
     top: var(--circle-container-offset);
+    transform: translateX(0);
     border-radius: var(--container-radius);
     -webkit-box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
     box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
-    -webkit-transition: var(--circle-transition);
-    -o-transition: var(--circle-transition);
-    transition: var(--circle-transition);
+    -webkit-transition: transform var(--circle-transition);
+    -o-transition: transform var(--circle-transition);
+    transition: transform var(--circle-transition);
+    will-change: transform;
     pointer-events: none;
   }
 
@@ -225,15 +227,15 @@ const StyledWrapper = styled.div`
   }
 
   .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
-    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+    transform: translateX(calc(var(--container-width) - var(--circle-container-diameter) - (var(--circle-container-offset) * 2)));
   }
 
   .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
-    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em)
+    transform: translateX(calc(var(--container-width) - var(--circle-container-diameter) - (var(--circle-container-offset) * 2) - 0.187em))
   }
 
   .theme-switch__circle-container:hover {
-    left: calc(var(--circle-container-offset) + 0.187em);
+    transform: translateX(0.187em);
   }
 
   .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {

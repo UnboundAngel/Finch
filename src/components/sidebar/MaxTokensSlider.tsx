@@ -7,7 +7,13 @@ interface MaxTokensSliderProps {
   isPinkMode?: boolean;
 }
 
-const PRESETS = [512, 2048, 4096, 8192, 16384, 32768, 'Max'];
+const PRESETS = [512, 2048, 4096, 8192, 16384, 'Max'];
+
+const formatPresetLabel = (val: number | 'Max'): string => {
+  if (val === 'Max') return 'Max';
+  if (val >= 1000) return `${Math.floor(val / 1000)}K`;
+  return String(val);
+};
 
 export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) => {
   const maxTokens = useModelParams(state => state.maxTokens);
@@ -132,7 +138,7 @@ export const MaxTokensSlider = ({ contrast, isPinkMode }: MaxTokensSliderProps) 
                     "relative z-10 transition-all duration-300",
                     isVisuallySelected && contrast === 'light' && "drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] [text-shadow:0_0_1px_rgba(0,0,0,0.5)]"
                   )}>
-                    {preset}
+                    {formatPresetLabel(preset as number | 'Max')}
                   </span>
                   
                   {/* Hardware Status LED (Bottom Tick) */}

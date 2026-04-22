@@ -88,7 +88,7 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
       : !isIncognito && (isDark ? customBgDark : customBgLight)
         ? "bg-background/20 backdrop-blur-2xl"
         : isDark
-          ? "bg-[#303030]/90 backdrop-blur-xl"
+          ? "bg-[#171717] backdrop-blur-xl"
           : "bg-[#efefef]/85 backdrop-blur-xl";
 
   return (
@@ -122,6 +122,7 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
 export function DashboardMain(props: DashboardMainProps) {
   const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
   const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
+  const setIsRightSidebarOpen = useChatStore(state => state.setIsRightSidebarOpen);
   const MIN_LEFT_SIDEBAR_WIDTH = 200;
   const MAX_LEFT_SIDEBAR_WIDTH = 420;
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(220);
@@ -226,10 +227,12 @@ export function DashboardMain(props: DashboardMainProps) {
     setIsLeftSidebarOpen(false);
   };
 
-  // Close left sidebar when entering incognito (replaces SidebarIncognitoController)
+  // Close both sidebars when entering incognito.
   useEffect(() => {
-    if (isIncognito) setIsLeftSidebarOpen(false);
-  }, [isIncognito, setIsLeftSidebarOpen]);
+    if (!isIncognito) return;
+    setIsLeftSidebarOpen(false);
+    setIsRightSidebarOpen(false);
+  }, [isIncognito, setIsLeftSidebarOpen, setIsRightSidebarOpen]);
 
   const leftSidebarPanelClass = showPinkMode
     ? "bg-[#fff5f7]/85 backdrop-blur-2xl"
@@ -238,7 +241,7 @@ export function DashboardMain(props: DashboardMainProps) {
       : isIncognito
         ? (isDark ? "bg-[#111]/85 backdrop-blur-xl" : "bg-[#fefaf0]/85 backdrop-blur-xl")
         : isDark
-          ? "bg-[#303030]/90 backdrop-blur-xl"
+          ? "bg-[#171717] backdrop-blur-xl"
           : "bg-[#efefef]/85 backdrop-blur-xl";
 
   return (

@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Cloud, Cpu, Sparkles, Zap, Key, Globe, RefreshCcw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ProviderSection } from './ProviderSection';
+import { useModelParams } from '@/src/store';
 
 import {
   AlertDialog,
@@ -50,6 +51,11 @@ export const SettingsDialog = ({
 }: SettingsDialogProps) => {
   const [activeTab, setActiveTab] = React.useState('general');
 
+  const showRightSidebarToggle = useModelParams(state => state.showRightSidebarToggle);
+  const setShowRightSidebarToggle = useModelParams(state => state.setShowRightSidebarToggle);
+  const showMessageStats = useModelParams(state => state.showMessageStats);
+  const setShowMessageStats = useModelParams(state => state.setShowMessageStats);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -71,9 +77,10 @@ export const SettingsDialog = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/20 p-1 overflow-visible">
+          <TabsList className="grid w-full grid-cols-3 rounded-xl bg-muted/20 p-1 overflow-visible">
             <TabsTrigger value="general" className="rounded-lg py-2">General</TabsTrigger>
             <TabsTrigger value="models" className="rounded-lg py-2">Models & Keys</TabsTrigger>
+            <TabsTrigger value="advanced" className="rounded-lg py-2">Advanced</TabsTrigger>
           </TabsList>
 
           <div className="grid grid-cols-1 grid-rows-1 py-6">
@@ -205,6 +212,50 @@ export const SettingsDialog = ({
                     provider="local_ollama"
                   />
                 </motion.div>
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="advanced" key="advanced">
+              <motion.div
+                animate={{
+                  opacity: activeTab === 'advanced' ? 1 : 0,
+                  y: activeTab === 'advanced' ? 0 : 8,
+                  pointerEvents: activeTab === 'advanced' ? 'auto' : 'none'
+                }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="col-start-1 row-start-1 flex flex-col gap-6"
+              >
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Interface</h4>
+                  <div
+                    className="group flex items-center justify-between p-4 border rounded-2xl bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer select-none"
+                    onClick={() => setShowRightSidebarToggle(!showRightSidebarToggle)}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">Show Right Sidebar</span>
+                      <span className="text-xs text-muted-foreground">Display the right sidebar toggle button in the header</span>
+                    </div>
+                    <Switch
+                      checked={showRightSidebarToggle}
+                      onCheckedChange={setShowRightSidebarToggle}
+                      aria-label="Show right sidebar toggle"
+                    />
+                  </div>
+                  <div
+                    className="group flex items-center justify-between p-4 border rounded-2xl bg-muted/5 hover:bg-muted/10 transition-colors cursor-pointer select-none"
+                    onClick={() => setShowMessageStats(!showMessageStats)}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">Show Message Stats</span>
+                      <span className="text-xs text-muted-foreground">Display token count and generation speed beneath AI responses</span>
+                    </div>
+                    <Switch
+                      checked={showMessageStats}
+                      onCheckedChange={setShowMessageStats}
+                      aria-label="Show message stats"
+                    />
+                  </div>
+                </div>
               </motion.div>
             </TabsContent>
           </div>

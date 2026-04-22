@@ -10,12 +10,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Bookmark } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { BookmarkIconButton } from '@/components/ui/bookmark-icon-button';
 import { fetchModelsMap } from '@/src/lib/availableModels';
+import { getTauriInvoke } from '@/src/lib/tauri-utils';
 
 interface ModelSelectorProps {
   selectedProvider: string;
@@ -73,9 +73,12 @@ export const ModelSelector = ({
       const map = await fetchModelsMap();
       setModels(map);
 
-      const config: any = await invoke('get_provider_config');
-      if (config?.bookmarked_models) {
-        setBookmarkedModels(config.bookmarked_models);
+      const invoke = await getTauriInvoke();
+      if (invoke) {
+        const config: any = await invoke('get_provider_config');
+        if (config?.bookmarked_models) {
+          setBookmarkedModels(config.bookmarked_models);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch models:', err);
@@ -88,6 +91,8 @@ export const ModelSelector = ({
 
   const saveBookmarks = async (bookmarks: BookmarkedModel[]) => {
     try {
+      const invoke = await getTauriInvoke();
+      if (!invoke) return;
       await invoke('save_provider_config', {
         config: {
           bookmarked_models: bookmarks
@@ -272,12 +277,20 @@ export const ModelSelector = ({
                   );
                 })}
 
-                <DropdownMenuItem
-                  className="mt-1 px-3 py-2 cursor-pointer rounded-xl focus:bg-primary/10 text-center justify-center font-bold text-[11px] uppercase tracking-tighter text-primary/80 hover:text-primary transition-all active:scale-95"
-                  onClick={(e) => { e.stopPropagation(); fetchModels(); }}
+                <button
+                  type="button"
+                  className="mt-1 w-full px-3 py-2 cursor-pointer rounded-xl text-center justify-center font-bold text-[11px] uppercase tracking-tighter text-primary/80 hover:text-primary transition-all active:scale-95"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchModels();
+                  }}
                 >
                   Refresh Models
-                </DropdownMenuItem>
+                </button>
               </div>
             </motion.div>
           )}

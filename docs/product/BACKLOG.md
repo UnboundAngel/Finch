@@ -2,46 +2,32 @@
 
 Items are ordered by priority. Close all **Baseline** items before touching **Differentiator** items.
 
+**Next focus:** Baseline is closed. Start with **Polish** (web search persistence, then favicon privacy, search bar polish, settings cleanup).
+
 ---
 
 ## 🔴 Baseline — Must Close First
 
-### [ ] 1. AI Message Actions — Positioning + Regenerate Visibility
-**Two issues in one:**
-
-1. **Copy button is on the left** of `MetadataRow`. Should be on the right, mirroring user message layout: `[MetadataRow] [Regenerate | Copy]`. **Files:** `MessageBubble.tsx:236–289`.
-
-2. **Regenerate button is invisible in practice.** The prop chain exists (`Dashboard → DashboardMain → ChatArea → MessageBubble`) but `ChatArea.tsx:148` only passes `onRegenerate` when the message is the very last one in the list — and even then it's hover-only. Users never discover it. **Fix:** Show regenerate on all AI messages (or at minimum keep it on last-message but make it always visible, not hover-gated).
+### [x] 1. AI Message Actions — Positioning + Regenerate Visibility
+**Shipped (2026-04):** Regenerate + Copy are always visible on completed AI messages (no hover gate); actions sit to the right with optional `MetadataRow` when message stats are enabled. `ChatArea` passes `onRegenerate` for all eligible AI turns.
 
 ---
 
-### [ ] 2. File Attachment — Image Preview + Broader File Types
-**Two issues in one:**
+### [x] 2. File Attachment — Image Preview + Broader File Types
+**Shipped (2026-04):**
+- Image thumbnails via `resolveMediaSrc` / Tauri `convertFileSrc` path; larger square preview in input; no filename on image cards.
+- Tauri picker supports documents, code, Office, images, PDF; `multiple: true` on dialog (UI still attaches **first file only** — see follow-up below).
+- **Browser:** hidden `<input type="file">` opens from paperclip when not in Tauri.
+- Non-image cards: square card, full filename, async line count for text-like extensions, neutral type badge, dismiss (X) on hover.
 
-1. **No image thumbnail preview.** When an image is attached, the input shows a paperclip pill with just the filename (`ChatInput.tsx:216–225`). It should show an actual thumbnail for image files (png, jpg, gif, webp). Use Tauri's `convertFileSrc()` to get a local URL from the file path, detect image by extension, and render a small `<img>` inside the pill.
-
-2. **File picker is too narrow.** `ChatInput.tsx:135` only allows `['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf']`. Should support the full range that providers accept:
-   - **Documents:** `txt, md, csv, rtf, html, json`
-   - **Code:** `py, js, ts, jsx, tsx, rs, go, java, cpp, c, cs, rb, php, yaml, toml, xml`
-   - **Office:** `docx, xlsx, pptx`
-   - **Images:** keep existing
-   - **PDF:** keep existing
-   
-   Also consider enabling `multiple: true` so users can attach more than one file per message (Claude supports up to 20).
+**Still open (track here or under Differentiators):**
+- **True multi-file attach:** one message with multiple attachments end-to-end (types, `Dashboard` send path, provider payload) — not only picker `multiple: true`.
+- **PDF input card:** distinct preview treatment (staged; preview modal spec lives under Differentiators).
 
 ---
 
-### [ ] 4. Power / Advanced Settings Tab
-**What's missing:** Several UI features are surfaced by default that power users want but casual users don't need:
-- Right sidebar toggle button in the header (hidden by default)
-- Token stats / metadata row under AI messages (hidden by default)
-- System prompt / persona controls (keep visible — these are core)
-
-**Fix:** Add an **Advanced** (or "Power") tab inside the Settings dialog. Put feature-flag toggles there:
-- "Show right sidebar" — off by default
-- "Show message stats" — off by default
-
-Store flags in `useProfileStore` or `useModelParams` with `persist`. Gate the right sidebar toggle button and `<MetadataRow />` render behind these flags.
+### [x] 4. Power / Advanced Settings Tab
+**Shipped (2026-04):** **Advanced** tab in Settings with persisted toggles on `useModelParams`: "Show right sidebar" and "Show message stats" (default off). Header right-sidebar control and `<MetadataRow />` gated behind these flags.
 
 ---
 
@@ -129,4 +115,4 @@ High-security "Contact Intelligence" system — structured persona vault with pe
 
 ---
 
-*Last updated: 2026-04-19*
+*Last updated: 2026-04-21*

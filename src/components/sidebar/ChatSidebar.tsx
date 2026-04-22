@@ -105,6 +105,7 @@ export const ChatSidebar = ({
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const deferredQuery = useDeferredValue(debouncedSearchQuery);
   const [, startTransition] = useTransition();
+  const hasLoggedSidebarButtonsRef = React.useRef(false);
 
   const { pinnedChats, unpinnedChats } = useMemo(() => {
     const filtered = recentChats.filter(chat => {
@@ -126,6 +127,13 @@ export const ChatSidebar = ({
       toast.success('Switched profile');
     }
   };
+
+  if (!hasLoggedSidebarButtonsRef.current && (pinnedChats.length > 0 || unpinnedChats.length > 0)) {
+    hasLoggedSidebarButtonsRef.current = true;
+    // #region agent log
+    fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H1',location:'ChatSidebar.tsx:132',message:'Rendering sidebar menu actions inside SidebarMenuButton',data:{pinnedCount:pinnedChats.length,unpinnedCount:unpinnedChats.length,usesPinIconButton:true},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }
 
   return (
     <Sidebar variant="sidebar" className={cn(

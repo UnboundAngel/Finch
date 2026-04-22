@@ -19,6 +19,22 @@ import { fetchModelsMap, inferProviderForModel } from '@/src/lib/availableModels
 import { WallpaperPickerDialog } from '@/src/components/profile/WallpaperPickerDialog';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { funEmojiAvatarUrl } from '@/src/lib/dicebearAvatar';
+
+// Cloud providers are rate-limited — avoid an extra API call just for the title.
+// Strip leading filler words and take the first 6 significant words of the message.
+function deriveClientTitle(message: string): string {
+  const stripped = message
+    .trim()
+    .replace(/^(?:what(?:'s| is| are| were)?|who(?:'s)?|where(?:'s)?|when|why|how(?:'s| do| does| did)?|can(?: you)?|could(?: you)?|would(?: you)?|should(?: i)?|please|tell(?: me)?|explain|help(?: me)?|write|create|make|give(?: me)?|show(?: me)?|is|are|do|does|did)\s+/i, '')
+    .replace(/[?!.]+$/, '')
+    .trim();
+  const words = (stripped || message.trim()).split(/\s+/).slice(0, 6);
+  const title = words.join(' ');
+  return title ? title.charAt(0).toUpperCase() + title.slice(1) : '';
+}
+
+const CLOUD_PROVIDERS = new Set(['anthropic', 'openai', 'gemini']);
+
 function DashboardContent({
   recentChats, setRecentChats,
   profileName, setProfileName,
@@ -144,6 +160,10 @@ function DashboardContent({
   messagesRef.current = session.messages;
 
   useEffect(() => {
+    setAttachedFile(null);
+  }, [session.activeSessionId, activeProfile?.id]);
+
+  useEffect(() => {
     chatSessionActionsRef.current = {
       setMessages: session.setMessages,
       setActiveSessionId: session.setActiveSessionId,
@@ -175,8 +195,13 @@ function DashboardContent({
     legacyInboxOwnerProfileId,
   });
 
+  const handleNewChatWrapped = useCallback(() => {
+    setAttachedFile(null);
+    session.handleNewChat();
+  }, [session.handleNewChat]);
+
   useKeyboardShortcuts({
-    onNewChat: session.handleNewChat,
+    onNewChat: handleNewChatWrapped,
     onOpenSettings: () => setIsSettingsOpen(true),
     onSearchFocus: () => document.getElementById('sidebar-search-input')?.focus()
   });
@@ -276,6 +301,13 @@ function DashboardContent({
     const aiMessageId = crypto.randomUUID();
     wasAbortedRef.current = false;
 
+    const cloudProviders = new Set(['anthropic', 'openai', 'gemini']);
+    const streamParams = {
+      systemPrompt, temperature, topP,
+      ...(cloudProviders.has(selectedProvider) ? {} : { maxTokens }),
+      enableWebSearch: isWebSearchActive,
+    };
+
     streamMessage(
       userMessage, selectedModel, selectedProvider,
       (token) => {
@@ -311,8 +343,11 @@ function DashboardContent({
         });
         setIsThinking(false);
       },
-      (err) => { setIsThinking(false); toast.error(`That reply went sideways: ${err}`); },
-      { systemPrompt, temperature, topP, maxTokens, enableWebSearch: isWebSearchActive },
+      (err) => {
+        setIsThinking(false);
+        toast.error(`That reply went sideways: ${err}`);
+      },
+      streamParams,
       historyWithUserMsg,
       attachmentPath ? [{ path: attachmentPath }] : undefined,
     );
@@ -336,13 +371,23 @@ function DashboardContent({
     setResearchEvents([]);
     const msgs = messagesRef.current;
     const isFirstMessage = msgs.length === 0;
-    const updatedMessages: Message[] = [...msgs, { id: crypto.randomUUID(), role: 'user', content: userMessage }];
+    const pendingAttach = attachedFileRef.current;
+    const updatedMessages: Message[] = [
+      ...msgs,
+      {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: userMessage,
+        ...(pendingAttach ? { attachment: { name: pendingAttach.name, path: pendingAttach.path } } : {}),
+      },
+    ];
     session.setMessages(updatedMessages);
+    setIsThinking(true);
     await updateActiveSessionInList(updatedMessages);
     if (isFirstMessage) {
-      void autoNameChatRef.current(userMessage);
+      await autoNameChatRef.current(userMessage);
     }
-    const attachmentPath = attachedFileRef.current?.path;
+    const attachmentPath = pendingAttach?.path;
     setAttachedFile(null);
     invokeStream(userMessage, updatedMessages, attachmentPath);
   }, [isThinking, isStreaming, openOverflowModal, session.setMessages, updateActiveSessionInList, invokeStream, setAttachedFile]);
@@ -375,6 +420,7 @@ function DashboardContent({
     const truncated = msgs.slice(0, lastUserIdx + 1);
     session.setMessages(truncated);
     setResearchEvents([]);
+    setIsThinking(true);
     await updateActiveSessionInList(truncated);
     invokeStream(userMsg.content, truncated);
   }, [isThinking, isStreaming, invokeStream, session.setMessages, updateActiveSessionInList]);
@@ -388,13 +434,36 @@ function DashboardContent({
     const truncated = [...msgs.slice(0, idx), editedMessage];
     session.setMessages(truncated);
     setResearchEvents([]);
+    setIsThinking(true);
     await updateActiveSessionInList(truncated);
     invokeStream(newContent, truncated);
   }, [isThinking, isStreaming, invokeStream, session.setMessages, updateActiveSessionInList]);
 
+  const applyTitle = useCallback((sessionId: string, cleanTitle: string) => {
+    pendingAutoTitleBySessionIdRef.current.set(sessionId, cleanTitle);
+    setRecentChats(prev => {
+      const chat = prev.find(c => c.id === sessionId);
+      if (!chat) return prev;
+      const updated = { ...chat, title: cleanTitle };
+      void invoke('save_chat', { chat: updated });
+      return prev.map(c => c.id === sessionId ? updated : c);
+    });
+  }, [setRecentChats]);
+
   const autoNameChat = useCallback(async (userMessage: string) => {
     const sessionId = session.activeSessionIdRef.current;
     if (!sessionId || !selectedModel || !selectedProvider) return;
+
+    // Cloud providers: derive title client-side — no extra API call, no quota hit.
+    if (CLOUD_PROVIDERS.has(selectedProvider)) {
+      const cleanTitle = deriveClientTitle(userMessage);
+      if (cleanTitle && cleanTitle.length <= 80) {
+        applyTitle(sessionId, cleanTitle);
+      }
+      return;
+    }
+
+    // Local models are already in memory — free to ask for a better title.
     try {
       const title = await invoke<string>('send_message', {
         prompt: `Give this chat a 4-6 word title based on the opening message. Reply with ONLY the title — no quotes, no punctuation, no explanation.\n\nMessage: "${userMessage.substring(0, 300)}"`,
@@ -402,22 +471,15 @@ function DashboardContent({
         provider: selectedProvider,
         conversationHistory: [],
         systemPrompt: 'You are a chat title generator. Reply with only a concise title.',
-        maxTokens: 20,
+        maxTokens: 256,
       });
       const cleanTitle = title.trim().replace(/^["'\s]+|["'\s]+$/g, '').replace(/[.,!?]$/, '');
       if (!cleanTitle || cleanTitle.length > 80) return;
-      pendingAutoTitleBySessionIdRef.current.set(sessionId, cleanTitle);
-      setRecentChats(prev => {
-        const chat = prev.find(c => c.id === sessionId);
-        if (!chat) return prev;
-        const updated = { ...chat, title: cleanTitle };
-        void invoke('save_chat', { chat: updated });
-        return prev.map(c => c.id === sessionId ? updated : c);
-      });
+      applyTitle(sessionId, cleanTitle);
     } catch {
-      // Silent fail — fallback title already set
+      // Silent fail — client-side fallback title was not needed (local model only path)
     }
-  }, [selectedModel, selectedProvider, session.activeSessionIdRef, setRecentChats]);
+  }, [selectedModel, selectedProvider, session.activeSessionIdRef, applyTitle]);
   autoNameChatRef.current = autoNameChat;
 
   return (
@@ -456,6 +518,7 @@ function DashboardContent({
       />
       <DashboardMain
         {...session}
+        handleNewChat={handleNewChatWrapped}
         recentChats={recentChats} setRecentChats={setRecentChats}
         isIncognito={isIncognito} setIsIncognito={setIsIncognito}
         showPinkMode={showPinkMode} isDark={isDark}

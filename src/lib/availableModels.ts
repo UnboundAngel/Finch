@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { getTauriInvoke } from '@/src/lib/tauri-utils';
 
 export type ProviderId =
   | 'anthropic'
@@ -28,6 +28,9 @@ const EMPTY: ModelsMap = {
 /** Loads discoverable models the same way the in-app model picker does. */
 export async function fetchModelsMap(): Promise<ModelsMap> {
   try {
+    const invoke = await getTauriInvoke();
+    if (!invoke) return { ...EMPTY };
+
     const config: Record<string, unknown> | null =
       (await invoke('get_provider_config')) ?? null;
     if (!config) return { ...EMPTY };

@@ -19,7 +19,7 @@ export function useKeyboardShortcuts({
       if (!isModifier) return;
 
       switch (e.key.toLowerCase()) {
-        case 'n':
+        case 't':
           e.preventDefault();
           onNewChat();
           break;

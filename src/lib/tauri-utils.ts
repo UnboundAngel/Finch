@@ -15,3 +15,14 @@ const MASK_SENTINEL = "••••••••";
 export function unmaskKey(val: string): string {
   return val === MASK_SENTINEL ? "" : val;
 }
+
+type TauriInvoke = <T = unknown>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
+
+/**
+ * Returns invoke in Tauri runtime, otherwise null for browser mode.
+ */
+export async function getTauriInvoke(): Promise<TauriInvoke | null> {
+  if (!isTauri()) return null;
+  const core = await import("@tauri-apps/api/core");
+  return core?.invoke ?? null;
+}

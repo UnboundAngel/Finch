@@ -11,6 +11,12 @@ import { ThinkingBox } from './ThinkingBox';
 import { MetadataRow } from './MetadataRow';
 import { CodeBlock } from './CodeBlock';
 import { ExternalLink } from '@/src/components/ui/ExternalLink';
+import { resolveMediaSrc } from '@/src/lib/mediaPaths';
+import { useModelParams } from '@/src/store';
+
+function isImageFileName(name: string) {
+  return /\.(png|jpe?g|gif|webp)$/i.test(name);
+}
 
 const remarkPlugins = [remarkGfm];
 
@@ -44,6 +50,7 @@ export const MessageBubble = memo(function MessageBubble({
   const [copied, setCopied] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [editValue, setEditValue] = React.useState('');
+  const showMessageStats = useModelParams(state => state.showMessageStats);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(msg.content);
@@ -158,6 +165,22 @@ export const MessageBubble = memo(function MessageBubble({
             ) : (
               <>
                 {msg.reasoning && <ThinkingBox content={msg.reasoning} />}
+                {msg.role === 'user' && msg.attachment && (
+                  <div className="mb-3">
+                    {isImageFileName(msg.attachment.name) ? (
+                      <img
+                        src={resolveMediaSrc(msg.attachment.path)}
+                        alt={msg.attachment.name}
+                        className="max-h-44 w-auto max-w-full rounded-lg border border-white/25 object-contain"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs">
+                        <Files className="h-4 w-4 shrink-0 opacity-90" />
+                        <span className="truncate font-medium">{msg.attachment.name}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className={`prose prose-sm dark:prose-invert max-w-none ${msg.role === 'user' ? 'text-primary-foreground' : 'text-foreground/90'}`}>
                 <ReactMarkdown
                   remarkPlugins={remarkPlugins}
@@ -243,10 +266,10 @@ export const MessageBubble = memo(function MessageBubble({
 
         {msg.role === 'ai' && !msg.streaming && (
           <div className="flex items-center gap-1">
-            <div className={cn(
-              "flex items-center gap-1 px-1 transition-opacity duration-500 delay-200 group-hover:duration-200 group-hover:delay-0",
-              isLatest || copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-            )}>
+            {showMessageStats && msg.metadata && (
+              <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} hasCustomBg={hasCustomBg} />
+            )}
+            <div className="flex items-center gap-1 px-1 ml-auto">
               {onRegenerate && (
                 <TooltipProvider delay={400}>
                   <Tooltip>
@@ -292,8 +315,6 @@ export const MessageBubble = memo(function MessageBubble({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            {/* Metadata hidden for now - will be moved to settings in the future */}
-            {/* {msg.metadata && <MetadataRow metadata={msg.metadata} isLatest={isLatest || !!msg.streaming} hasCustomBg={hasCustomBg} />} */}
           </div>
         )}
       </div>

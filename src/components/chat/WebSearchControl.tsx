@@ -17,8 +17,8 @@ import {
   DropdownMenuGroup
 } from '@/components/ui/dropdown-menu';
 import { SearchOnboarding } from './SearchOnboarding';
-import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { getTauriInvoke, isTauri } from '@/src/lib/tauri-utils';
 
 interface ProviderConfig {
   active_search_provider?: string;
@@ -50,6 +50,11 @@ export const WebSearchControl = ({
   useEffect(() => {
     const loadConfig = async () => {
       try {
+        const invoke = await getTauriInvoke();
+        if (!invoke) {
+          setConfigLoaded(true);
+          return;
+        }
         const c = await invoke<ProviderConfig>('get_provider_config');
         setConfig(c);
         setConfigLoaded(true);
@@ -134,7 +139,11 @@ export const WebSearchControl = ({
                 className="text-xs rounded-lg gap-2 cursor-pointer"
                 onClick={async () => {
                   try {
-                    await openUrl('https://tavily.com/');
+                    if (isTauri()) {
+                      await openUrl('https://tavily.com/');
+                    } else {
+                      window.open('https://tavily.com/', '_blank');
+                    }
                   } catch (e) {
                     window.open('https://tavily.com/', '_blank');
                   }
@@ -159,6 +168,11 @@ export const WebSearchControl = ({
                       key={p}
                       onClick={async () => {
                         try {
+                          const invoke = await getTauriInvoke();
+                          if (!invoke) {
+                            toast.error('Search provider config is only available in desktop mode');
+                            return;
+                          }
                           await invoke('update_search_config', { 
                             config: { active_search_provider: p } 
                           });

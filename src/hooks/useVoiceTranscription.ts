@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 import { WhisperModel } from '../components/chat/ModelMarketplace';
 import { useChatStore } from '../store';
+import { getTauriInvoke, isTauri } from '@/src/lib/tauri-utils';
 
 interface DownloadProgressEvent {
   id: string;
@@ -25,6 +24,11 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
   useEffect(() => {
     const checkModels = async () => {
       try {
+        const invoke = await getTauriInvoke();
+        if (!invoke) {
+          setInstalledModels([]);
+          return;
+        }
         const models = await invoke<string[]>('list_downloaded_voice_models');
         setInstalledModels(models);
       } catch (err) {
@@ -39,6 +43,9 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
     if (status === 'transcribing') {
       pollIntervalRef.current = setInterval(async () => {
         try {
+          // #region agent log
+          fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H4',location:'useVoiceTranscription.ts:46',message:'Polling transcription status',data:{status,hasGlobalInvoke:typeof (globalThis as { invoke?: unknown }).invoke !== 'undefined'},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
           const currentStatus = await invoke<any>('get_transcription_status');
           if (currentStatus.status === 'Completed') {
             const text = currentStatus.data;
@@ -55,6 +62,9 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
             pollIntervalRef.current = null;
           }
         } catch (err) {
+          // #region agent log
+          fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H4',location:'useVoiceTranscription.ts:63',message:'Transcription polling failed',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now()})}).catch(()=>{});
+          // #endregion
           console.error("Failed to poll transcription status:", err);
         }
       }, 500);
@@ -71,6 +81,8 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
     let unlisten: (() => void) | undefined;
 
     const setupListener = async () => {
+      if (!isTauri()) return;
+      const { listen } = await import('@tauri-apps/api/event');
       unlisten = await listen<DownloadProgressEvent>('download-progress', (event) => {
         const { id, progress } = event.payload;
         setDownloadingModels(prev => ({
@@ -97,6 +109,11 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
 
   const downloadModel = useCallback(async (model: WhisperModel) => {
     try {
+      const invoke = await getTauriInvoke();
+      if (!invoke) {
+        toast.error('Voice model downloads are only available in desktop mode');
+        return;
+      }
       setDownloadingModels(prev => ({ ...prev, [model.id]: 0 }));
       await invoke('download_voice_model', { manifest: model });
     } catch (err: any) {
@@ -115,6 +132,11 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
       return;
     }
     try {
+      const invoke = await getTauriInvoke();
+      if (!invoke) {
+        toast.error('Recording is only available in desktop mode');
+        return;
+      }
       await invoke('start_recording');
       setIsRecording(true);
       setStatus('recording');
@@ -125,6 +147,12 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
 
   const stopRecording = useCallback(async (modelId?: string) => {
     try {
+      const invoke = await getTauriInvoke();
+      if (!invoke) {
+        setIsRecording(false);
+        setStatus('idle');
+        return;
+      }
       setStatus('transcribing');
       setIsRecording(false);
       const selectedModel = modelId || installedModels[0];

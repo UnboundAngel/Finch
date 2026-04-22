@@ -3,8 +3,6 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Pin } from "lucide-react";
-import { Button } from "./button";
-
 const animations = {
   icon: {
     initial: { scale: 1, rotate: 0 },
@@ -44,11 +42,12 @@ interface PinIconButtonProps {
 export function PinIconButton({ isPinned, onToggle, className }: PinIconButtonProps) {
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 rounded-lg"
+      <div
+        role="button"
+        tabIndex={0}
+        className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-accent hover:text-accent-foreground cursor-pointer"
         onClick={onToggle}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(e as unknown as React.MouseEvent); } }}
         aria-pressed={isPinned}
       >
         <motion.div
@@ -82,7 +81,7 @@ export function PinIconButton({ isPinned, onToggle, className }: PinIconButtonPr
             )}
           </AnimatePresence>
         </motion.div>
-      </Button>
+      </div>
 
       <AnimatePresence>
         {isPinned && (

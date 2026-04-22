@@ -3,6 +3,41 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::ipc::Channel;
 use futures_util::StreamExt;
+use serde_json::Value;
+
+/// Non-stream `generateContent` responses can include multiple `parts` (e.g. reasoning vs text).
+/// Scan for the first non-empty `text` field instead of assuming `parts[0]` is plain text.
+fn extract_text_from_gemini_generate_response(json: &Value) -> Option<String> {
+    let candidates = json.get("candidates")?.as_array()?;
+    let first = candidates.first()?;
+    let parts = first.get("content")?.get("parts")?.as_array()?;
+    for part in parts {
+        if let Some(s) = part.get("text").and_then(|v| v.as_str()) {
+            let t = s.trim();
+            if !t.is_empty() {
+                return Some(t.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn gemini_generate_error_hint(json: &Value) -> String {
+    if let Some(r) = json
+        .get("promptFeedback")
+        .and_then(|p| p.get("blockReason"))
+        .and_then(|b| b.as_str())
+    {
+        return format!("prompt blocked: {}", r);
+    }
+    if let Some(m) = json.get("error").and_then(|e| e.get("message")).and_then(|x| x.as_str()) {
+        return format!("api error: {}", m);
+    }
+    if let Some(fr) = json.pointer("/candidates/0/finishReason").and_then(|v| v.as_str()) {
+        return format!("finishReason={}", fr);
+    }
+    "no structured error in body".to_string()
+}
 
 pub async fn send_message_gemini(
     config: &ProviderConfig,
@@ -52,11 +87,16 @@ pub async fn send_message_gemini(
         .await
         .map_err(|e| e.to_string())?;
 
+    let status = resp.status();
     let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
-    json["candidates"][0]["content"]["parts"][0]["text"]
-        .as_str()
-        .map(|s| s.to_string())
-        .ok_or("Failed to parse Gemini response".to_string())
+
+    extract_text_from_gemini_generate_response(&json).ok_or_else(|| {
+        format!(
+            "Gemini send_message: no text in candidates.parts (http {}, {})",
+            status,
+            gemini_generate_error_hint(&json)
+        )
+    })
 }
 
 pub async fn stream_message_gemini(
@@ -109,6 +149,15 @@ pub async fn stream_message_gemini(
         .await
         .map_err(|e| e.to_string())?;
 
+    let status = resp.status();
+    if !status.is_success() {
+        let body_text = resp.text().await.unwrap_or_default();
+        let hint = serde_json::from_str::<serde_json::Value>(&body_text)
+            .map(|j| gemini_generate_error_hint(&j))
+            .unwrap_or_else(|_| body_text.chars().take(300).collect());
+        return Err(format!("Gemini stream_message: http {}, {}", status, hint));
+    }
+
     let mut stream = resp.bytes_stream();
     let mut buffer = String::new();
     let mut total_tokens = 0;
@@ -132,9 +181,16 @@ pub async fn stream_message_gemini(
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
                     if let Some(candidates) = json.get("candidates").and_then(|c| c.as_array()) {
                         if !candidates.is_empty() {
-                            if let Some(content) = candidates[0]["content"]["parts"][0]["text"].as_str() {
-                                manual_token_count += 1;
-                                let _ = channel.send(serde_json::to_string(&StreamingEvent::Text(content.to_string())).unwrap());
+                            // Scan all parts for text (thinking models may have multiple parts)
+                            if let Some(parts) = candidates[0]["content"]["parts"].as_array() {
+                                for part in parts {
+                                    if let Some(text) = part.get("text").and_then(|v| v.as_str()) {
+                                        if !text.is_empty() {
+                                            manual_token_count += 1;
+                                            let _ = channel.send(serde_json::to_string(&StreamingEvent::Text(text.to_string())).unwrap());
+                                        }
+                                    }
+                                }
                             }
                             if let Some(reason) = candidates[0]["finishReason"].as_str() {
                                 stop_reason = match reason {

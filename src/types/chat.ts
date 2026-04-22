@@ -14,6 +14,8 @@ export type Message = {
   id?: string;
   role: 'user' | 'ai';
   content: string;
+  /** Present when the user sent this turn with a file attachment (Tauri local path). */
+  attachment?: { name: string; path: string };
   reasoning?: string;
   metadata?: MessageMetadata;
   branchPoint?: boolean;
