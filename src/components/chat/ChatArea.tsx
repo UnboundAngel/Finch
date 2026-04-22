@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { MessageBubble } from './MessageBubble';
 import { ThinkingBox } from './ThinkingBox';
 import { Message } from '../../types/chat';
+import type { Artifact } from '../../types/chat';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { SearchStatus } from './SearchStatus';
 
@@ -23,6 +24,7 @@ interface ChatAreaProps {
   userAvatarLetter: string;
   onRegenerate?: (messageId?: string) => void;
   onEditResend?: (messageId: string, newContent: string) => void;
+  onArtifactClick?: (artifact: Artifact) => void;
 }
 
 export const ChatArea = memo(({
@@ -40,6 +42,7 @@ export const ChatArea = memo(({
   userAvatarLetter,
   onRegenerate,
   onEditResend,
+  onArtifactClick,
 }: ChatAreaProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showQuickPrompts, setShowQuickPrompts] = useState(true);
@@ -71,10 +74,10 @@ export const ChatArea = memo(({
 
   return (
     <div
-      className={`flex-1 pt-20 pb-8 pl-6 pr-4 scrollbar-hide ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto'}`}
+      className={`flex-1 pt-20 pb-8 pl-6 pr-4 scrollbar-hide min-w-0 ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
       style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 72px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 72px)' }}
     >
-      <div className="max-w-3xl mx-auto min-h-full flex flex-col">
+      <div className="max-w-3xl mx-auto min-h-full flex flex-col min-w-0">
         <div className="flex-1 space-y-6">
           {messages.length === 0 && (
             isIncognito ? (
@@ -171,6 +174,7 @@ export const ChatArea = memo(({
                 msg.role === 'ai' && !msg.streaming && !isThinking ? onRegenerate : undefined
               }
               onEditResend={msg.role === 'user' && !isThinking ? onEditResend : undefined}
+              onArtifactClick={onArtifactClick}
             />
           ))}
 

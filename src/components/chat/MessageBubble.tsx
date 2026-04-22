@@ -7,14 +7,17 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Message } from '../../types/chat';
+import type { Artifact } from '../../types/chat';
 import { SearchStatus } from './SearchStatus';
 import { ThinkingBox } from './ThinkingBox';
 import { MetadataRow } from './MetadataRow';
 import { CodeBlock } from './CodeBlock';
+import { ArtifactCard } from './ArtifactCard';
 import { ExternalLink } from '@/src/components/ui/ExternalLink';
 import { resolveMediaSrc } from '@/src/lib/mediaPaths';
 import { useModelParams } from '@/src/store';
 import { FilePreviewModal, type PreviewFile } from '@/src/components/chat/FilePreviewModal';
+import { parseContentSegments } from '@/src/lib/artifactParser';
 
 function isImageFileName(name: string) {
   return /\.(png|jpe?g|gif|webp)$/i.test(name);
@@ -34,6 +37,7 @@ interface MessageBubbleProps {
   userAvatarLetter: string;
   onRegenerate?: (messageId?: string) => void;
   onEditResend?: (messageId: string, newContent: string) => void;
+  onArtifactClick?: (artifact: Artifact) => void;
 }
 
 export const MessageBubble = memo(function MessageBubble({
@@ -48,6 +52,7 @@ export const MessageBubble = memo(function MessageBubble({
   userAvatarLetter,
   onRegenerate,
   onEditResend,
+  onArtifactClick,
 }: MessageBubbleProps) {
   const [copied, setCopied] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
@@ -115,7 +120,7 @@ export const MessageBubble = memo(function MessageBubble({
 
   return (
     <>
-    <div className="flex gap-4 w-full group">
+    <div className="flex gap-4 w-full min-w-0 group">
       {msg.role === 'user' ? (
         <Avatar className="h-8 w-8 shrink-0 mt-0.5 rounded-lg border border-muted-foreground/20">
           <AvatarImage src={userAvatarSrc} alt="" referrerPolicy="no-referrer" />
@@ -126,14 +131,14 @@ export const MessageBubble = memo(function MessageBubble({
           <MessageSquare className="h-4 w-4 text-primary-foreground" />
         </div>
       )}
-      <div className="flex-1 space-y-2 text-wrap">
+      <div className="flex-1 min-w-0 space-y-2 overflow-hidden">
         <div className="font-medium text-sm px-1">{msg.role === 'user' ? 'You' : selectedModel}</div>
 
         {msg.role === 'ai' && msg.metadata?.researchEvents && msg.metadata.researchEvents.length > 0 && (
           <SearchStatus events={msg.metadata.researchEvents} />
         )}
 
-        <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors ${msg.role === 'user'
+        <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors min-w-0 ${msg.role === 'user'
             ? 'bg-primary text-primary-foreground'
             : (isIncognito
               ? (isDark ? 'bg-neutral-900 border border-neutral-800' : 'bg-white border border-neutral-200')
@@ -193,14 +198,35 @@ export const MessageBubble = memo(function MessageBubble({
                     )}
                   </div>
                 )}
-                <div className={`prose prose-sm dark:prose-invert max-w-none ${msg.role === 'user' ? 'text-primary-foreground' : 'text-foreground/90'}`}>
-                <ReactMarkdown
-                  remarkPlugins={remarkPlugins}
-                  components={markdownComponents}
-                >
-                  {msg.content}
-                </ReactMarkdown>
-              </div>
+                {msg.role === 'ai' ? (
+                  // Segment the content so artifact XML renders as cards, not raw text.
+                  <div className="space-y-3 min-w-0">
+                    {parseContentSegments(msg.content, isStreaming).map((seg, i) =>
+                      seg.type === 'artifact' ? (
+                        <ArtifactCard
+                          key={seg.artifact.id}
+                          artifact={seg.artifact}
+                          isDark={isDark}
+                          onClick={(art) => onArtifactClick?.(art)}
+                        />
+                      ) : (
+                        seg.content.trim() ? (
+                          <div key={i} className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 break-words overflow-x-auto">
+                            <ReactMarkdown remarkPlugins={remarkPlugins} components={markdownComponents}>
+                              {seg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : null
+                      )
+                    )}
+                  </div>
+                ) : (
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-primary-foreground break-words overflow-x-auto">
+                    <ReactMarkdown remarkPlugins={remarkPlugins} components={markdownComponents}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </>
             )}
           </div>

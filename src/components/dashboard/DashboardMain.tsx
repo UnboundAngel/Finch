@@ -7,7 +7,9 @@ import { ChatSidebar } from '@/src/components/sidebar/ChatSidebar';
 import { ChatArea } from '@/src/components/chat/ChatArea';
 import { ChatInput } from '@/src/components/chat/ChatInput';
 import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
+import { ArtifactPanel } from '@/src/components/chat/ArtifactPanel';
 import { useChatStore } from '@/src/store';
+import type { Artifact } from '@/src/types/chat';
 
 interface DashboardMainProps {
   recentChats: any[];
@@ -69,6 +71,9 @@ interface DashboardMainProps {
   setCustomBgLight: (val: string) => void;
   onRegenerate: (messageId?: string) => void;
   onEditResend: (messageId: string, newContent: string) => void;
+  activeArtifact: Artifact | null;
+  onArtifactClick: (artifact: Artifact) => void;
+  onArtifactClose: () => void;
 }
 
 
@@ -144,6 +149,7 @@ export function DashboardMain(props: DashboardMainProps) {
     setAttachedFile, isWebSearchActive, setIsWebSearchActive, enterToSend, isModelLoaded,
     handleInputFocus, isListening, setIsListening, handleChangeBackground, setCustomBgDark, setCustomBgLight,
     userAvatarSrc, userAvatarLetter, onRegenerate, onEditResend,
+    activeArtifact, onArtifactClick, onArtifactClose,
   } = props;
 
   useEffect(() => {
@@ -288,6 +294,7 @@ export function DashboardMain(props: DashboardMainProps) {
                   userAvatarLetter={userAvatarLetter}
                   onRegenerate={onRegenerate}
                   onEditResend={onEditResend}
+                  onArtifactClick={onArtifactClick}
                 />
                 <div className="relative z-20">
                   <ChatInput
@@ -422,6 +429,18 @@ export function DashboardMain(props: DashboardMainProps) {
         isIncognito={isIncognito}
         rightSidebarContrast={rightSidebarContrast}
       />
+
+      {/* Artifact panel — slides in from the right over the chat area */}
+      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+        <div className={`relative h-full w-full ${activeArtifact ? 'pointer-events-auto' : ''}`}>
+          <ArtifactPanel
+            artifact={activeArtifact}
+            isDark={isDark}
+            onClose={onArtifactClose}
+          />
+        </div>
+      </div>
+
       {createPortal(
         <div
           ref={railTooltipRef}

@@ -3,6 +3,18 @@ export type WebSearchResearchEvent = {
   data?: any;
 };
 
+export type ArtifactKind = 'code' | 'html' | 'markdown' | 'svg' | 'react' | 'text';
+
+export type Artifact = {
+  id: string;
+  kind: ArtifactKind;
+  title: string;
+  language?: string;
+  content: string;
+  /** 1-based version index within its message */
+  version: number;
+};
+
 export type MessageMetadata = {
   promptTokens?: number;
   completionTokens?: number;
@@ -14,6 +26,7 @@ export type MessageMetadata = {
   stopReason?: string;
   timestamp?: Date;
   researchEvents?: WebSearchResearchEvent[];
+  artifacts?: Artifact[];
 };
 
 export type Message = {

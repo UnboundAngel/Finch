@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import type { Message, ChatSession, WebSearchResearchEvent } from '../../types/chat';
+import type { Message, ChatSession, WebSearchResearchEvent, Artifact } from '../../types/chat';
+import { ARTIFACT_SYSTEM_INSTRUCTIONS } from '@/src/lib/artifactSystemPrompt';
 import { useChatPersistence } from '@/src/hooks/useChatPersistence';
 import { useAIStreaming } from '@/src/hooks/useAIStreaming';
 import { useKeyboardShortcuts } from '@/src/hooks/useKeyboardShortcuts';
@@ -68,6 +69,7 @@ function DashboardContent({
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
   const [researchEvents, setResearchEvents] = useState<WebSearchResearchEvent[]>([]);
   const researchEventsRef = useRef<WebSearchResearchEvent[]>([]);
+  const [activeArtifact, setActiveArtifact] = useState<Artifact | null>(null);
   const [attachedFile, setAttachedFile] = useState<{ name: string; path: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -304,9 +306,14 @@ function DashboardContent({
     const aiMessageId = crypto.randomUUID();
     wasAbortedRef.current = false;
 
+    // Compose system prompt: user-provided prompt + artifact authoring instructions.
+    const composedSystemPrompt = systemPrompt
+      ? `${systemPrompt}\n\n${ARTIFACT_SYSTEM_INSTRUCTIONS}`
+      : ARTIFACT_SYSTEM_INSTRUCTIONS;
+
     const cloudProviders = new Set(['anthropic', 'openai', 'gemini']);
     const streamParams = {
-      systemPrompt, temperature, topP,
+      systemPrompt: composedSystemPrompt, temperature, topP,
       ...(cloudProviders.has(selectedProvider) ? {} : { maxTokens }),
       enableWebSearch: isWebSearchActive,
     };
@@ -575,6 +582,9 @@ function DashboardContent({
         setIsSettingsOpen={setIsSettingsOpen}
         userAvatarSrc={userAvatarSrc}
         userAvatarLetter={userAvatarLetter}
+        activeArtifact={activeArtifact}
+        onArtifactClick={(art) => setActiveArtifact(art)}
+        onArtifactClose={() => setActiveArtifact(null)}
       />
     </div>
   );
