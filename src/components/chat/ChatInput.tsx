@@ -290,37 +290,74 @@ export const ChatInput = ({
     }
   }, [setAttachedFile]);
 
+  // ── Tauri v2: native OS file drag-drop ──────────────────────────────────────
+  // Tauri intercepts native file drags at the webview level — HTML drag events
+  // never fire for files dragged from the OS. We use the Tauri webview API and
+  // fall back to HTML drag handlers in browser mode.
+  useEffect(() => {
+    if (!isTauri()) return;
+    let unlisten: (() => void) | undefined;
+
+    const setup = async () => {
+      const { getCurrentWebview } = await import('@tauri-apps/api/webview');
+      unlisten = await getCurrentWebview().onDragDropEvent((event) => {
+        const { type } = event.payload;
+        if (type === 'enter') {
+          setIsDragOver(true);
+        } else if (type === 'leave') {
+          setIsDragOver(false);
+        } else if (type === 'drop') {
+          setIsDragOver(false);
+          const paths: string[] = (event.payload as any).paths ?? [];
+          if (paths.length === 0) return;
+          const filePath = paths[0];
+          const name = filePath.replace(/\\/g, '/').split('/').pop() ?? 'file';
+          const ext = name.split('.').pop()?.toLowerCase() ?? '';
+          if (!SUPPORTED_DROP_EXTS.has(ext)) {
+            toast.error(`".${ext}" files are not supported`, { duration: 2500, position: 'bottom-center' });
+            return;
+          }
+          setAttachedFile({ name, path: filePath });
+        }
+      });
+    };
+
+    setup().catch(console.error);
+    return () => { unlisten?.(); };
+  }, [setAttachedFile]);
+
+  // ── Browser fallback: HTML drag events (no-ops in Tauri) ─────────────────
   const handleDragEnter = useCallback((e: React.DragEvent) => {
+    if (isTauri()) return;
     e.preventDefault();
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) setIsDragOver(true);
   }, []);
 
   const handleDragLeave = useCallback(() => {
+    if (isTauri()) return;
     dragCounterRef.current -= 1;
     if (dragCounterRef.current === 0) setIsDragOver(false);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (isTauri()) return;
     e.preventDefault();
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
+    if (isTauri()) return;
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDragOver(false);
-
     const file = e.dataTransfer.files[0];
     if (!file) return;
-
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
     if (!SUPPORTED_DROP_EXTS.has(ext)) {
       toast.error(`".${ext}" files are not supported`, { duration: 2500, position: 'bottom-center' });
       return;
     }
-
-    // In Tauri the File object carries a real path; in the browser use a blob URL.
-    const path = (file as any).path || URL.createObjectURL(file);
+    const path = URL.createObjectURL(file);
     setAttachedFile({ name: file.name, path });
   }, [setAttachedFile]);
 
