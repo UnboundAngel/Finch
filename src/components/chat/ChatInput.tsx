@@ -504,16 +504,10 @@ export const ChatInput = ({
     <>
     {isDragOver && (
       <div
-        className="pointer-events-none fixed z-[10010] flex h-16 w-16 items-center justify-center rounded-lg border border-blue-500/45 bg-background/95 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-sm"
-        style={{ left: dragPointer.x, top: dragPointer.y, transform: 'translate(-50%, -58%)' }}
+        className="pointer-events-none fixed z-[10010]"
+        style={{ left: dragPointer.x + 20, top: dragPointer.y + 24 }}
       >
-        <div className="flex h-11 w-11 flex-col items-center justify-center rounded-md border border-blue-500/30 bg-blue-500/10">
-          <Paperclip className="h-4 w-4 text-blue-500" />
-          <span className="mt-0.5 max-w-[36px] truncate text-[9px] font-semibold leading-none text-blue-500">
-            {getFileTypeLabel(dragFileName || 'file')}
-          </span>
-        </div>
-        <span className="absolute -bottom-5 max-w-[180px] truncate text-[11px] font-medium text-blue-500/95 drop-shadow-sm">
+        <span className="inline-flex max-w-[220px] truncate rounded-md border border-blue-500/35 bg-background/85 px-2 py-1 text-[11px] font-medium text-blue-500/95 shadow-md backdrop-blur-sm">
           {dragFileName || 'Drop file'}
         </span>
       </div>
