@@ -175,6 +175,8 @@ export const ChatInput = ({
   const [micMenuPos, setMicMenuPos] = useState<{ bottom: number; right: number } | null>(null);
   const [previewFile, setPreviewFile] = useState<PreviewFile | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [dragFileName, setDragFileName] = useState<string>('');
+  const [dragPointer, setDragPointer] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Controlled Menu States
   const [isMicMenuOpen, setIsMicMenuOpen] = useState(false);
@@ -301,14 +303,28 @@ export const ChatInput = ({
     const setup = async () => {
       const { getCurrentWebview } = await import('@tauri-apps/api/webview');
       unlisten = await getCurrentWebview().onDragDropEvent((event) => {
-        const { type } = event.payload;
+        const payload = event.payload as any;
+        const { type } = payload;
+        const paths: string[] = payload.paths ?? [];
+        const firstPath = paths[0] as string | undefined;
+        const inferredName = firstPath?.replace(/\\/g, '/').split('/').pop() ?? '';
+        const pos = payload.position ?? payload.pos ?? payload.cursor ?? {};
+        const x = typeof pos.x === 'number' ? pos.x : (typeof payload.x === 'number' ? payload.x : null);
+        const y = typeof pos.y === 'number' ? pos.y : (typeof payload.y === 'number' ? payload.y : null);
+        if (x !== null && y !== null) setDragPointer({ x, y });
+
         if (type === 'enter') {
           setIsDragOver(true);
+          setDragFileName(inferredName);
+        } else if (type === 'over') {
+          setIsDragOver(true);
+          if (inferredName) setDragFileName(inferredName);
         } else if (type === 'leave') {
           setIsDragOver(false);
+          setDragFileName('');
         } else if (type === 'drop') {
           setIsDragOver(false);
-          const paths: string[] = (event.payload as any).paths ?? [];
+          setDragFileName('');
           if (paths.length === 0) return;
           const filePath = paths[0];
           const name = filePath.replace(/\\/g, '/').split('/').pop() ?? 'file';
@@ -332,17 +348,24 @@ export const ChatInput = ({
     e.preventDefault();
     dragCounterRef.current += 1;
     if (dragCounterRef.current === 1) setIsDragOver(true);
+    setDragPointer({ x: e.clientX, y: e.clientY });
+    const first = e.dataTransfer.files?.[0];
+    if (first?.name) setDragFileName(first.name);
   }, []);
 
   const handleDragLeave = useCallback(() => {
     if (isTauri()) return;
     dragCounterRef.current -= 1;
-    if (dragCounterRef.current === 0) setIsDragOver(false);
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+      setDragFileName('');
+    }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     if (isTauri()) return;
     e.preventDefault();
+    setDragPointer({ x: e.clientX, y: e.clientY });
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -350,6 +373,7 @@ export const ChatInput = ({
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDragOver(false);
+    setDragFileName('');
     const file = e.dataTransfer.files[0];
     if (!file) return;
     const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
@@ -478,6 +502,17 @@ export const ChatInput = ({
 
   return (
     <>
+    {isDragOver && (
+      <div
+        className="pointer-events-none fixed z-[10010] flex max-w-[280px] items-center gap-2 rounded-lg border border-blue-500/50 bg-background/90 px-2.5 py-1.5 shadow-lg backdrop-blur-sm"
+        style={{ left: dragPointer.x + 14, top: dragPointer.y + 14 }}
+      >
+        <Paperclip className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+        <span className="truncate text-xs font-medium text-blue-500">
+          {dragFileName || 'Drop file'}
+        </span>
+      </div>
+    )}
     <div
       className="flex-shrink-0 w-full z-20 transition-all bg-transparent"
       onDragEnter={handleDragEnter}
