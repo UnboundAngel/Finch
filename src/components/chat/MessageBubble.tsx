@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useRef, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Files, Check, Square, RefreshCw, Pencil } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -76,6 +76,13 @@ export const MessageBubble = memo(function MessageBubble({
 
   const isStreaming = !!msg.streaming;
   const isUserMsg = msg.role === 'user';
+  const isStreamingRef = useRef(isStreaming);
+  isStreamingRef.current = isStreaming;
+
+  const contentSegments = useMemo(
+    () => parseContentSegments(msg.content, isStreaming),
+    [msg.content, isStreaming],
+  );
 
   const markdownComponents = useMemo(() => ({
     h1: ({ node, ...props }: any) => <h1 className="text-xl font-bold mb-4" {...props} />,
@@ -89,12 +96,14 @@ export const MessageBubble = memo(function MessageBubble({
     li: ({ node, ...props }: any) => <li className="mb-1" {...props} />,
     table: ({ node, ...props }: any) => (
       <div className="overflow-x-auto my-4 rounded-lg border border-muted-foreground/10">
-        <table className="min-w-full divide-y divide-muted-foreground/10" {...props} />
+        <table className="min-w-full border-collapse" {...props} />
       </div>
     ),
+    tbody: ({ node, ...props }: any) => <tbody className="[&_tr:last-child_td]:border-b-0" {...props} />,
+    tr: ({ node, ...props }: any) => <tr className="border-0" {...props} />,
     thead: ({ node, ...props }: any) => <thead className="bg-muted/50" {...props} />,
-    th: ({ node, ...props }: any) => <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider" {...props} />,
-    td: ({ node, ...props }: any) => <td className="px-4 py-2 text-sm border-t border-muted-foreground/10" {...props} />,
+    th: ({ node, ...props }: any) => <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-muted-foreground/10" {...props} />,
+    td: ({ node, ...props }: any) => <td className="px-4 py-2 text-sm border-b border-muted-foreground/10" {...props} />,
     a: ({ node, href, children, ...props }: any) => (
       <ExternalLink href={href || ''} {...props}>
         {children}
@@ -108,7 +117,7 @@ export const MessageBubble = memo(function MessageBubble({
           children={String(children).replace(/\n$/, '')}
           language={match[1]}
           isDark={isDark}
-          streaming={isStreaming}
+          streaming={isStreamingRef.current}
         />
       ) : (
         <code className={`px-1.5 py-0.5 rounded text-sm font-mono font-medium break-all whitespace-pre-wrap ${isUserMsg ? 'bg-white/20' : 'bg-muted/80'}`} {...rest}>
@@ -116,7 +125,7 @@ export const MessageBubble = memo(function MessageBubble({
         </code>
       );
     },
-  }), [isDark, isStreaming, isUserMsg]);
+  }), [isDark, isUserMsg]);
 
   return (
     <>
@@ -138,13 +147,9 @@ export const MessageBubble = memo(function MessageBubble({
           <SearchStatus events={msg.metadata.researchEvents} />
         )}
 
-        <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors min-w-0 ${msg.role === 'user'
-            ? 'bg-primary text-primary-foreground'
-            : (isIncognito
-              ? (isDark ? 'bg-neutral-900 border border-neutral-800' : 'bg-white border border-neutral-200')
-              : (isPinkMode
-                ? 'bg-white/70 border border-rose-100/50'
-                : 'bg-muted/50 border border-muted-foreground/10'))
+        <div className={`transition-colors min-w-0 ${msg.role === 'user'
+            ? 'rounded-2xl px-4 py-3 shadow-sm bg-primary text-primary-foreground'
+            : 'px-0 py-0 shadow-none bg-transparent border-0'
           }`}>
           <div className="min-h-[1.5rem]">
             {msg.role === 'user' && isEditing ? (
@@ -201,7 +206,7 @@ export const MessageBubble = memo(function MessageBubble({
                 {msg.role === 'ai' ? (
                   // Segment the content so artifact XML renders as cards, not raw text.
                   <div className="space-y-3 min-w-0">
-                    {parseContentSegments(msg.content, isStreaming).map((seg, i) =>
+                    {contentSegments.map((seg, i) =>
                       seg.type === 'artifact' ? (
                         <ArtifactCard
                           key={seg.artifact.id}
@@ -356,6 +361,7 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
         )}
       </div>
+      <div className="h-8 w-8 shrink-0 mt-0.5 opacity-0 pointer-events-none" aria-hidden="true" />
     </div>
     <FilePreviewModal
       file={previewFile}
