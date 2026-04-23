@@ -442,6 +442,7 @@ export function DashboardMain(props: DashboardMainProps) {
           <ArtifactPanel
             artifact={activeArtifact}
             isDark={isDark}
+            isStreaming={isStreaming}
             onClose={onArtifactClose}
             allVersions={allVersionsOfActive}
             onSelectVersion={onArtifactClick}
