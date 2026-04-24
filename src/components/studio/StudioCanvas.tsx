@@ -92,32 +92,27 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       )}
       {/* INTEGRATION */}
       {isStreaming ? (
-        <div className="flex flex-col h-full w-full">
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex-1 min-w-0 space-y-2 py-0.5">
-              <div className="h-[18px] w-3/5 bg-muted rounded" />
-              <div className="h-[14px] w-2/5 bg-muted/50 rounded" />
+        <div className="space-y-5">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 flex-1">
+              <div className="h-5 w-32 bg-muted/60 rounded-md animate-pulse" />
+              <div className="h-3 w-20 bg-muted/40 rounded animate-pulse" />
             </div>
-            <div className="h-5 w-16 bg-muted rounded-full" />
-          </div>
-
-          <div className="flex gap-2 mt-5">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="flex-1 aspect-square rounded-lg bg-muted" />
-            ))}
+            <div className="h-6 w-16 bg-muted/40 rounded-full animate-pulse" />
           </div>
 
           <div className="flex gap-2 mt-2">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="flex-1 h-[22px] bg-muted/50 rounded" />
+              <div key={i} className="flex-1 aspect-square bg-muted/30 rounded-lg animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
             ))}
           </div>
 
-          <div className="h-px bg-border/50 my-3" />
-          <div className="flex gap-1.5">
-            <div className="h-4 w-12 bg-muted/50 rounded" />
-            <div className="h-4 w-16 bg-muted/50 rounded" />
-            <div className="h-4 w-14 bg-muted/50 rounded" />
+          <div className="space-y-3 mt-4 pt-4 border-t border-border/30">
+            <div className="h-2 w-10 bg-muted/40 rounded animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-3 w-full bg-muted/20 rounded animate-pulse" />
+              <div className="h-3 w-2/3 bg-muted/20 rounded animate-pulse" />
+            </div>
           </div>
         </div>
       ) : (
@@ -240,9 +235,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
                   onClick={(e) => { e.stopPropagation(); onRefineNode?.(node); }}
                   onPointerDown={e => e.stopPropagation()}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /><path d="M5 3v4" /><path d="M19 17v4" /><path d="M3 5h4" /><path d="M17 19h4" /></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>
                 </TooltipTrigger>
-                <TooltipContent side="top">Refine with AI</TooltipContent>
+                <TooltipContent side="top">Regenerate Palette</TooltipContent>
               </Tooltip>
 
               <Tooltip>
