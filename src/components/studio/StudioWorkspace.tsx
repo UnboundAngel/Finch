@@ -73,24 +73,21 @@ export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspa
 
     text += `What could we do with this pallete?`;
 
-    const newMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: text,
-      metadata: { timestamp: new Date() }
-    };
-
-    setMessages((prev: Message[]) => [...prev, newMessage]);
     setActiveWorkspace('chat');
-    setInput('');
+    setInput(text);
     setPendingEjectTrigger(true);
-  }, [setMessages, setActiveWorkspace, setInput]);
+  }, [setActiveWorkspace, setInput]);
 
   // Effect to trigger AI response after the workspace switch and message injection
   useEffect(() => {
     if (pendingEjectTrigger) {
-      onSend();
+      // Small timeout ensures Dashboard.tsx completes its render cycle 
+      // and updates inputRef.current with the newly set input text.
+      const timer = setTimeout(() => {
+        onSend();
+      }, 100);
       setPendingEjectTrigger(false);
+      return () => clearTimeout(timer);
     }
   }, [pendingEjectTrigger, onSend]);
 
