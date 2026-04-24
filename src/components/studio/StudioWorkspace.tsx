@@ -40,13 +40,37 @@ export function StudioWorkspace({ messages, setMessages }: StudioWorkspaceProps)
 
   const handleEjectNode = useCallback((node: PaletteNode) => {
     const p = node.palette;
-    let text = `I'd like to discuss this color palette from the Studio:\n\n`;
-    text += `**Theme**: ${p.theme || 'Untitled'}\n`;
-    if (p.description) text += `**Description**: ${p.description}\n`;
-    text += `\n**Colors**:\n`;
-    p.colors.forEach(c => {
-      text += `- ${c.name}: \`${c.hex}\`${c.wcag ? ` (WCAG: ${c.wcag})` : ''}\n`;
+    const colors = p.colors;
+    
+    // Detect uniform accessibility
+    const allWcag = colors.map(c => c.wcag).filter(Boolean);
+    const uniqueWcag = [...new Set(allWcag)];
+    const allMatch = uniqueWcag.length === 1 && allWcag.length === colors.length;
+    
+    let text = `🎨 **${p.theme || 'Untitled Palette'}**\n\n`;
+    if (p.description) text += `${p.description}\n\n`;
+
+    // Format colors with scannable layout
+    colors.forEach(c => {
+      // Use a consistent name column width
+      const name = c.name.padEnd(24, ' ');
+      const wcagSuffix = (!allMatch && c.wcag) ? ` — ${c.wcag}` : '';
+      text += `${name} \`${c.hex}\`${wcagSuffix}\n`;
     });
+
+    text += `\n`;
+
+    // Accessibility Quality Stamp
+    if (allMatch) {
+      text += `✓ All colors meet WCAG ${uniqueWcag[0]} accessibility standards\n`;
+    } else if (uniqueWcag.length > 0) {
+      text += `ℹ️ Mixed accessibility standards (AA to AAA)\n`;
+    }
+
+    // Final Polish: Small metadata footer
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const date = new Date().toLocaleDateString([], { month: 'short', day: 'numeric' });
+    text += `\n*Generated on ${date} at ${time}*`;
 
     const newMessage: Message = {
       id: crypto.randomUUID(),
