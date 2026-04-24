@@ -167,3 +167,8 @@ commands.allow = ["save_artifact_version"]
 identifier = "allow-get-file-size"
 description = "Allows retrieving the size of a file on disk"
 commands.allow = ["get_file_size"]
+
+[[permission]]
+identifier = "allow-process-imported-media"
+description = "Allows processing and compressing an imported media file"
+commands.allow = ["process_imported_media"]
