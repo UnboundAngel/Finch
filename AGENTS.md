@@ -231,7 +231,22 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 - `ProviderConfig` in `types.rs` uses `get_store` in `lib.rs` setup (line 39–40) — this is the initialization pattern for the Tauri store and intentionally distinct from runtime usage which always uses `handle.store()`.
 - `ipc/media_import.rs` is declared as a `pub mod` in `ipc/mod.rs` but none of its commands appear in `lib.rs`'s `invoke_handler!`. The functions in `settings.rs` (`import_user_media`, `remove_imported_media`) handle that surface instead. The `media_import.rs` module may be vestigial or contain shared helpers — verify before modifying.
 
-## 11. Agent Conventions
+## 11. Cursor Subagents
+
+This project uses specialized **subagents** defined in `.cursor/agents/`. These are high-leverage tools that run with specific models and focused file scopes.
+
+| Subagent | Prefix | Focus | Primary Model |
+|---|---|---|---|
+| **Rust Specialist** | `/rust-backend-specialist` | Implementation & Tauri v2 commands | Sonnet 4.6 |
+| **Rust Architect** | `/rust-backend-architect` | High-level design & security audits | Opus 4.7 |
+| **React Specialist** | `/react-ui-specialist` | UI, Motion, and Studio Canvas | Gemini 3 Flash |
+
+### Subagent Rules
+- **Scope Confined**: Subagents only read/write their designated paths. Do not expand their scope unless necessary.
+- **Handoff Requirement**: If a subagent hits a cross-layer dependency (e.g., UI needs a new IPC command), it must provide a **symbols & types handoff** for the parent agent.
+- **Verification**: Always verify `capabilities/default.json` for new Rust commands.
+
+## 12. Agent Conventions (General)
 - **Read `STATE.md` before starting any task.**
 - **Surgical edits only.** Never output full file contents unless explicitly asked. Use targeted replacements.
 - **Never rewrite a file that wasn't explicitly scoped.**
