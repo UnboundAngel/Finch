@@ -290,6 +290,7 @@ export function DashboardMain(props: DashboardMainProps) {
                   <StudioWorkspace 
                     messages={messages}
                     setMessages={setMessages}
+                    onSend={handleSend}
                   />
                   {/* Floating Chat Input over the canvas */}
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl z-20 px-4">

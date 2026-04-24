@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import StudioCanvas from '@/src/components/studio/StudioCanvas';
 import { useStudioStore, useChatStore } from '@/src/store/index';
 import { parseLenientJson } from '@/src/lib/jsonParser';
@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils';
 interface StudioWorkspaceProps {
   messages: Message[];
   setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
+  onSend: () => void;
 }
 
-export function StudioWorkspace({ messages, setMessages }: StudioWorkspaceProps) {
+export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspaceProps) {
   const nodes = useStudioStore(state => state.nodes);
   const studioStreamBuffer = useStudioStore(state => state.studioStreamBuffer);
   const updateNodePosition = useStudioStore(state => state.updateNodePosition);
@@ -19,6 +20,8 @@ export function StudioWorkspace({ messages, setMessages }: StudioWorkspaceProps)
   
   const setInput = useChatStore(state => state.setInput);
   const setActiveWorkspace = useChatStore(state => state.setActiveWorkspace);
+
+  const [pendingEjectTrigger, setPendingEjectTrigger] = useState(false);
 
   const streamingNode = useMemo(() => {
     if (!studioStreamBuffer) return null;
@@ -50,12 +53,13 @@ export function StudioWorkspace({ messages, setMessages }: StudioWorkspaceProps)
     let text = `🎨 **${p.theme || 'Untitled Palette'}**\n\n`;
     if (p.description) text += `${p.description}\n\n`;
 
-    // Format colors with scannable layout
+    // Format colors with GFM Table for perfect alignment
+    text += `| Swatch | Name | Hex |${!allMatch ? ' WCAG |' : ''}\n`;
+    text += `| :--- | :--- | :--- |${!allMatch ? ' :--- |' : ''}\n`;
+
     colors.forEach(c => {
-      // Use a consistent name column width
-      const name = c.name.padEnd(24, ' ');
-      const wcagSuffix = (!allMatch && c.wcag) ? ` — ${c.wcag}` : '';
-      text += `${name} \`${c.hex}\`${wcagSuffix}\n`;
+      const wcagCol = (!allMatch) ? ` ${c.wcag || '-'} |` : '';
+      text += `| <span style="color: ${c.hex}">■</span> | ${c.name} | \`${c.hex}\` |${wcagCol}\n`;
     });
 
     text += `\n`;
@@ -82,7 +86,16 @@ export function StudioWorkspace({ messages, setMessages }: StudioWorkspaceProps)
     setMessages((prev: Message[]) => [...prev, newMessage]);
     setActiveWorkspace('chat');
     setInput('');
+    setPendingEjectTrigger(true);
   }, [setMessages, setActiveWorkspace, setInput]);
+
+  // Effect to trigger AI response after the workspace switch and message injection
+  useEffect(() => {
+    if (pendingEjectTrigger) {
+      onSend();
+      setPendingEjectTrigger(false);
+    }
+  }, [pendingEjectTrigger, onSend]);
 
 // INTEGRATION
   return (
