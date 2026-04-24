@@ -15,10 +15,11 @@ interface StudioWorkspaceProps {
   isStreaming: boolean;
 }
 
-export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspaceProps) {
+export function StudioWorkspace({ messages, setMessages, onSend, isStreaming }: StudioWorkspaceProps) {
   const nodes = useStudioStore(state => state.nodes);
   const studioStreamBuffer = useStudioStore(state => state.studioStreamBuffer);
   const updateNodePosition = useStudioStore(state => state.updateNodePosition);
+  const refinementNodeId = useStudioStore(state => state.refinementNodeId);
   const setRefinementNodeId = useStudioStore(state => state.setRefinementNodeId);
   
   const setInput = useChatStore(state => state.setInput);

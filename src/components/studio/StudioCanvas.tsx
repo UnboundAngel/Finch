@@ -87,12 +87,13 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       data-node-id={node.id}
       ref={ref}
       className={cn(
-        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl group",
-        "hover:border-ring/50 shadow-xl",
+        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl",
+        !showSkeleton && "group hover:border-ring/50 shadow-xl cursor-grab",
         isSelected && "border-primary ring-1 ring-primary shadow-lg",
-        isStreaming && "animate-pulse pointer-events-none border-primary"
+        isStreaming && "animate-pulse pointer-events-none border-primary",
+        showSkeleton && "cursor-wait"
       )}
-      onPointerDown={isStreaming ? undefined : (e) => onPointerDown(e, node)}
+      onPointerDown={showSkeleton ? undefined : (e) => onPointerDown(e, node)}
       onPointerUp={onPointerUp}
       style={{
         width: `${width}px`,
@@ -105,39 +106,33 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
         </div>
       )}
       {/* INTEGRATION */}
-      {showSkeleton ? (
-        <div className="flex flex-col h-full w-full">
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex-1 min-w-0 space-y-2 py-0.5">
-              <div className="h-[18px] w-3/5 bg-muted rounded skeleton-shimmer" />
-              <div className="h-[14px] w-2/5 bg-muted/50 rounded skeleton-shimmer" />
-            </div>
-            <div className="h-5 w-16 bg-muted rounded-full skeleton-shimmer" />
-          </div>
-
-          <div className="flex gap-2 mt-5">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="flex-1 aspect-square rounded-lg bg-muted skeleton-shimmer" />
-            ))}
-          </div>
-
-          <div className="flex gap-2 mt-2">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="flex-1 h-[22px] bg-muted/50 rounded skeleton-shimmer" />
-            ))}
-          </div>
-
-          <div className="h-px bg-border/50 my-3" />
-          <div className="flex gap-1.5">
-            <div className="h-4 w-12 bg-muted/50 rounded" />
-            <div className="h-4 w-16 bg-muted/50 rounded" />
-            <div className="h-4 w-14 bg-muted/50 rounded" />
-          </div>
+      {/* Prismatic Diffusion Regeneration Effect */}
+      {showSkeleton && (
+        <div 
+          className="absolute inset-0 z-50 rounded-2xl overflow-hidden pointer-events-none transition-all duration-700 ease-in-out [contain:paint]"
+          style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
+        >
+          {/* Base Glass Layer with Breathing Blur */}
+          <div className="absolute inset-0 backdrop-blur-2xl bg-card/10 animate-glass-pulse" />
+          
+          {/* Prismatic Light Sweep */}
+          <div className="absolute -inset-[100%] opacity-30 bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0%,var(--primary)_10%,transparent_20%,var(--accent)_40%,transparent_50%,var(--primary)_70%,transparent_80%,var(--accent)_90%,transparent_100%)] animate-prismatic-spin blur-3xl" />
+          
+          {/* Spectral Diffraction Scanning */}
+          <div className="absolute inset-0 opacity-[0.15] bg-[linear-gradient(110deg,transparent_20%,var(--primary)_40%,var(--accent)_50%,var(--primary)_60%,transparent_80%)] bg-[length:200%_100%] animate-spectral-scan" />
+          
+          {/* Micro-Geometric Lattice (Subtle Grid) */}
+          <div className="absolute inset-0 opacity-[0.05] bg-[matrix(1,0,0,1,0,0)]" style={{ backgroundImage: 'radial-gradient(var(--primary) 0.5px, transparent 0.5px)', backgroundSize: '12px 12px' }} />
+          
+          {/* Inner Glow Border */}
+          <div className="absolute inset-0 rounded-2xl border border-primary/20 shadow-[inset_0_0_20px_oklch(from_var(--primary)_l_c_h_/_0.15)]" />
         </div>
-      ) : (
-        <>
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex-1 min-w-0">
+      )}
+
+      {/* Main Content (Always rendered but blurred/shifted when loading) */}
+      <div className={cn("flex flex-col h-full w-full", showSkeleton && "animate-chromatic-shift opacity-50 grayscale-[0.3] transition-all duration-700 pointer-events-none")}>
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1 min-w-0">
               {isEditing ? (
                 <input
                   autoFocus
@@ -283,14 +278,14 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
               </Tooltip>
             </div>
           )}
-        </>
-      )}
-      {!isStreaming && (
-        <div onPointerDown={(e) => onResizePointerDown(e, node)} onPointerUp={onPointerUp} className="absolute right-0 bottom-0 w-4 h-4 cursor-ew-resize flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1L7 7L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
-      )}
-    </div>
+
+        {!isStreaming && (
+          <div onPointerDown={(e) => onResizePointerDown(e, node)} onPointerUp={onPointerUp} className="absolute right-0 bottom-0 w-4 h-4 cursor-ew-resize flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1L7 7L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+        )}
+      </div>
   );
 }));
 
