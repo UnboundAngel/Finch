@@ -1,7 +1,9 @@
 import { useMemo, useCallback, useState, useEffect } from 'react';
+import { invoke } from "@tauri-apps/api/core";
 import StudioCanvas from '@/src/components/studio/StudioCanvas';
 import { useStudioStore, useChatStore } from '@/src/store/index';
 import { parseLenientJson } from '@/src/lib/jsonParser';
+import { isLocalInferenceProvider } from '@/src/lib/providers';
 import type { PaletteNode } from '@/src/store/studioSlice';
 import type { Message } from '@/src/types/chat';
 import { cn } from '@/lib/utils';
@@ -10,6 +12,7 @@ interface StudioWorkspaceProps {
   messages: Message[];
   setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
   onSend: () => void;
+  isStreaming: boolean;
 }
 
 export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspaceProps) {
@@ -20,8 +23,13 @@ export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspa
   
   const setInput = useChatStore(state => state.setInput);
   const setActiveWorkspace = useChatStore(state => state.setActiveWorkspace);
+  const selectedProvider = useChatStore(state => state.selectedProvider);
+  const selectedModel = useChatStore(state => state.selectedModel);
+  const isModelLoaded = useChatStore(state => state.isModelLoaded);
+  const setIsModelLoading = useChatStore(state => state.setIsModelLoading);
 
   const [pendingEjectTrigger, setPendingEjectTrigger] = useState(false);
+  const [waitingForLoadToRegen, setWaitingForLoadToRegen] = useState(false);
 
   const streamingNode = useMemo(() => {
     if (!studioStreamBuffer) return null;
@@ -38,8 +46,25 @@ export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspa
 
   const handleRefineNode = (node: any) => {
     setRefinementNodeId(node.id);
-    setInput(node.sourcePrompt);
+    const variationPrompt = `${node.sourcePrompt}\n\nChange it up. Create a unique variation while keeping the core theme.`;
+    setInput(variationPrompt);
+    
+    if (isLocalInferenceProvider(selectedProvider) && !isModelLoaded) {
+      invoke('preload_model', { provider: selectedProvider, modelId: selectedModel });
+      setIsModelLoading(true);
+      setWaitingForLoadToRegen(true);
+    } else {
+      // Small timeout to ensure input state is synced with useChatEngine's inputRef
+      setTimeout(() => onSend(), 50);
+    }
   };
+
+  useEffect(() => {
+    if (waitingForLoadToRegen && isModelLoaded) {
+      setWaitingForLoadToRegen(false);
+      onSend();
+    }
+  }, [waitingForLoadToRegen, isModelLoaded, onSend]);
 
   const handleEjectNode = useCallback((node: PaletteNode) => {
     const p = node.palette;
@@ -100,6 +125,8 @@ export function StudioWorkspace({ messages, setMessages, onSend }: StudioWorkspa
         onNodeMove={updateNodePosition} 
         onRefineNode={handleRefineNode}
         onEjectNode={handleEjectNode}
+        isStreaming={isStreaming}
+        refinementNodeId={refinementNodeId}
       />
     </div>
   );

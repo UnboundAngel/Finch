@@ -11,6 +11,8 @@ export interface StudioCanvasProps {
   onSaveNode?: (id: string) => void;
   onRefineNode?: (node: PaletteNode) => void;
   onEjectNode?: (node: PaletteNode) => void;
+  isStreaming?: boolean;
+  refinementNodeId?: string | null;
 }
 
 type DragInfo =
@@ -40,8 +42,10 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   onSaveNode?: (nodeId: string) => void;
   onRefineNode?: (node: PaletteNode) => void;
   onEjectNode?: (node: PaletteNode) => void;
+  refinementNodeId?: string | null;
+  globalIsStreaming?: boolean;
 }>((props, ref) => {
-  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode, onEjectNode } = props;
+  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode, onEjectNode, refinementNodeId, globalIsStreaming } = props;
 
   const [editedTitle, setEditedTitle] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,7 +80,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
     }
   }, [isStreaming]);
 
-  const showSkeleton = isStreaming || isRegenerating;
+  const showSkeleton = isStreaming || isRegenerating || (globalIsStreaming && node.id === refinementNodeId);
 
   return (
     <div
@@ -105,21 +109,21 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
         <div className="flex flex-col h-full w-full">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0 space-y-2 py-0.5">
-              <div className="h-[18px] w-3/5 bg-muted rounded" />
-              <div className="h-[14px] w-2/5 bg-muted/50 rounded" />
+              <div className="h-[18px] w-3/5 bg-muted rounded skeleton-shimmer" />
+              <div className="h-[14px] w-2/5 bg-muted/50 rounded skeleton-shimmer" />
             </div>
-            <div className="h-5 w-16 bg-muted rounded-full" />
+            <div className="h-5 w-16 bg-muted rounded-full skeleton-shimmer" />
           </div>
 
           <div className="flex gap-2 mt-5">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="flex-1 aspect-square rounded-lg bg-muted" />
+              <div key={i} className="flex-1 aspect-square rounded-lg bg-muted skeleton-shimmer" />
             ))}
           </div>
 
           <div className="flex gap-2 mt-2">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="flex-1 h-[22px] bg-muted/50 rounded" />
+              <div key={i} className="flex-1 h-[22px] bg-muted/50 rounded skeleton-shimmer" />
             ))}
           </div>
 
@@ -291,7 +295,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 }));
 
 export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Element {
-  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode, onEjectNode } = props;
+  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode, onEjectNode, isStreaming, refinementNodeId } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -613,9 +617,11 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
               onSaveNode={onSaveNode}
               onRefineNode={onRefineNode}
               onEjectNode={onEjectNode}
+              refinementNodeId={refinementNodeId}
+              globalIsStreaming={isStreaming}
             />
           ))}
-          {streamingNode && (
+          {streamingNode && !refinementNodeId && (
             <PaletteNodeCard
               key={streamingNode.id}
               node={streamingNode as PaletteNode}
