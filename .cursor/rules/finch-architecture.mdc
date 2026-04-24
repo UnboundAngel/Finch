@@ -1,0 +1,39 @@
+---
+description: Consolidated architecture, performance, and discipline rules for Finch
+alwaysApply: true
+---
+
+# Finch Architecture Rules
+
+## File Boundaries
+- **React UI**: `src/components/`, `src/hooks/`, `src/lib/`, `src/store/`
+- **Rust Backend**: `src-tauri/src/`
+- **Never Modify**: `.planning/`, `docs/archive/`
+- **Always Read**: `.planning/STATE.md` at session start
+
+## Tauri Conventions
+- Every new `#[command]` requires `allow-[command-name]` in `src-tauri/capabilities/default.json`
+- Tauri v2 Channel uses `.onmessage` assignment, **NOT** `.onData()`
+- `camelCase` JS → `snake_case` Rust args is automatic; never manually convert
+- Use `handle.store()` via `StoreExt`, **NEVER** `handle.get_store()`
+
+## State Management
+- **Three Zustand Stores**: `useModelParamsStore`, `useChatStore`, `useProfileStore`, `useStudioStore`
+- No Redux, no React Context for global state (except `ModalProvider`)
+- `tokensUsed` and `voiceStatus` are excluded from chat persistence
+
+## Performance Mandates
+- **Studio Canvas**: Direct DOM mutation (`el.style.transform`) for drag/resize, **NOT** React re-renders
+- Avoid `transition-all` on Studio nodes; use specific transitions
+- Motion `layout` + `height: auto` conflicts with Zustand during slider drag — use CSS `max-height` instead
+- **Shiki**: Async singleton, init once in `CodeBlock.tsx`
+
+## Output Discipline
+- **Surgical edits only**. Never rewrite a file not explicitly scoped.
+- **Never output full file contents** unless asked.
+- When uncertain about a file's role, read it. Do not assume.
+
+## Git
+- **Primary Remote**: `origin` → `Finch_full` (private)
+- **Branch**: `main` on Windows, `linux` on laptop
+- All pushes go to `origin`
