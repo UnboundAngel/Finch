@@ -83,8 +83,9 @@ export const WebSearchControl = ({
           <PopoverAnchor asChild>
             <div className="inline-flex relative">
               <Tooltip>
-                <TooltipTrigger render={
+                <TooltipTrigger render={(props) => (
                   <Button                            
+                    {...props}
                     variant="ghost"
                     size="icon"
                     className={cn(
@@ -93,7 +94,10 @@ export const WebSearchControl = ({
                         ? "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20" 
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     )}
-                    onClick={() => {
+                    onClick={(e) => {
+                      // Trigger base tooltip/focus behavior
+                      props.onClick?.(e);
+                      
                       if (!configLoaded) return;
                       if (!hasSearchKey) {
                         setOnboardingStep(0);
@@ -117,7 +121,7 @@ export const WebSearchControl = ({
                   >
                     <Globe className="h-4 w-4" />
                   </Button>
-                } />
+                )} />
                 <TooltipContent side="top" className="text-[11px] py-1.5 px-2.5 z-50">
                   {isWebSearchActive ? 'Web Research enabled' : 'Web Research disabled'}
                 </TooltipContent>

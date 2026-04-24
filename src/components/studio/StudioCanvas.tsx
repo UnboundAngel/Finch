@@ -633,14 +633,20 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
 
         <div className="absolute bottom-6 right-6 z-50">
           <Tooltip>
-            <TooltipTrigger
-              onClick={handleCleanUp}
-              className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
-              Clean Up
-            </TooltipTrigger>
-            <TooltipContent side="top">Auto-organize nodes</TooltipContent>
+            <TooltipTrigger render={(props) => (
+              <button
+                {...props}
+                onClick={(e) => {
+                  props.onClick?.(e);
+                  handleCleanUp();
+                }}
+                className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                Clean Up
+              </button>
+            )} />
+            <TooltipContent side="top">Organize all nodes in a grid</TooltipContent>
           </Tooltip>
         </div>
 

@@ -218,15 +218,13 @@ pub async fn eject_model(handle: AppHandle, provider: String, model_id: String) 
 
             if instance_ids.is_empty() {
                 // Fallback for older behavior where caller already passes a concrete instance ID.
-                client
+                // We swallow errors here (like 404 if the model isn't loaded) to prevent auto-eject from logging failures.
+                let _ = client
                     .post(unload_url)
                     .header("Content-Type", "application/json")
                     .json(&serde_json::json!({ "instance_id": model_id }))
                     .send()
-                    .await
-                    .map_err(|e| e.to_string())?
-                    .error_for_status()
-                    .map_err(|e| e.to_string())?;
+                    .await;
                 return Ok(());
             }
 

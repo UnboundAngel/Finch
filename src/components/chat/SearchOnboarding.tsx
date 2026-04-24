@@ -173,7 +173,7 @@ export const SearchOnboarding = ({ onComplete, onClose, initialStep }: SearchOnb
                   {activeProvider === 'searxng' ? 'Instance URL' : `${activeProvider} API Key`}
                 </label>
                 <Input 
-                  value={activeProvider === 'tavily' ? apiKey : (activeProvider === 'brave' ? braveKey : searxUrl)}
+                  value={(activeProvider === 'tavily' ? apiKey : (activeProvider === 'brave' ? braveKey : searxUrl)) ?? ''}
                   onChange={(e) => {
                     if (activeProvider === 'tavily') setApiKey(e.target.value);
                     else if (activeProvider === 'brave') setBraveKey(e.target.value);

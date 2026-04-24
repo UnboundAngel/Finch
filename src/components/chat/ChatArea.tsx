@@ -94,10 +94,8 @@ export const ChatArea = memo(({
                     <p className="text-lg">Incognito chats aren't saved or kept in memory</p>
                     <TooltipProvider delay={200}>
                       <Tooltip>
-                        <TooltipTrigger>
-                          <button className="text-primary hover:underline font-medium mt-1 inline-flex items-center gap-1">
-                            Learn more.
-                          </button>
+                        <TooltipTrigger className="text-primary hover:underline font-medium mt-1 inline-flex items-center gap-1">
+                          Learn more.
                         </TooltipTrigger>
                         <TooltipContent
                           side="bottom"

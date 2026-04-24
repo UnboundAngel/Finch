@@ -363,7 +363,7 @@ export const ChatInput = ({
             ) : (
               <textarea
                 ref={textareaRef}
-                value={input}
+                value={input ?? ''}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={onFocus}
@@ -374,7 +374,7 @@ export const ChatInput = ({
             )}
 
             <ChatInputControls
-              hasText={!!input.trim()}
+              hasText={!!String(input || '').trim()}
               isThinking={isThinking}
               onSend={handleSend}
               onStop={onStop}
