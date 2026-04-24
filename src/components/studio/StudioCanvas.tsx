@@ -47,6 +47,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   const [isEditing, setIsEditing] = useState(false);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const title = editedTitle ?? (node.palette.theme || 'Untitled Theme');
@@ -67,6 +68,15 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       setCopiedHex(current => current === hex ? null : current);
     }, 1500);
   };
+
+  useEffect(() => {
+    if (isStreaming) {
+      setIsRegenerating(false);
+      setIsExpanded(false);
+    }
+  }, [isStreaming]);
+
+  const showSkeleton = isStreaming || isRegenerating;
 
   return (
     <div
@@ -91,7 +101,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
         </div>
       )}
       {/* INTEGRATION */}
-      {isStreaming ? (
+      {showSkeleton ? (
         <div className="flex flex-col h-full w-full">
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0 space-y-2 py-0.5">
@@ -208,11 +218,12 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 
           {(node.palette.description) && (
             <>
-              <div className="h-px bg-border/50 my-3" />
-              <div className="flex gap-1.5 flex-wrap">
-                {(node.palette.description?.split(',').slice(0, 3))?.map((tag, i) => (
-                  <span key={i} className="text-muted-foreground text-[11px] font-sans">#{tag.trim().toLowerCase()}</span>
-                ))}
+              <div className="h-px bg-border/30 my-4" />
+              <div className="px-1 space-y-1.5">
+                <div className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/50 font-bold">Concept</div>
+                <p className="text-foreground/90 text-[12px] leading-relaxed font-medium italic">
+                  {node.palette.description.replace(/^#/, '')}
+                </p>
               </div>
             </>
           )}
@@ -239,6 +250,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
                   className="p-1.5 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center"
                   onClick={(e) => { 
                     e.stopPropagation(); 
+                    setIsRegenerating(true);
                     setIsExpanded(false);
                     onRefineNode?.(node); 
                   }}
