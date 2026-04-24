@@ -1,6 +1,0 @@
----
-description: Agent output and file editing discipline
-alwaysApply: true
----
-
-Surgical edits only. Never rewrite a file not explicitly scoped. Never output full file contents unless asked. When uncertain about a file's role, read it first. Do not assume.

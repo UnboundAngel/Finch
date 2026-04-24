@@ -11,22 +11,34 @@ alwaysApply: true
 - **Never Modify**: `.planning/`, `docs/archive/`
 - **Always Read**: `.planning/STATE.md` at session start
 
-## Tauri Conventions
+## Tauri & IPC
 - Every new `#[command]` requires `allow-[command-name]` in `src-tauri/capabilities/default.json`
 - Tauri v2 Channel uses `.onmessage` assignment, **NOT** `.onData()`
 - `camelCase` JS → `snake_case` Rust args is automatic; never manually convert
 - Use `handle.store()` via `StoreExt`, **NEVER** `handle.get_store()`
 
 ## State Management
-- **Three Zustand Stores**: `useModelParamsStore`, `useChatStore`, `useProfileStore`, `useStudioStore`
-- No Redux, no React Context for global state (except `ModalProvider`)
-- `tokensUsed` and `voiceStatus` are excluded from chat persistence
+- **Stores**: `useChatStore`, `useProfileStore`, `useModelParamsStore`, `useStudioStore`. **NEVER** add a 4th store or use React Context for global state.
+- **Slices**: Use `StateCreator<T, [], [], T> = (set, get) => ({ ... })`.
+- **Naming**: Booleans `isX`, Actions `setX`, Slices `createXSlice`.
+- **Exclusions**: `tokensUsed` and `voiceStatus` are excluded from chat persistence.
 
-## Performance Mandates
-- **Studio Canvas**: Direct DOM mutation (`el.style.transform`) for drag/resize, **NOT** React re-renders
-- Avoid `transition-all` on Studio nodes; use specific transitions
-- Motion `layout` + `height: auto` conflicts with Zustand during slider drag — use CSS `max-height` instead
-- **Shiki**: Async singleton, init once in `CodeBlock.tsx`
+## TypeScript & Types
+- **Location**: Shared types in `src/types/` (e.g., `chat.ts`). Local types in component/hook files.
+- **Extension**: Always extend existing types (e.g., `MessageMetadata`), never duplicate.
+- **Import Alias**: Use `@/` for all absolute-style imports (`@/src/components/...`).
+
+## Component Architecture
+- **Organization**: `components/ui/` (primitives), `src/components/chat/` (domain), `src/components/dashboard/` (layout).
+- **Design**: Named exports only. Move complex logic to custom hooks.
+- **Interactivity**: Elements must have `hover`, `focus`, `active`, and `disabled` states.
+
+## Styling & Performance
+- **Colors**: Use **OKLCH** variables from `index.css`. No raw hex/rgb.
+- **Glassmorphism**: Default surface: `bg-background/80 backdrop-blur-24px border-white/10`.
+- **Motion**: Everything animates. Entry: `opacity: 0, y: 12` (200ms). Hover: `translateY(-2px)`.
+- **Performance**: Studio Canvas uses direct DOM mutation (`el.style.transform`) for drag/resize.
+- **Shiki**: Async singleton, init once in `CodeBlock.tsx`.
 
 ## Output Discipline
 - **Surgical edits only**. Never rewrite a file not explicitly scoped.
@@ -34,6 +46,5 @@ alwaysApply: true
 - When uncertain about a file's role, read it. Do not assume.
 
 ## Git
-- **Primary Remote**: `origin` → `Finch_full` (private)
-- **Branch**: `main` on Windows, `linux` on laptop
-- All pushes go to `origin`
+- **Primary Remote**: `origin` → `Finch_full` (private).
+- **Branch Strategy**: `main` on Windows, `linux` on laptop. All pushes to `origin`.

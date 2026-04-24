@@ -1,6 +1,0 @@
----
-description: Git branch and remote discipline
-alwaysApply: true
----
-
-Push all commits to origin which points to the private Finch_full repository. Main branch is Windows, linux branch is the laptop. Confirm current branch and remote before any git operation.
