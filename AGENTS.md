@@ -1,24 +1,11 @@
 # Finch AI Instructions
 
-## 🚨 DUAL-REPOSITORY SAFETY PROTOCOL (CRITICAL)
-This project exists in two states: **Public** (Frontend only) and **Private** (Full code). To prevent accidental leaking of the backend source code, follow these steps BEFORE any git operation:
+## 🚨 REPOSITORY SAFETY PROTOCOL (CRITICAL)
+This project is managed via the private **Finch_full** repository. To ensure system integrity and prevent data loss, follow these rules:
 
-> **⛔ PUBLIC REPO PUSHES SUSPENDED**
-> Pushing to `origin` (public) is **disabled for the current development cycle**.
-> All commits go to `full-repo` (private) only: `git push full-repo linux:main`.
-> Do not push to `origin` under any circumstances until this notice is removed.
-
-1. **Verify Remote**: Check `git remote -v` to see where you are pushing.
-   - `origin`: Public (`Finch`) → **SUSPENDED. DO NOT PUSH.**
-   - `full-repo`: Private (`Finch_full`) → **ALL pushes go here.**
-
-2. **Sync .gitignore** (for private pushes only):
-   - `cp .gitignore.private .gitignore` before staging.
-   - Restore with `cp .gitignore.public .gitignore` after pushing (default safe state).
-
-3. **Validation**: Always run `git status` before staging. Confirm `src-tauri/` is visible (private) or hidden (public). Currently always expect private.
-
-**NEVER push to `origin` while this notice is present.**
+1. **Primary Remote**: `origin` points to the private (`Finch_full`) repository.
+2. **Push Mandate**: All commits and updates MUST be pushed to `origin` (private).
+3. **Branching**: Ensure you are on the correct branch (`main` for Windows, `linux` for Linux laptop) before performing git operations.
 
 ---
 
@@ -28,7 +15,7 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
 ## 2. Branch / OS Setup
 - **main** → Windows (primary machine). Repo path: `C:\Random things i dont want deleted\Finch\finch-sandbox\`
 - **linux** → Linux laptop (same repo, separate branch).
-- Confirm branch and remotes before pushing (see Section 1).
+- Confirm branch and remotes before pushing. All updates go to the `Finch_full` GitHub repository.
 
 ## 3. Tech Stack
 
@@ -246,11 +233,11 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 - **Read `STATE.md` before starting any task.**
 - **Surgical edits only.** Never output full file contents unless explicitly asked. Use targeted replacements.
 - **Never rewrite a file that wasn't explicitly scoped.**
-- **Push to `full-repo` (private) only**: `git push full-repo linux:main`. Public repo pushes are suspended — see Section 1.
+- **Push all updates to `origin`**: This is the private `Finch_full` repository.
 - **When uncertain about a file's role, read it** — do not assume.
 - **Verify all Tauri capability entries** when adding a new `#[command]`. Missing entries fail silently at runtime.
 
 ---
 
 ## Last Updated
-`2026-04-24T12:00:00-04:00` — Optimized Studio Workspace performance: fixed node dragging lag by disabling transition-all on active nodes and eliminated layout thrashing in marquee selection by caching bounding rects. Updated documentation with Studio-specific performance mandates.
+`2026-04-24T12:15:00-04:00` — Simplified repository protocol: removed dual-repository (public/private) mode references and standardized on the private `Finch_full` repository (`origin`). Swapped `.gitignore` to the private version permanently.
