@@ -17,6 +17,7 @@ export interface ChatState {
   isLeftSidebarOpen: boolean;
   holdToRecord: boolean;
   selectedMicDevice: string;
+  input: string;
 
   setActiveWorkspace: (workspace: 'chat' | 'studio', abortFn?: () => void) => void;
   setSelectedProvider: (provider: string) => void;
@@ -33,6 +34,7 @@ export interface ChatState {
   setIsLeftSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
   setHoldToRecord: (hold: boolean) => void;
   setSelectedMicDevice: (device: string) => void;
+  setInput: (val: string | ((prev: string) => string)) => void;
   reset: () => void;
 }
 
@@ -52,6 +54,7 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   isLeftSidebarOpen: true,
   holdToRecord: false,
   selectedMicDevice: '',
+  input: '',
 
   setActiveWorkspace: (workspace, abortFn) => {
     if (abortFn) abortFn();
@@ -85,11 +88,15 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   })),
   setHoldToRecord: (holdToRecord) => set({ holdToRecord }),
   setSelectedMicDevice: (selectedMicDevice) => set({ selectedMicDevice }),
+  setInput: (input) => set((state) => ({
+    input: typeof input === 'function' ? input(state.input) : input
+  })),
   reset: () => set({
     tokensUsed: 0,
     isModelLoaded: true,
     isModelLoading: false,
     modelLoadProgress: 0,
     isIncognito: false,
+    input: '',
   }),
 });

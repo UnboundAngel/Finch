@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import StudioCanvas from '@/src/components/studio/StudioCanvas';
-import { useStudioStore } from '@/src/store/index';
+import { useStudioStore, useChatStore } from '@/src/store/index';
 import { parseLenientJson } from '@/src/lib/jsonParser';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +8,9 @@ export function StudioWorkspace() {
   const nodes = useStudioStore(state => state.nodes);
   const studioStreamBuffer = useStudioStore(state => state.studioStreamBuffer);
   const updateNodePosition = useStudioStore(state => state.updateNodePosition);
+  const setRefinementNodeId = useStudioStore(state => state.setRefinementNodeId);
+  
+  const setInput = useChatStore(state => state.setInput);
 
   const streamingNode = useMemo(() => {
     if (!studioStreamBuffer) return null;
@@ -22,6 +25,11 @@ export function StudioWorkspace() {
     };
   }, [studioStreamBuffer, nodes.length]);
 
+  const handleRefineNode = (node: any) => {
+    setRefinementNodeId(node.id);
+    setInput(node.sourcePrompt);
+  };
+
 // INTEGRATION
   return (
     <div className="flex-1 w-full h-full relative overflow-hidden bg-[#0A0A0B]">
@@ -29,6 +37,7 @@ export function StudioWorkspace() {
         nodes={nodes} 
         streamingNode={streamingNode} 
         onNodeMove={updateNodePosition} 
+        onRefineNode={handleRefineNode}
       />
     </div>
   );

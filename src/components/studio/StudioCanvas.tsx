@@ -2,13 +2,13 @@ import React, { useState, useRef, useCallback, useEffect, forwardRef } from 'rea
 import { cn } from '@/lib/utils';
 import type { PaletteNode } from '@/src/store/studioSlice';
 import type { ParsedPalette } from '@/src/lib/jsonParser';
-
 export interface StudioCanvasProps {
   nodes: PaletteNode[];
   streamingNode?: PaletteNode | null;
   onNodeMove: (id: string, position: { x: number; y: number }) => void;
   onNodeResize?: (id: string, width: number) => void;
   onSaveNode?: (id: string) => void;
+  onRefineNode?: (node: PaletteNode) => void;
 }
 
 type DragInfo =
@@ -36,8 +36,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   onPointerUp: (e: React.PointerEvent<HTMLDivElement>) => void;
   onResizePointerDown: (e: React.PointerEvent<HTMLDivElement>, node: PaletteNode) => void;
   onSaveNode?: (nodeId: string) => void;
+  onRefineNode?: (node: PaletteNode) => void;
 }>((props, ref) => {
-  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode } = props;
+  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode } = props;
 
   const [editedTitle, setEditedTitle] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -212,7 +213,16 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 
           {!isStreaming && (
             <div className="flex justify-between items-center mt-4">
-              <div className="flex-1"></div>
+              <div className="flex-1">
+                <button 
+                  className="bg-primary/10 text-primary border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-primary/20 hover:scale-105 active:scale-95"
+                  onClick={(e) => { e.stopPropagation(); onRefineNode?.(node); }}
+                  onPointerDown={e => e.stopPropagation()}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                  Refine
+                </button>
+              </div>
               <div className="flex gap-2">
                 <button className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }} onPointerDown={e => e.stopPropagation()}>
                   {isExpanded ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 9l7-7 7 7M5 15l7 7 7-7"/></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>}
@@ -234,7 +244,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 }));
 
 export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Element {
-  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode } = props;
+  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode } = props;
   
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -469,6 +479,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
             onPointerUp={handlePointerUp}
             onResizePointerDown={handleResizePointerDown}
             onSaveNode={onSaveNode}
+            onRefineNode={onRefineNode}
           />
         ))}
         {streamingNode && (

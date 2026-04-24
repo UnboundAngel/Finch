@@ -215,13 +215,21 @@ export function useChatEngine({
     let isFirstToken = true;
     const aiMessageId = crypto.randomUUID();
     const activeWorkspace = useChatStore.getState().activeWorkspace;
-    const composedSystemPrompt = activeWorkspace === 'studio'
+
+    const { addNode, updateNodePalette, setStreamBuffer, clearBuffer, nodes, refinementNodeId, setRefinementNodeId } = useStudioStore.getState();
+    if (activeWorkspace === 'studio') {
+      clearBuffer();
+    }
+
+    let composedSystemPrompt = activeWorkspace === 'studio'
       ? STUDIO_SYSTEM_PROMPT
       : buildChatSystemPrompt(systemPrompt, isArtifactToolActive);
 
-    const { addNode, setStreamBuffer, clearBuffer, nodes } = useStudioStore.getState();
-    if (activeWorkspace === 'studio') {
-      clearBuffer();
+    if (activeWorkspace === 'studio' && refinementNodeId) {
+      const node = nodes.find(n => n.id === refinementNodeId);
+      if (node) {
+        composedSystemPrompt = `${STUDIO_SYSTEM_PROMPT}\n\nRefinement Context: You are refining an existing palette. Here is the current node data:\n${JSON.stringify(node.palette, null, 2)}\n\nIMPORTANT: The user wants to modify this specific palette. Use their new instructions to generate an updated version of the JSON.`;
+      }
     }
 
     const streamParams = {
@@ -284,8 +292,15 @@ export function useChatEngine({
           setIsThinking(false);
           const finalBuffer = useStudioStore.getState().studioStreamBuffer;
           const parsed = parseLenientJson(finalBuffer);
+          const { refinementNodeId, updateNodePalette, addNode, setRefinementNodeId } = useStudioStore.getState();
+
           if (parsed) {
-            addNode(parsed, userMessage);
+            if (refinementNodeId) {
+              updateNodePalette(refinementNodeId, parsed, userMessage);
+              setRefinementNodeId(null);
+            } else {
+              addNode(parsed, userMessage);
+            }
           }
           clearBuffer();
           return;
@@ -335,7 +350,7 @@ export function useChatEngine({
         toast.error(`That reply went sideways: ${err}`);
       },
       streamParams,
-      historyWithUserMsg,
+      (activeWorkspace === 'studio' && refinementNodeId) ? [] : historyWithUserMsg,
       attachmentPath ? [{ path: attachmentPath }] : undefined,
     );
   }, [selectedModel, selectedProvider, isWebSearchActive, isArtifactToolActive, streamMessage, session, updateActiveSessionInList]);

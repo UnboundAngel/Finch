@@ -49,7 +49,8 @@ function DashboardContent({
   const setSystemPrompt = useModelParams((s) => s.setSystemPrompt);
   const fetchContextIntelligence = useModelParams((s) => s.fetchContextIntelligence);
 
-  const [input, setInput] = useState('');
+  const input = useChatStore(state => state.input);
+  const setInput = useChatStore(state => state.setInput);
   const [isWebSearchActive, setIsWebSearchActive] = useState(false);
   const [isArtifactToolActive, setIsArtifactToolActive] = useState(false);
   const [activeArtifact, setActiveArtifact] = useState<Artifact | null>(null);
