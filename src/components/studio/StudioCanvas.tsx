@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useStudioStore } from '@/src/store/index';
 import type { PaletteNode } from '@/src/store/studioSlice';
 import type { ParsedPalette } from '@/src/lib/jsonParser';
 export interface StudioCanvasProps {
@@ -297,8 +298,11 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
   const marqueeRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<{ [id: string]: HTMLDivElement | null }>({});
 
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
+  const panOffset = useStudioStore(state => state.panOffset);
+  const setPanOffset = useStudioStore(state => state.setPanOffset);
+  const zoom = useStudioStore(state => state.zoom);
+  const setZoom = useStudioStore(state => state.setZoom);
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [nodeWidths, setNodeWidths] = useState<Record<string, number>>({});
 
@@ -310,6 +314,43 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     nodes.forEach(n => { if (n.width) map[n.id] = n.width; });
     setNodeWidths(prev => ({ ...prev, ...map }));
   }, [nodes]);
+
+  // Center nodes on mount if we're at the default pan position
+  useEffect(() => {
+    if (nodes.length > 0 && containerRef.current && panOffset.x === 0 && panOffset.y === 0) {
+      const rect = containerRef.current.getBoundingClientRect();
+      
+      // Calculate bounding box
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      nodes.forEach(node => {
+        const w = nodeWidths[node.id] || node.width || 320;
+        const h = 400; // estimated height
+        minX = Math.min(minX, node.position.x);
+        minY = Math.min(minY, node.position.y);
+        maxX = Math.max(maxX, node.position.x + w);
+        maxY = Math.max(maxY, node.position.y + h);
+      });
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+
+      setPanOffset({
+        x: rect.width / 2 - centerX,
+        y: rect.height / 2 - centerY
+      });
+    }
+  }, [nodes, nodeWidths, panOffset, setPanOffset]);
+
+  // Sync DOM with store state
+  useEffect(() => {
+    if (worldRef.current) {
+      worldRef.current.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`;
+    }
+    if (containerRef.current) {
+      containerRef.current.style.backgroundPosition = `${panOffset.x}px ${panOffset.y}px`;
+      containerRef.current.style.backgroundSize = `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px`;
+    }
+  }, [panOffset, zoom]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button === 1) {
@@ -549,6 +590,8 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     const SPACING = 32;
     const MAX_WIDTH = 1200;
 
+    const newPositions: Record<string, { x: number, y: number }> = {};
+
     nodes.forEach(node => {
       const w = nodeWidths[node.id] || node.width || 320;
       const el = nodeRefs.current[node.id];
@@ -563,18 +606,33 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       const snappedX = Math.round(currentX / GRID_SIZE) * GRID_SIZE;
       const snappedY = Math.round(currentY / GRID_SIZE) * GRID_SIZE;
 
-      if (snappedX !== node.position.x || snappedY !== node.position.y) {
-        onNodeMove(node.id, { x: snappedX, y: snappedY });
-      }
-
-      if (el) {
-        el.style.transform = `translate(${snappedX}px, ${snappedY}px)`;
-      }
+      newPositions[node.id] = { x: snappedX, y: snappedY };
 
       currentX = snappedX + w + SPACING;
       rowMaxHeight = Math.max(rowMaxHeight, h);
     });
-  }, [nodes, nodeWidths, onNodeMove, zoom]);
+
+    Object.entries(newPositions).forEach(([id, pos]) => {
+      onNodeMove(id, pos);
+      const el = nodeRefs.current[id];
+      if (el) el.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+    });
+
+    if (containerRef.current && nodes.length > 0) {
+      const rect = containerRef.current.getBoundingClientRect();
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      Object.entries(newPositions).forEach(([id, pos]) => {
+        const w = nodeWidths[id] || 320;
+        minX = Math.min(minX, pos.x);
+        minY = Math.min(minY, pos.y);
+        maxX = Math.max(maxX, pos.x + w);
+        maxY = Math.max(maxY, pos.y + 400);
+      });
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      setPanOffset({ x: rect.width / 2 - centerX, y: rect.height / 2 - centerY });
+    }
+  }, [nodes, nodeWidths, onNodeMove, zoom, setPanOffset]);
 
   return (
     <TooltipProvider delay={400}>

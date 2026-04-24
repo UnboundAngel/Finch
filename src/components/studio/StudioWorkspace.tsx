@@ -38,7 +38,7 @@ export function StudioWorkspace({ messages, setMessages, onSend, isStreaming }: 
     if (!parsed) return null;
     return {
       id: 'streaming-node',
-      position: { x: 100 + nodes.length * 320, y: 100 },
+      position: { x: 100 + nodes.length * 320, y: 300 },
       palette: parsed,
       createdAt: Date.now(),
       sourcePrompt: ''
