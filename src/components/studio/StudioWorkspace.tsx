@@ -21,6 +21,14 @@ export function StudioWorkspace({ messages, setMessages, onSend, isStreaming }: 
   const updateNodePosition = useStudioStore(state => state.updateNodePosition);
   const refinementNodeId = useStudioStore(state => state.refinementNodeId);
   const setRefinementNodeId = useStudioStore(state => state.setRefinementNodeId);
+  const addNode = useStudioStore(state => state.addNode);
+
+  // Clear refinement ID when generation finishes so the node is no longer in "skeleton" mode
+  useEffect(() => {
+    if (!isStreaming && refinementNodeId) {
+      setRefinementNodeId(null);
+    }
+  }, [isStreaming, refinementNodeId, setRefinementNodeId]);
   
   const setInput = useChatStore(state => state.setInput);
   const setActiveWorkspace = useChatStore(state => state.setActiveWorkspace);

@@ -75,11 +75,11 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   };
 
   useEffect(() => {
-    if (isStreaming) {
+    if (globalIsStreaming && node.id === refinementNodeId) {
       setIsRegenerating(false);
       setIsExpanded(false);
     }
-  }, [isStreaming]);
+  }, [globalIsStreaming, node.id, refinementNodeId]);
 
   const showSkeleton = isStreaming || isRegenerating || (globalIsStreaming && node.id === refinementNodeId);
 
@@ -315,31 +315,33 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     setNodeWidths(prev => ({ ...prev, ...map }));
   }, [nodes]);
 
-  // Center nodes on mount if we're at the default pan position
+  // Auto-center camera on mount if there are nodes
   useEffect(() => {
-    if (nodes.length > 0 && containerRef.current && panOffset.x === 0 && panOffset.y === 0) {
-      const rect = containerRef.current.getBoundingClientRect();
-      
+    const allNodes = streamingNode ? [...nodes, streamingNode] : nodes;
+    if (allNodes.length > 0 && containerRef.current && panOffset.x === 0 && panOffset.y === 0) {
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+
+      if (containerWidth === 0 || containerHeight === 0) return;
+
       // Calculate bounding box
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      nodes.forEach(node => {
-        const w = nodeWidths[node.id] || node.width || 320;
-        const h = 400; // estimated height
+      allNodes.forEach(node => {
         minX = Math.min(minX, node.position.x);
         minY = Math.min(minY, node.position.y);
-        maxX = Math.max(maxX, node.position.x + w);
-        maxY = Math.max(maxY, node.position.y + h);
+        maxX = Math.max(maxX, node.position.x + (node.width || 320));
+        maxY = Math.max(maxY, node.position.y + 450); // Estimated height
       });
 
       const centerX = (minX + maxX) / 2;
       const centerY = (minY + maxY) / 2;
 
       setPanOffset({
-        x: rect.width / 2 - centerX,
-        y: rect.height / 2 - centerY
+        x: containerWidth / 2 - (centerX * zoom),
+        y: containerHeight / 2 - (centerY * zoom)
       });
     }
-  }, [nodes, nodeWidths, panOffset, setPanOffset]);
+  }, [nodes, streamingNode, setPanOffset, panOffset.x, panOffset.y, zoom]);
 
   // Sync DOM with store state
   useEffect(() => {
