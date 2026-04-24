@@ -198,8 +198,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
           {(node.palette.description) && (
             <>
               <div className="h-px bg-border/30 my-4" />
-              <div className="px-1">
-                <p className="text-foreground/80 text-[11px] leading-relaxed font-medium uppercase tracking-wider italic">
+              <div className="px-1 space-y-1.5">
+                <div className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/50 font-bold">Concept</div>
+                <p className="text-foreground/90 text-[12px] leading-relaxed font-medium italic">
                   {node.palette.description.replace(/^#/, '')}
                 </p>
               </div>

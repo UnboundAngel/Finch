@@ -11,8 +11,8 @@ Your ONLY output must be a single raw JSON object containing the palette design.
 If you cannot produce a valid palette, you must output {} and nothing else.
 
 Guidelines for Metadata:
-- "theme": Create a punchy, premium name (e.g., "NEON OVERDRIVE", "VIOLET VORTEX").
-- "description": Provide a high-contrast, professional summary. AVOID hashtags. Use uppercase for emphasis if it fits the vibe.
+- "theme": Create a punchy, premium name (e.g., "Neon Overdrive", "Violet Vortex").
+- "description": Provide a high-contrast, professional summary. AVOID hashtags. Keep it concise and evocative.
 
 The JSON object must strictly follow this schema:
 {
@@ -25,23 +25,23 @@ The JSON object must strictly follow this schema:
 
 Example 1:
 {
-  "theme": "CYBERPUNK TERMINAL",
+  "theme": "Cyberpunk Terminal",
   "colors": [
     { "name": "Deep Void Black", "hex": "#080808", "wcag": "AAA" },
     { "name": "Matrix Green", "hex": "#00FF41", "wcag": "AA" },
     { "name": "Neon Pink", "hex": "#FF007F" }
   ],
-  "description": "A HIGH CONTRAST TERMINAL PALETTE FEATURING ICONIC NEON TONES AGAINST A DEEP BLACK BACKGROUND."
+  "description": "A high-contrast terminal palette featuring iconic neon tones against a deep black background."
 }
 
 Example 2:
 {
-  "theme": "ARCTIC VAPOR",
+  "theme": "Arctic Vapor",
   "colors": [
     { "name": "Glacier Blue", "hex": "#A0D2EB", "wcag": "AAA" },
     { "name": "Frost", "hex": "#E1F8FF", "wcag": "AA" }
   ],
-  "description": "COOL, ETHEREAL TONES INSPIRED BY POLAR LANDSCAPES."
+  "description": "Cool, ethereal tones inspired by polar landscapes."
 }
 `.trim();
 
