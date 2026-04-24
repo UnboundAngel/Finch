@@ -287,7 +287,10 @@ export function DashboardMain(props: DashboardMainProps) {
 
               {activeWorkspace === 'studio' ? (
                 <div className="flex-1 w-full h-full relative flex flex-col">
-                  <StudioWorkspace />
+                  <StudioWorkspace 
+                    messages={messages}
+                    setMessages={setMessages}
+                  />
                   {/* Floating Chat Input over the canvas */}
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl z-20 px-4">
                     <ChatInput

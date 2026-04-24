@@ -9,6 +9,7 @@ export interface StudioCanvasProps {
   onNodeResize?: (id: string, width: number) => void;
   onSaveNode?: (id: string) => void;
   onRefineNode?: (node: PaletteNode) => void;
+  onEjectNode?: (node: PaletteNode) => void;
 }
 
 type DragInfo =
@@ -37,8 +38,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   onResizePointerDown: (e: React.PointerEvent<HTMLDivElement>, node: PaletteNode) => void;
   onSaveNode?: (nodeId: string) => void;
   onRefineNode?: (node: PaletteNode) => void;
+  onEjectNode?: (node: PaletteNode) => void;
 }>((props, ref) => {
-  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode } = props;
+  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode, onEjectNode } = props;
 
   const [editedTitle, setEditedTitle] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -222,6 +224,15 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
                   Refine
                 </button>
+                <button 
+                  className="bg-muted/50 text-muted-foreground border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 ml-2"
+                  onClick={(e) => { e.stopPropagation(); onEjectNode?.(node); }}
+                  onPointerDown={e => e.stopPropagation()}
+                  title="Eject to Chat"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  Eject
+                </button>
               </div>
               <div className="flex gap-2">
                 <button className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }} onPointerDown={e => e.stopPropagation()}>
@@ -244,7 +255,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 }));
 
 export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Element {
-  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode } = props;
+  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode, onEjectNode } = props;
   
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -564,6 +575,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
             onResizePointerDown={handleResizePointerDown}
             onSaveNode={onSaveNode}
             onRefineNode={onRefineNode}
+            onEjectNode={onEjectNode}
           />
         ))}
         {streamingNode && (
