@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { ImagePlus, Trash2, X } from 'lucide-react';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { ImagePlus, Trash2, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -31,7 +32,10 @@ type Props = {
 export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
   const [recents, setRecents] = useState<string[]>([]);
   const [gifWarnOpen, setGifWarnOpen] = useState(false);
-  const pendingGifRef = useRef<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Stores the path. We also need to know if it needs processing (new upload) or is already processed (recent)
+  const pendingActionRef = useRef<{ path: string, isRecent: boolean, kind: 'avatar_static' | 'avatar_gif' } | null>(null);
 
   const refreshRecents = useCallback(() => {
     setRecents(getRecentAvatars());
@@ -51,10 +55,25 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
     [onChoose, onOpenChange]
   );
 
-  const handleImportedPath = useCallback(
-    async (path: string) => {
+  const processAndFinalizePath = async (originalPath: string, kind: 'avatar_static' | 'avatar_gif') => {
+    try {
+      setIsProcessing(true);
+      toast.loading('Processing image...', { id: 'media-process' });
+      const finalPath = await invoke<string>('process_imported_media', { path: originalPath, kind });
+      toast.dismiss('media-process');
+      finalizePath(finalPath);
+    } catch (e) {
+      toast.dismiss('media-process');
+      toast.error(`Processing failed: ${e}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRecentClick = useCallback(
+    (path: string) => {
       if (isGifPath(path)) {
-        pendingGifRef.current = path;
+        pendingActionRef.current = { path, isRecent: true, kind: 'avatar_gif' };
         setGifWarnOpen(true);
         return;
       }
@@ -69,29 +88,44 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
       return;
     }
     try {
-      const path = await invoke<string>('import_user_media', { kind });
-      await handleImportedPath(path);
+      const extensions = kind === 'avatar_gif' ? ['gif'] : ['png', 'jpg', 'jpeg', 'webp'];
+      const file = await openDialog({
+        multiple: false,
+        filters: [{ name: kind === 'avatar_gif' ? 'GIF' : 'Images', extensions }]
+      });
+      if (!file) return;
+
+      const path = typeof file === 'string' ? file : (file as any).path ?? file;
+      
+      if (!path || typeof path !== 'string') return;
+
+      if (kind === 'avatar_gif' || isGifPath(path)) {
+        pendingActionRef.current = { path, isRecent: false, kind: 'avatar_gif' };
+        setGifWarnOpen(true);
+        return;
+      }
+      
+      await processAndFinalizePath(path, kind);
     } catch (e) {
-      if (e !== 'No file selected') toast.error(`That image import face-planted: ${e}`);
+      toast.error(`That image import face-planted: ${e}`);
     }
   };
 
-  const dismissPendingGif = useCallback(async () => {
-    const path = pendingGifRef.current;
-    pendingGifRef.current = null;
-    if (path && isTauri()) {
-      try {
-        await invoke('remove_imported_media', { path });
-      } catch {
-        /* ignore */
-      }
-    }
+  const dismissPendingGif = useCallback(() => {
+    pendingActionRef.current = null;
   }, []);
 
   const confirmGif = useCallback(() => {
-    const path = pendingGifRef.current;
-    pendingGifRef.current = null;
-    if (path) finalizePath(path);
+    const pending = pendingActionRef.current;
+    pendingActionRef.current = null;
+    
+    if (pending) {
+      if (pending.isRecent) {
+        finalizePath(pending.path);
+      } else {
+        processAndFinalizePath(pending.path, pending.kind);
+      }
+    }
   }, [finalizePath]);
 
   return (
@@ -118,11 +152,16 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-8 min-h-[160px] hover:bg-muted/50 transition-colors text-center"
+                disabled={isProcessing}
+                className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-8 min-h-[160px] hover:bg-muted/50 transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => void importKind('avatar_static')}
               >
                 <div className="rounded-xl bg-background/80 p-4 border border-border">
-                  <ImagePlus className="h-10 w-10 text-primary/80" />
+                  {isProcessing ? (
+                    <Loader2 className="h-10 w-10 text-primary/80 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-10 w-10 text-primary/80" />
+                  )}
                 </div>
                 <span className="text-sm font-medium text-primary">Upload image</span>
                 <span className="text-[11px] text-muted-foreground leading-snug">
@@ -132,7 +171,8 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
 
               <button
                 type="button"
-                className="group relative flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-muted/30 p-3 min-h-[160px] hover:bg-muted/50 transition-colors overflow-hidden"
+                disabled={isProcessing}
+                className="group relative flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-muted/30 p-3 min-h-[160px] hover:bg-muted/50 transition-colors overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => void importKind('avatar_gif')}
               >
                 <div className="absolute inset-2 grid grid-cols-2 gap-1 rounded-xl overflow-hidden opacity-40">
@@ -165,8 +205,9 @@ export function AvatarPickerDialog({ open, onOpenChange, onChoose }: Props) {
                       <div key={p} className="relative h-14 w-14 shrink-0">
                         <button
                           type="button"
-                          className="absolute inset-0 z-0 rounded-full border-2 border-border overflow-hidden hover:border-primary/50 transition-colors"
-                          onClick={() => void handleImportedPath(p)}
+                          disabled={isProcessing}
+                          className="absolute inset-0 z-0 rounded-full border-2 border-border overflow-hidden hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => void handleRecentClick(p)}
                           title={p}
                         >
                           <img

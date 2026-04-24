@@ -26,23 +26,25 @@ export function GifImpactWarningDialog({ open, onOpenChange, context, onConfirm,
         <AlertDialogHeader>
           <AlertDialogTitle>Animated GIF selected</AlertDialogTitle>
           <AlertDialogDescription className="text-muted-foreground space-y-2">
-            {isAvatar ? (
-              <>
-                <p>
-                  GIF avatars animate wherever your profile appears (profile picker, sidebar, and
-                  similar surfaces). They can use more memory and CPU than a still image.
-                </p>
-                <p>Still images (PNG, JPEG, WebP) are recommended for the lightest experience.</p>
-              </>
-            ) : (
-              <>
-                <p>
-                  Animated wallpapers run continuously behind the chat UI. GIFs can use more GPU,
-                  memory, and battery than a still background.
-                </p>
-                <p>You can switch back anytime from Settings or the background menu.</p>
-              </>
-            )}
+            <div className="text-sm">
+              {isAvatar ? (
+                <>
+                  <div className="block">
+                    GIF avatars animate wherever your profile appears (profile picker, sidebar, and
+                    similar surfaces). They can use more memory and CPU than a still image.
+                  </div>
+                  <div className="block">Still images (PNG, JPEG, WebP) are recommended for the lightest experience.</div>
+                </>
+              ) : (
+                <>
+                  <div className="block">
+                    Animated wallpapers run continuously behind the chat UI. GIFs can use more GPU,
+                    memory, and battery than a still background.
+                  </div>
+                  <div className="block">You can switch back anytime from Settings or the background menu.</div>
+                </>
+              )}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

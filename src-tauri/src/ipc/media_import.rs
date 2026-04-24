@@ -131,28 +131,15 @@ fn fallback_copy(src: &Path, dir: &Path, id: Uuid) -> Result<PathBuf, String> {
     Ok(dest)
 }
 
-/// Pick a file from the dialog, then compress into `subdir` under app data (or copy on failure).
-pub fn pick_and_save_media(
+/// Process a given file path and compress into `subdir` under app data (or copy on failure).
+pub fn process_and_save_media(
     handle: &AppHandle,
+    file_path: &Path,
     subdir: &str,
-    filter_label: &str,
-    extensions: &[&str],
     profile: CompressProfile,
 ) -> Result<String, String> {
-    let file_path_enum = handle
-        .dialog()
-        .file()
-        .add_filter(filter_label, extensions)
-        .blocking_pick_file()
-        .ok_or_else(|| "No file selected".to_string())?;
-
-    let file_path = match file_path_enum {
-        tauri_plugin_dialog::FilePath::Path(p) => p,
-        _ => return Err("Selected item is not a local file".into()),
-    };
-
     // Pre-read metadata check to prevent memory exhaustion on massive files
-    let meta = fs::metadata(&file_path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
+    let meta = fs::metadata(file_path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
     if meta.len() > 50 * 1024 * 1024 {
         return Err("File is too large. Maximum allowed size for media import is 50 MB.".into());
     }
@@ -174,20 +161,43 @@ pub fn pick_and_save_media(
     let dest = if is_gif {
         let dest = dir.join(format!("{id}.gif"));
         match compress_gif(
-            &file_path,
+            file_path,
             &dest,
             profile.max_gif_edge,
             profile.max_gif_frames,
         ) {
             Ok(()) => dest,
-            Err(_) => fallback_copy(&file_path, &dir, id)?,
+            Err(_) => fallback_copy(file_path, &dir, id)?,
         }
     } else {
-        match compress_static(&file_path, &dir, id, profile) {
+        match compress_static(file_path, &dir, id, profile) {
             Ok(p) => p,
-            Err(_) => fallback_copy(&file_path, &dir, id)?,
+            Err(_) => fallback_copy(file_path, &dir, id)?,
         }
     };
 
     Ok(dest.to_string_lossy().into_owned())
+}
+
+/// Pick a file from the dialog, then compress into `subdir` under app data (or copy on failure).
+pub fn pick_and_save_media(
+    handle: &AppHandle,
+    subdir: &str,
+    filter_label: &str,
+    extensions: &[&str],
+    profile: CompressProfile,
+) -> Result<String, String> {
+    let file_path_enum = handle
+        .dialog()
+        .file()
+        .add_filter(filter_label, extensions)
+        .blocking_pick_file()
+        .ok_or_else(|| "No file selected".to_string())?;
+
+    let file_path = match file_path_enum {
+        tauri_plugin_dialog::FilePath::Path(p) => p,
+        _ => return Err("Selected item is not a local file".into()),
+    };
+
+    process_and_save_media(handle, &file_path, subdir, profile)
 }

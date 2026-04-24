@@ -46,6 +46,35 @@ pub async fn import_user_media(handle: AppHandle, kind: String) -> Result<String
     }
 }
 
+/// kind: `avatar_static` | `avatar_gif` | `background`
+#[command]
+pub async fn process_imported_media(handle: AppHandle, path: String, kind: String) -> Result<String, String> {
+    use crate::ipc::media_import::process_and_save_media;
+    let target_path = PathBuf::from(path);
+    
+    match kind.as_str() {
+        "avatar_static" => process_and_save_media(
+            &handle,
+            &target_path,
+            "avatars",
+            CompressProfile::avatar_static(),
+        ),
+        "avatar_gif" => process_and_save_media(
+            &handle,
+            &target_path,
+            "avatars",
+            CompressProfile::avatar_gif(),
+        ),
+        "background" => process_and_save_media(
+            &handle,
+            &target_path,
+            "backgrounds",
+            CompressProfile::background(),
+        ),
+        _ => Err("Invalid import kind".into()),
+    }
+}
+
 #[command]
 pub async fn remove_imported_media(handle: AppHandle, path: String) -> Result<(), String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;

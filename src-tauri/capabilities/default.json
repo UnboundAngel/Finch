@@ -43,6 +43,7 @@
     "allow-preload-model",
     "allow-set-background-image",
     "allow-import-user-media",
+    "allow-process-imported-media",
     "allow-remove-imported-media",
     "allow-get-model-loaded-status",
     "allow-get-hardware-info",

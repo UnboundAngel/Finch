@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { ImagePlus, X } from 'lucide-react';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { ImagePlus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -25,7 +26,10 @@ type Props = {
 export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Props) {
   const [recents, setRecents] = useState<string[]>([]);
   const [gifWarnOpen, setGifWarnOpen] = useState(false);
-  const pendingGifRef = useRef<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Stores the path. We also need to know if it needs processing (new upload) or is already processed (recent)
+  const pendingActionRef = useRef<{ path: string, isRecent: boolean } | null>(null);
 
   const refreshRecents = useCallback(() => {
     setRecents(getRecentWallpapers());
@@ -47,10 +51,25 @@ export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Pro
     [mode, onApply, onOpenChange]
   );
 
-  const handleImportedPath = useCallback(
-    async (path: string) => {
+  const processAndFinalizePath = async (originalPath: string) => {
+    try {
+      setIsProcessing(true);
+      toast.loading('Processing image...', { id: 'media-process' });
+      const finalPath = await invoke<string>('process_imported_media', { path: originalPath, kind: 'background' });
+      toast.dismiss('media-process');
+      finalizePath(finalPath);
+    } catch (e) {
+      toast.dismiss('media-process');
+      toast.error(`Processing failed: ${e}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRecentClick = useCallback(
+    (path: string) => {
       if (isGifPath(path)) {
-        pendingGifRef.current = path;
+        pendingActionRef.current = { path, isRecent: true };
         setGifWarnOpen(true);
         return;
       }
@@ -65,29 +84,46 @@ export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Pro
       return;
     }
     try {
-      const path = await invoke<string>('import_user_media', { kind: 'background' });
-      await handleImportedPath(path);
+      const file = await openDialog({
+        multiple: false,
+        filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }]
+      });
+      if (!file) return;
+
+      // file path access depends on Tauri v2 return shape; plugin-dialog returns an object with `path` or directly a string if multiple is false, wait, in tauri 2, for single pick, it returns an object or null?
+      // Wait, tauri-plugin-dialog return type for single pick is `string | null`? No, wait. 
+      // Actually, let's just use `file.path ?? file` if it's an object. But let's assume it returns a string if we look at other usages.
+      const path = typeof file === 'string' ? file : (file as any).path ?? file;
+      
+      if (!path || typeof path !== 'string') return;
+
+      if (isGifPath(path)) {
+        pendingActionRef.current = { path, isRecent: false };
+        setGifWarnOpen(true);
+        return;
+      }
+      
+      await processAndFinalizePath(path);
     } catch (e) {
-      if (e !== 'No file selected') toast.error(`That wallpaper import wiped out: ${e}`);
+      toast.error(`That wallpaper import wiped out: ${e}`);
     }
   };
 
-  const dismissPendingGif = useCallback(async () => {
-    const path = pendingGifRef.current;
-    pendingGifRef.current = null;
-    if (path && isTauri()) {
-      try {
-        await invoke('remove_imported_media', { path });
-      } catch {
-        /* ignore */
-      }
-    }
+  const dismissPendingGif = useCallback(() => {
+    pendingActionRef.current = null;
   }, []);
 
   const confirmGif = useCallback(() => {
-    const path = pendingGifRef.current;
-    pendingGifRef.current = null;
-    if (path) finalizePath(path);
+    const pending = pendingActionRef.current;
+    pendingActionRef.current = null;
+    
+    if (pending) {
+      if (pending.isRecent) {
+        finalizePath(pending.path);
+      } else {
+        processAndFinalizePath(pending.path);
+      }
+    }
   }, [finalizePath]);
 
   return (
@@ -120,13 +156,20 @@ export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Pro
             <div className="grid grid-cols-1 gap-3">
               <button
                 type="button"
-                className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-8 min-h-[120px] hover:bg-muted/50 transition-colors text-center"
+                disabled={isProcessing}
+                className="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-8 min-h-[120px] hover:bg-muted/50 transition-colors text-center disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => void pickBackground()}
               >
                 <div className="rounded-xl bg-background/80 p-4 border border-border">
-                  <ImagePlus className="h-10 w-10 text-primary/80" />
+                  {isProcessing ? (
+                    <Loader2 className="h-10 w-10 text-primary/80 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-10 w-10 text-primary/80" />
+                  )}
                 </div>
-                <span className="text-sm font-medium text-primary">Upload image or GIF</span>
+                <span className="text-sm font-medium text-primary">
+                  {isProcessing ? 'Processing...' : 'Upload image or GIF'}
+                </span>
                 <span className="text-[11px] text-muted-foreground leading-snug">
                   PNG, JPEG, WebP, or GIF from your computer
                 </span>
@@ -146,8 +189,9 @@ export function WallpaperPickerDialog({ open, onOpenChange, mode, onApply }: Pro
                     <button
                       key={p}
                       type="button"
-                      className="h-16 w-24 rounded-xl border-2 border-border overflow-hidden hover:border-primary/50 transition-colors shrink-0"
-                      onClick={() => void handleImportedPath(p)}
+                      disabled={isProcessing}
+                      className="h-16 w-24 rounded-xl border-2 border-border overflow-hidden hover:border-primary/50 transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => void handleRecentClick(p)}
                       title={p}
                     >
                       <img

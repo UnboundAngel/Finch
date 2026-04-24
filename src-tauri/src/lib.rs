@@ -49,6 +49,7 @@ pub fn run() {
             ipc::settings::get_provider_config,
             ipc::settings::set_background_image,
             ipc::settings::import_user_media,
+            ipc::settings::process_imported_media,
             ipc::settings::remove_imported_media,
             ipc::settings::update_search_config,
             ipc::settings::get_hardware_info,

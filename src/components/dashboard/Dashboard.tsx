@@ -150,10 +150,9 @@ function DashboardContent({
   }, [chatSessionActionsRef, session.setMessages, session.setActiveSessionId]);
 
   const handleEject = useCallback(() => {
-    setSelectedModel('');
-    setSelectedProvider('');
+    setIsModelLoaded(false);
     toast.info("Local model unloaded due to inactivity");
-  }, [setSelectedModel, setSelectedProvider]);
+  }, [setIsModelLoaded]);
 
   const { resetTimer } = useInactivityEject({ provider: selectedProvider, modelId: selectedModel, onEject: handleEject });
 
