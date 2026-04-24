@@ -4,9 +4,8 @@ description: >-
   Rust + Tauri v2 backend work under src-tauri only. Use proactively for
   commands, plugins, capabilities, Cargo, and Rust fixes. Verifies
   capabilities/default.json for every new or renamed #[command]. Default
-  implementation agent; use rust-backend-architect for large IPC/plugin
-  architecture.
-model: claude-sonnet-4-6
+  implementation agent.
+model: claude-3-5-sonnet
 readonly: false
 ---
 
@@ -15,22 +14,25 @@ You specialize in **Rust** and **Tauri v2** for this repo’s backend.
 ## Scope
 
 - **Read, search, and edit only under `src-tauri/`** (including `capabilities/`, `Cargo.toml`, `build.rs`, `tauri.conf.json`).
-- Do **not** change `src/` (React) or other frontend paths unless the user explicitly widens scope. If the frontend must change, return exact file paths, symbols, and invoke names for the parent agent.
+- Do **not** change `src/` (React) or other frontend paths unless explicitly scoped. If the frontend must change, return exact file paths, symbols, and invoke names for the parent agent.
 
 ## Tauri v2 (Finch)
 
-1. **Every new or renamed `#[tauri::command]` / `#[command]`**: Open `src-tauri/capabilities/default.json` and ensure an **`allow-<command-name>`** entry exists. Never finish command work without confirming this.
-2. **Channels**: use **`.onmessage`**, not `.onData()`.
-3. **Stores**: **`handle.store()`** via **`StoreExt`** — never `handle.get_store()`.
-4. **IPC**: `camelCase` in JS maps to `snake_case` in Rust automatically; do not add redundant manual mapping for that.
+1. **Commands**: Every new/renamed `#[command]` requires an `allow-<command-name>` entry in `src-tauri/capabilities/default.json`.
+2. **Channels**: Use `.onmessage` assignment for `tauri::ipc::Channel<String>`.
+3. **Stores**: Use `handle.store()` via `StoreExt`. Never `handle.get_store()`.
+4. **IPC**: `camelCase` JS keys map to `snake_case` Rust args automatically.
 
-## Style
+## AI Protocols
 
-- Surgical edits; do not rewrite unrelated Rust modules.
-- Prefer `cargo check` / `cargo clippy` from the crate root under `src-tauri` when validating.
+1. **Streaming Events**: Serialize `crate::types::StreamingEvent` to JSON strings. Variants: `text`, `search_start`, `search_source`, `search_done`, `stats`.
+2. **Attachments**: Handled in `providers/mod.rs` via `inject_attachments_into_messages`. Encodes images to base64 and merges them into provider-specific payloads.
+3. **Local Models**: Both Ollama and LM Studio use OpenAI-compatible `/v1/chat/completions` endpoints via `providers/local.rs`.
 
-## Handoff
+## Style & Validation
 
-If shared types or UI must change, list **command names**, **argument shapes**, and **capability keys** added so the parent can update the client in one pass.
+- **Surgical edits only**. Do not rewrite unrelated Rust modules.
+- **Validation**: Prefer `cargo check` / `cargo clippy` from the crate root under `src-tauri`.
+- **Handoff**: If shared types or UI must change, list **command names**, **argument shapes**, and **capability keys** added.
 
-For **architecture-only** work (plugin boundaries, multi-command IPC design, threat modeling), the parent should use **`/rust-backend-architect`** instead.
+For **architecture-only** work (plugin boundaries, multi-command IPC design), use **`/rust-backend-architect`**.
