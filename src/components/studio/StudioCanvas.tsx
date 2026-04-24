@@ -252,10 +252,12 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
   const nodeRefs = useRef<{ [id: string]: HTMLDivElement | null }>({});
 
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [nodeWidths, setNodeWidths] = useState<Record<string, number>>({});
   
   const dragInfo = useRef<DragInfo | null>(null);
+  const GRID_SIZE = 32;
 
   useEffect(() => {
     const map: Record<string, number> = {};
@@ -362,7 +364,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     if (info.type === 'pan') {
       const newX = info.initialPanX + dx;
       const newY = info.initialPanY + dy;
-      if (worldRef.current) worldRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+      if (worldRef.current) worldRef.current.style.transform = `translate(${newX}px, ${newY}px) scale(${zoom})`;
       // INTEGRATION
       if (containerRef.current) containerRef.current.style.backgroundPosition = `${newX}px ${newY}px`;
     } else if (info.type === 'marquee') {
@@ -391,20 +393,24 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
         setSelectedIds(newlySelected);
       }
     } else if (info.type === 'node') {
+      const worldDx = dx / zoom;
+      const worldDy = dy / zoom;
       info.nodeIds.forEach(id => {
         const el = nodeRefs.current[id];
         const initial = info.initialPositions[id];
         if (el && initial) {
-          el.style.transform = `translate(${initial.x + dx}px, ${initial.y + dy}px) scale(1.02)`;
+          const snappedX = Math.round((initial.x + worldDx) / GRID_SIZE) * GRID_SIZE;
+          const snappedY = Math.round((initial.y + worldDy) / GRID_SIZE) * GRID_SIZE;
+          el.style.transform = `translate(${snappedX}px, ${snappedY}px) scale(1.02)`;
           el.style.zIndex = '10';
         }
       });
     } else if (info.type === 'resize') {
-      const newWidth = Math.max(280, info.initialWidth + dx);
+      const newWidth = Math.max(280, info.initialWidth + dx / zoom);
       const el = nodeRefs.current[info.nodeId];
       if (el) el.style.width = `${newWidth}px`;
     }
-  }, [nodes]);
+  }, [nodes, zoom]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
@@ -421,30 +427,108 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       if (marqueeRef.current) marqueeRef.current.style.display = 'none';
     } 
     else if (info.type === 'node') {
-      const dx = e.clientX - info.startX;
-      const dy = e.clientY - info.startY;
+      const worldDx = (e.clientX - info.startX) / zoom;
+      const worldDy = (e.clientY - info.startY) / zoom;
       info.nodeIds.forEach(id => {
         const el = nodeRefs.current[id];
         if (el) {
-          el.style.transform = `translate(${info.initialPositions[id].x + dx}px, ${info.initialPositions[id].y + dy}px)`;
+          const snappedX = Math.round((info.initialPositions[id].x + worldDx) / GRID_SIZE) * GRID_SIZE;
+          const snappedY = Math.round((info.initialPositions[id].y + worldDy) / GRID_SIZE) * GRID_SIZE;
+          el.style.transform = `translate(${snappedX}px, ${snappedY}px)`;
           el.style.zIndex = '';
+          if (snappedX !== info.initialPositions[id].x || snappedY !== info.initialPositions[id].y) {
+            onNodeMove(id, { x: snappedX, y: snappedY });
+          }
         }
-        if (dx !== 0 || dy !== 0) onNodeMove(id, { x: info.initialPositions[id].x + dx, y: info.initialPositions[id].y + dy });
       });
     }
     else if (info.type === 'resize') {
-      const newWidth = Math.max(280, info.initialWidth + (e.clientX - info.startX));
+      const newWidth = Math.max(280, info.initialWidth + (e.clientX - info.startX) / zoom);
       setNodeWidths(prev => ({ ...prev, [info.nodeId]: newWidth }));
       if (onNodeResize) onNodeResize(info.nodeId, newWidth);
     }
     
     dragInfo.current = null;
-  }, [onNodeMove, onNodeResize]);
+  }, [onNodeMove, onNodeResize, zoom]);
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.ctrlKey || e.metaKey) return;
-    setPanOffset(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
-  }, []);
+    if (e.ctrlKey || e.metaKey) {
+      // Zoom
+      const scale = Math.exp(-e.deltaY * 0.01);
+      const newZoom = Math.min(Math.max(0.1, zoom * scale), 5);
+      const ratio = newZoom / zoom;
+      
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const newPanX = mouseX - (mouseX - panOffset.x) * ratio;
+      const newPanY = mouseY - (mouseY - panOffset.y) * ratio;
+      
+      setZoom(newZoom);
+      setPanOffset({ x: newPanX, y: newPanY });
+      
+      if (worldRef.current) {
+        worldRef.current.style.transform = `translate(${newPanX}px, ${newPanY}px) scale(${newZoom})`;
+      }
+      if (containerRef.current) {
+        containerRef.current.style.backgroundPosition = `${newPanX}px ${newPanY}px`;
+        containerRef.current.style.backgroundSize = `${GRID_SIZE * newZoom}px ${GRID_SIZE * newZoom}px`;
+      }
+      return;
+    }
+    
+    // Pan
+    setPanOffset(prev => {
+      const newX = prev.x - e.deltaX;
+      const newY = prev.y - e.deltaY;
+      
+      if (worldRef.current) {
+        worldRef.current.style.transform = `translate(${newX}px, ${newY}px) scale(${zoom})`;
+      }
+      if (containerRef.current) {
+        containerRef.current.style.backgroundPosition = `${newX}px ${newY}px`;
+      }
+      
+      return { x: newX, y: newY };
+    });
+  }, [zoom, panOffset]);
+
+  const handleCleanUp = useCallback(() => {
+    let currentX = 0;
+    let currentY = 0;
+    let rowMaxHeight = 0;
+    const SPACING = 32;
+    const MAX_WIDTH = 1200;
+
+    nodes.forEach(node => {
+      const w = nodeWidths[node.id] || node.width || 320;
+      const el = nodeRefs.current[node.id];
+      const h = el ? el.getBoundingClientRect().height / zoom : 300;
+      
+      if (currentX + w > MAX_WIDTH && currentX > 0) {
+        currentX = 0;
+        currentY += Math.ceil((rowMaxHeight + SPACING) / GRID_SIZE) * GRID_SIZE;
+        rowMaxHeight = 0;
+      }
+      
+      const snappedX = Math.round(currentX / GRID_SIZE) * GRID_SIZE;
+      const snappedY = Math.round(currentY / GRID_SIZE) * GRID_SIZE;
+      
+      if (snappedX !== node.position.x || snappedY !== node.position.y) {
+        onNodeMove(node.id, { x: snappedX, y: snappedY });
+      }
+      
+      if (el) {
+        el.style.transform = `translate(${snappedX}px, ${snappedY}px)`;
+      }
+      
+      currentX = snappedX + w + SPACING;
+      rowMaxHeight = Math.max(rowMaxHeight, h);
+    });
+  }, [nodes, nodeWidths, onNodeMove, zoom]);
 
   return (
     <div
@@ -458,14 +542,14 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       className="relative overflow-hidden w-full h-full bg-transparent touch-none"
       style={{
         backgroundImage: 'radial-gradient(#ffffff10 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
+        backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px`,
         backgroundPosition: `${panOffset.x}px ${panOffset.y}px`
       }}
     >
       <div 
         ref={worldRef} 
-        className="absolute top-0 left-0 w-0 h-0"
-        style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px)` }}
+        className="absolute top-0 left-0 w-0 h-0 origin-top-left"
+        style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})` }}
       >
         {nodes.map(node => (
           <PaletteNodeCard
@@ -496,6 +580,16 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
             onSaveNode={onSaveNode}
           />
         )}
+      </div>
+
+      <div className="absolute bottom-6 right-6 z-50">
+        <button
+          onClick={handleCleanUp}
+          className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          Clean Up
+        </button>
       </div>
 
       <div 
