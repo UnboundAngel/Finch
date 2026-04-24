@@ -147,6 +147,8 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
     - Use direct DOM mutation (`el.style.transform`) for dragging and resizing to bypass React render cycles.
     - Avoid `transition-all` on nodes; use specific transitions (e.g., `transition-[border-color,box-shadow]`) to prevent "lag" during manual DOM style updates.
     - Cache `getBoundingClientRect` results once at `pointerdown` for marquee selection to prevent layout thrashing during `pointermove`.
+    - Handle canvas zoom via `scale()` on the world container; calculate world coordinates by dividing screen deltas by the current zoom level (`delta / zoom`).
+    - Snap-to-grid alignment uses a 32px constant; apply to both dragging and the Clean Up action.
 
 ## 6. Planning System & Docs
 The `.planning/` directory holds GSD-style state: **`STATE.md`** (milestone, phase history), **`phases/`** (execution plans), **`quick/`** (small tasks), **`research/`**. **Read `STATE.md` at session start.**
@@ -222,7 +224,7 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 | Right sidebar (AI params) split into sub-sections | ✅ Done | `sidebar/components/` (OutputSection, ParameterZone, SamplingSection, StopWordsSection, SystemPromptSection) |
 | Model marketplace (voice model download) | ✅ Done | `ModelMarketplace.tsx` |
 | Web search onboarding | ✅ Done | `SearchOnboarding.tsx` |
-| Studio Workspace (Node-based canvas) | ✅ Done | `StudioWorkspace.tsx`, `StudioCanvas.tsx`, `studioSlice.ts` |
+| Studio Workspace (Node-based canvas) | ✅ Done | Zoom, Snap-to-grid (32px), Clean Up action, performance-optimized DOM transforms |
 
 ## 10. Known Gotchas
 - `useVoiceTranscription.ts` contains **leftover debug `fetch` calls** to `http://127.0.0.1:7723` inside the polling loop (lines 47 and 66). These are wrapped in `#region agent log` comments and `catch(()=>{})` guards so they are non-fatal, but they should be cleaned up before production.
@@ -240,4 +242,4 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 ---
 
 ## Last Updated
-`2026-04-24T12:00:00-04:00` — Optimized Studio Workspace performance: fixed node dragging lag by disabling transition-all on active nodes and eliminated layout thrashing in marquee selection by caching bounding rects. Updated documentation with Studio-specific performance mandates.
+`2026-04-24T13:15:00-04:00` — Implemented Studio Canvas zoom (anchored to cursor) and 32px snap-to-grid. Added "Clean Up" action to automatically organize nodes. Optimized zoom performance using scale transforms on the world container.
