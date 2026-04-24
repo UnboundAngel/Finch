@@ -1,0 +1,30 @@
+---
+description: LLM provider implementation patterns in Rust
+alwaysApply: false
+globs: "src-tauri/src/providers/**/*.rs"
+---
+
+# Provider Patterns
+
+## Implementation
+- Each provider (Anthropic, Gemini, OpenAI, Local) must have its own file in `src-tauri/src/providers/`.
+- Provider logic is orchestrated in `ipc/chat.rs`.
+
+## Shared Logic (`providers/mod.rs`)
+- **Token Estimation**: `estimate_tokens(text: &str)` (char count / 4).
+- **History Management**: `trim_history` and `prepare_messages` handle context windowing and budget allocation.
+- **Attachment Handling**: `inject_attachments_into_messages` handles base64 encoding and downscaling.
+
+## Provider Interface
+New providers must implement:
+1. `send_message_[name]`: Simple request/response.
+2. `stream_message_[name]`: SSE/Streaming loop that sends `StreamingEvent` variants to the channel.
+
+## Naming & Mapping
+- Map internal Finch model names to provider-specific IDs in `map_model(model_name: &str)`.
+- Use `serde` for provider-specific REST/SSE JSON shapes.
+
+## Constraints
+- Max attachment size: 15MB.
+- Auto-downscale images to 1024px (local) or 2048px (remote).
+- Always include `stop_reason` and token counts in final `Stats` event.

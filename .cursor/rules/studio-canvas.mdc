@@ -1,0 +1,7 @@
+---
+description: Studio Canvas performance rules
+alwaysApply: false
+globs: src/components/studio/**
+---
+
+Use direct DOM mutation (el.style.transform) for drag and resize, not React re-renders. Avoid transition-all on canvas nodes. Motion layout + height:auto conflicts with Zustand during slider drag — use CSS max-height instead. Snap grid constant is 32px, apply to both dragging and Clean Up action.

@@ -1,0 +1,6 @@
+---
+description: Tauri v2 IPC and store conventions
+alwaysApply: true
+---
+
+Every new #[command] requires allow-[command-name] in src-tauri/capabilities/default.json. Tauri v2 Channel uses .onmessage NOT .onData(). camelCase JS keys auto-convert to snake_case Rust args — never manually convert. Use handle.store() via StoreExt, never handle.get_store().

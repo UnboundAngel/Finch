@@ -1,0 +1,27 @@
+---
+description: Tauri IPC command and event patterns
+alwaysApply: false
+globs: "src-tauri/src/ipc/**/*.rs"
+---
+
+# IPC Patterns
+
+## Command Structure
+- All IPC commands live in `src-tauri/src/ipc/`.
+- Commands must be `#[command] pub async fn ...`.
+- Use `AppHandle` for store access and `State<'_, AppState>` for global Rust state (e.g., `abort_flag`).
+- Return `Result<T, String>` for error handling.
+
+## Event Flow
+- Use `tauri::ipc::Channel<String>` for streaming.
+- **StreamingEvent Enum**: Defined in `types.rs`. Events must be serialized as JSON strings.
+- Flow: `Text` (tokens) -> `SearchStart` -> `SearchSource` -> `SearchDone` -> `Stats` (final metadata).
+
+## Command Naming
+- Rust: `snake_case` (e.g., `stream_message`).
+- Frontend: `camelCase` (Tauri auto-converts, but maintain consistency in `invoke` calls).
+- Commands must be registered in `src-tauri/src/lib.rs` and added to `capabilities/default.json`.
+
+## Patterns
+- **Pre-Pass Logic**: Perform heavy lifting (search, attachment processing) in Rust before calling the LLM provider.
+- **Abort Logic**: Use `state.abort_flag` and `Ordering::SeqCst` to safely terminate streaming loops.

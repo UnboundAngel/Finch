@@ -1,0 +1,25 @@
+---
+description: TypeScript type locations and naming conventions
+alwaysApply: true
+---
+
+# TypeScript Conventions
+
+## Location
+- All shared types must live in `src/types/`.
+- `src/types/chat.ts`: Core domain entities (`Message`, `ChatSession`, `Profile`, `Artifact`).
+- Local types (props, internal state) should live in the component or hook file.
+
+## Patterns
+- **Extend, Never Duplicate**: Always extend existing types from `src/types/chat.ts` when adding metadata or specialized versions.
+- **Discriminated Unions**: Use for events and complex states (e.g., `StreamingEvent` in Rust, `ArtifactKind` in TS).
+- **Metadata**: Use the `metadata` field in `Message` for non-prose properties (tokens, timings, artifacts).
+
+## Naming
+- Use `PascalCase` for types and interfaces.
+- Use `camelCase` for properties and variables.
+- Type names should be descriptive: `ArtifactKind`, `WebSearchResearchEvent`.
+
+## Tooling
+- Use `@/` aliases for imports: `@/src/types/chat`.
+- Avoid `any` except in highly dynamic parsing logic; prefer `unknown` or specific interfaces.
