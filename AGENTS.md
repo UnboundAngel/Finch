@@ -92,6 +92,7 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
 │   │   ├── chat/       # All chat-area UI (15 files)
 │   │   ├── dashboard/  # Layout orchestrators, header, dialogs (8 files)
 │   │   ├── modals/     # ContextOverflowModal
+│   │   ├── studio/     # Studio node-based canvas (StudioWorkspace, StudioCanvas)
 │   │   ├── profile/    # Avatar/wallpaper pickers, GIF warning (3 files)
 │   │   ├── sidebar/    # Left + right sidebar, sub-components, hooks (3 top + 5 sub + 2 hooks)
 │   │   ├── startup/    # Profile creation/editing/selection, startup screen (4 files)
@@ -155,6 +156,10 @@ Finch is a high-performance desktop AI chat application built with Tauri v2 and 
 - **Artifact parsing is client-side only.** `artifactParser.ts` uses a single-pass regex to extract `<artifact>` XML blocks from the raw stream. No Rust-side artifact events exist yet (Phase B design is documented in `artifactParser.ts` if needed).
 - **`tokensUsed` and `voiceStatus` are excluded from Zustand persistence** (`chatSlice` partializer strips them on hydration).
 - **"Remember me" profile is stored in `localStorage`** under key `finch_remembered_profile`, not in the Tauri store.
+- **Studio Canvas Performance Mandates**: 
+    - Use direct DOM mutation (`el.style.transform`) for dragging and resizing to bypass React render cycles.
+    - Avoid `transition-all` on nodes; use specific transitions (e.g., `transition-[border-color,box-shadow]`) to prevent "lag" during manual DOM style updates.
+    - Cache `getBoundingClientRect` results once at `pointerdown` for marquee selection to prevent layout thrashing during `pointermove`.
 
 ## 6. Planning System & Docs
 The `.planning/` directory holds GSD-style state: **`STATE.md`** (milestone, phase history), **`phases/`** (execution plans), **`quick/`** (small tasks), **`research/`**. **Read `STATE.md` at session start.**
@@ -169,6 +174,7 @@ Three Zustand stores (all with `persist` middleware), in `src/store/`:
 | `useModelParams` | `useModelParams` | `modelParamsSlice.ts` | `finch-model-params` | LLM params (temp, top_p, maxTokens, stopStrings, systemPrompt) |
 | `useChatStore` | `useChatStore` | `chatSlice.ts` | `finch-chat-state` | Provider, model, incognito, sidebar state, dark mode, voice status, model loading progress. Excludes `tokensUsed` + `voiceStatus` from persistence. |
 | `useProfileStore` | `useProfileStore` | `profileSlice.ts` | `finch-profile-state` | Profile list, active profile. Falls back to `localStorage` if not in Tauri. |
+| `useStudioStore` | `useStudioStore` | `studioSlice.ts` | `finch-studio-state` | Studio Workspace state (nodes, canvas offset, selection). Excludes `studioStreamBuffer` from persistence. |
 
 No Redux or React Context is used for global state (except `ModalProvider` for modal open/close).
 
@@ -247,4 +253,4 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 ---
 
 ## Last Updated
-`2026-04-24T10:30:00-04:00` — Integrated Studio Workspace: implemented raw-JSON system prompt, streaming skeleton state, and state orchestration. Verified multi-node drag, marquee selection, and real-time palette generation.
+`2026-04-24T12:00:00-04:00` — Optimized Studio Workspace performance: fixed node dragging lag by disabling transition-all on active nodes and eliminated layout thrashing in marquee selection by caching bounding rects. Updated documentation with Studio-specific performance mandates.

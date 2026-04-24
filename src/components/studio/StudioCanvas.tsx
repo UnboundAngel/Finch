@@ -13,7 +13,7 @@ export interface StudioCanvasProps {
 
 type DragInfo =
   | { type: 'pan'; startX: number; startY: number; initialPanX: number; initialPanY: number }
-  | { type: 'marquee'; startX: number; startY: number; currentX: number; currentY: number; initialSelection: Set<string> }
+  | { type: 'marquee'; startX: number; startY: number; currentX: number; currentY: number; initialSelection: Set<string>; initialRects: { id: string; rect: DOMRect }[] }
   | { type: 'node'; nodeIds: string[]; startX: number; startY: number; initialPositions: { [id: string]: { x: number; y: number } } }
   | { type: 'resize'; nodeId: string; startX: number; startY: number; initialWidth: number };
 
@@ -69,7 +69,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       data-node-id={node.id}
       ref={ref}
       className={cn(
-        "absolute bg-card text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-all duration-200 box-border",
+        "absolute bg-card text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-[border-color,box-shadow] duration-200 box-border",
         "hover:border-ring shadow-sm",
         isSelected && "border-primary ring-1 ring-primary shadow-lg",
         isStreaming && "animate-pulse pointer-events-none border-primary"
@@ -273,16 +273,24 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       containerRef.current?.setPointerCapture(e.pointerId);
       const initialSelection = e.shiftKey ? new Set(selectedIds) : new Set<string>();
       if (!e.shiftKey) setSelectedIds(new Set());
+      
+      const initialRects: { id: string; rect: DOMRect }[] = [];
+      nodes.forEach(node => {
+        const el = nodeRefs.current[node.id];
+        if (el) initialRects.push({ id: node.id, rect: el.getBoundingClientRect() });
+      });
+
       dragInfo.current = {
         type: 'marquee',
         startX: e.clientX,
         startY: e.clientY,
         currentX: e.clientX,
         currentY: e.clientY,
-        initialSelection
+        initialSelection,
+        initialRects
       };
     }
-  }, [panOffset, selectedIds]);
+  }, [panOffset, selectedIds, nodes]);
 
   const handleNodePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, node: PaletteNode) => {
     if (e.button === 1) return;
@@ -365,14 +373,10 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
           left, right: left + width, top, bottom: top + height
         };
         const newlySelected = new Set(info.initialSelection);
-        nodes.forEach(node => {
-          const el = nodeRefs.current[node.id];
-          if (el) {
-            const rect = el.getBoundingClientRect();
-            const overlap = !(rect.right < screenMarquee.left || rect.left > screenMarquee.right || 
-                              rect.bottom < screenMarquee.top || rect.top > screenMarquee.bottom);
-            if (overlap) newlySelected.add(node.id);
-          }
+        info.initialRects.forEach(({ id, rect }) => {
+          const overlap = !(rect.right < screenMarquee.left || rect.left > screenMarquee.right || 
+                            rect.bottom < screenMarquee.top || rect.top > screenMarquee.bottom);
+          if (overlap) newlySelected.add(id);
         });
         setSelectedIds(newlySelected);
       }
