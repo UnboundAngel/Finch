@@ -14,6 +14,8 @@ export interface ChatState {
   modelLoadProgress: number;
   isDark: boolean;
   isLeftSidebarOpen: boolean;
+  holdToRecord: boolean;
+  selectedMicDevice: string;
 
   setSelectedProvider: (provider: string) => void;
   setSelectedModel: (model: string) => void;
@@ -27,6 +29,8 @@ export interface ChatState {
   setModelLoadProgress: (progress: number) => void;
   setIsDark: (isDark: boolean | ((prev: boolean) => boolean)) => void;
   setIsLeftSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
+  setHoldToRecord: (hold: boolean) => void;
+  setSelectedMicDevice: (device: string) => void;
   reset: () => void;
 }
 
@@ -43,6 +47,8 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   modelLoadProgress: 0,
   isDark: false,
   isLeftSidebarOpen: true,
+  holdToRecord: false,
+  selectedMicDevice: '',
 
   setSelectedProvider: (provider) => set({ selectedProvider: provider }),
   setSelectedModel: (model) => set({ 
@@ -67,6 +73,8 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   setIsLeftSidebarOpen: (isOpen) => set((state) => ({ 
     isLeftSidebarOpen: typeof isOpen === 'function' ? isOpen(state.isLeftSidebarOpen) : isOpen 
   })),
+  setHoldToRecord: (holdToRecord) => set({ holdToRecord }),
+  setSelectedMicDevice: (selectedMicDevice) => set({ selectedMicDevice }),
   reset: () => set({
     tokensUsed: 0,
     isModelLoaded: true,

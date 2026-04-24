@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Bookmark, Check } from 'lucide-react';
+import { ChevronDown, Bookmark, Check, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
@@ -62,6 +62,13 @@ export const ModelSelector = ({
 }: ModelSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [bookmarkedModels, setBookmarkedModels] = useState<BookmarkedModel[]>([]);
+  const [liveModels, setLiveModels] = useState<{ [key: string]: string[] }>({
+    anthropic: [],
+    openai: [],
+    gemini: [],
+    local_ollama: [],
+    local_lmstudio: [],
+  });
   const [models, setModels] = useState<{ [key: string]: string[] }>({
     anthropic: [],
     openai: [],
@@ -114,7 +121,15 @@ export const ModelSelector = ({
   const fetchModels = async () => {
     try {
       const map = await fetchModelsMap();
-      setModels(map);
+      setLiveModels(map);
+      setModels((prev) => ({
+        anthropic: map.anthropic,
+        openai: map.openai,
+        gemini: map.gemini,
+        // Preserve previously seen local models so unloaded ones don't disappear.
+        local_ollama: Array.from(new Set([...(map.local_ollama ?? []), ...(prev.local_ollama ?? [])])),
+        local_lmstudio: Array.from(new Set([...(map.local_lmstudio ?? []), ...(prev.local_lmstudio ?? [])])),
+      }));
 
       const invoke = await getTauriInvoke();
       if (invoke) {
@@ -163,14 +178,14 @@ export const ModelSelector = ({
     const prevProvider = selectedProvider;
     const prevModel = selectedModel;
 
-    // #region agent log
-    const _dbgLog = (hypothesisId: string, message: string, data: Record<string, unknown>) => fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'69f910'},body:JSON.stringify({sessionId:'69f910',location:'ModelSelector.tsx:handleSelect',hypothesisId,message,data,timestamp:Date.now()})}).catch(()=>{});
-    void _dbgLog('H1','handleSelect entered',{providerId,modelId,prevProvider,prevModel,isLocal:isLocalInferenceProvider(providerId)});
-    // #endregion
+    const isReloadingSameLocal =
+      isLocalInferenceProvider(providerId) &&
+      providerId === prevProvider &&
+      modelId === prevModel;
 
     setSelectedProvider(providerId);
     setSelectedModel(modelId);
-    toast.success(`Switched to ${modelId}`);
+    toast.success(isReloadingSameLocal ? `Reloading ${modelId}` : `Switched to ${modelId}`);
     setIsOpen(false);
 
     if (isLocalInferenceProvider(providerId)) {
@@ -184,9 +199,6 @@ export const ModelSelector = ({
     }
 
     const invoke = await getTauriInvoke();
-    // #region agent log
-    void _dbgLog('H2','getTauriInvoke result',{invokeIsNull: invoke == null, isLocal: isLocalInferenceProvider(providerId)});
-    // #endregion
     if (!invoke) return;
 
     // Eject the previous local model before loading any local selection.
@@ -211,23 +223,16 @@ export const ModelSelector = ({
 
     // Trigger preload for the newly selected local model (fire-and-forget).
     if (isLocalInferenceProvider(providerId)) {
-      // #region agent log
-      void _dbgLog('H3','about to invoke preload_model',{provider: providerId, modelId});
-      // #endregion
       invoke('preload_model', { provider: providerId, modelId }).then(() => {
-        // #region agent log
-        void _dbgLog('H3','preload_model resolved OK',{provider: providerId, modelId});
-        // #endregion
       }).catch((err: unknown) => {
-        // #region agent log
-        void _dbgLog('H3','preload_model rejected',{provider: providerId, modelId, err: String(err)});
-        // #endregion
       });
     }
   };
 
   const currentProvider = providers.find(p => p.id === selectedProvider);
   void currentProvider; // used by consumers; suppress unused warning
+  const isUnloadedLocalModel = (providerId: string, modelId: string) =>
+    isLocalInferenceProvider(providerId) && !(liveModels[providerId] ?? []).includes(modelId);
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -320,6 +325,9 @@ export const ModelSelector = ({
                     </DropdownMenuLabel>
                     <div className="space-y-0.5">
                       {bookmarkedModels.map((bm) => (
+                        (() => {
+                          const unloaded = isUnloadedLocalModel(bm.providerId, bm.modelId);
+                          return (
                         <DropdownMenuItem
                           key={`bookmark-${bm.providerId}-${bm.modelId}`}
                           className={cn(
@@ -347,14 +355,34 @@ export const ModelSelector = ({
                             )}>
                               {bm.modelId}
                             </span>
+                            {unloaded && (
+                              <span className="text-[10px] font-medium text-amber-500/90">
+                                Unloaded
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1">
+                            {unloaded && (
+                              <button
+                                type="button"
+                                className="h-6 w-6 inline-flex items-center justify-center rounded-md text-amber-500/90 hover:bg-amber-500/10 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleSelect(bm.providerId, bm.modelId);
+                                }}
+                                title="Reload model"
+                              >
+                                <RotateCw className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                             <BookmarkIconButton
                               isBookmarked={true}
                               onToggle={(e) => toggleBookmark(e, bm.providerId, bm.modelId)}
                             />
                           </div>
                         </DropdownMenuItem>
+                          );
+                        })()
                       ))}
                     </div>
                     <DropdownMenuSeparator className="my-1.5 opacity-40" />
@@ -380,6 +408,9 @@ export const ModelSelector = ({
                         </DropdownMenuLabel>
                         <div className="space-y-0.5">
                           {visibleModels.map((modelId) => (
+                            (() => {
+                              const unloaded = isUnloadedLocalModel(provider.id, modelId);
+                              return (
                             <DropdownMenuItem
                               key={`${provider.id}-${modelId}`}
                               className={cn(
@@ -407,12 +438,27 @@ export const ModelSelector = ({
                                 {modelId}
                               </span>
                               <div className="flex items-center gap-1">
+                                {unloaded && (
+                                  <button
+                                    type="button"
+                                    className="h-6 w-6 inline-flex items-center justify-center rounded-md text-amber-500/90 hover:bg-amber-500/10 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void handleSelect(provider.id, modelId);
+                                    }}
+                                    title="Reload model"
+                                  >
+                                    <RotateCw className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                                 <BookmarkIconButton
                                   isBookmarked={false}
                                   onToggle={(e) => toggleBookmark(e, provider.id, modelId)}
                                 />
                               </div>
                             </DropdownMenuItem>
+                              );
+                            })()
                           ))}
                         </div>
                         <DropdownMenuSeparator className="my-1.5 opacity-40" />

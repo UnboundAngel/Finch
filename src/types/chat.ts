@@ -3,7 +3,7 @@ export type WebSearchResearchEvent = {
   data?: any;
 };
 
-export type ArtifactKind = 'code' | 'html' | 'markdown' | 'svg' | 'react' | 'text';
+export type ArtifactKind = 'code' | 'html' | 'markdown' | 'svg' | 'react' | 'text' | 'color-studio';
 
 export type Artifact = {
   id: string;
@@ -13,6 +13,8 @@ export type Artifact = {
   content: string;
   /** 1-based version index within its message */
   version: number;
+  /** Absolute path on disk after the artifact has been persisted. Present after stream completion. */
+  filePath?: string;
 };
 
 export type MessageMetadata = {

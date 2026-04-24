@@ -146,19 +146,44 @@ pub fn inject_attachments_into_messages(
         m.get("role").and_then(|r| r.as_str()) == Some("user")
     }).ok_or("no user message found")?;
 
-    const MAX_ATTACHMENT_BYTES: u64 = 25 * 1024 * 1024; // 25 MB
+    const MAX_ATTACHMENT_BYTES: u64 = 15 * 1024 * 1024; // 15 MB
 
     for attachment in attachments {
         let path = Path::new(&attachment.path);
         let meta = std::fs::metadata(path)
             .map_err(|e| format!("Cannot stat attachment {}: {}", attachment.path, e))?;
         if meta.len() > MAX_ATTACHMENT_BYTES {
-            return Err(format!("Attachment {} exceeds 25 MB limit", attachment.path));
+            return Err(format!("Attachment {} exceeds 15 MB limit", attachment.path));
         }
         let bytes = std::fs::read(path)
             .map_err(|e| format!("Failed to read attachment {}: {}", attachment.path, e))?;
-        let b64 = BASE64.encode(&bytes);
-        let mime = detect_mime(path);
+        
+        let mut mime = detect_mime(path);
+        let mut final_bytes = bytes;
+
+        // Auto-downscale large images to save tokens and avoid context rot
+        if mime.starts_with("image/") && mime != "image/gif" {
+            let max_edge = if provider.starts_with("local_") { 1024 } else { 2048 };
+            if let Ok(img) = image::load_from_memory(&final_bytes) {
+                if img.width() > max_edge || img.height() > max_edge {
+                    let resized = img.resize(max_edge, max_edge, image::imageops::FilterType::Triangle);
+                    let mut cursor = std::io::Cursor::new(Vec::new());
+                    
+                    let encode_success = if img.color().has_alpha() {
+                        resized.write_to(&mut cursor, image::ImageFormat::Png).is_ok()
+                    } else {
+                        resized.write_to(&mut cursor, image::ImageFormat::Jpeg).is_ok()
+                    };
+
+                    if encode_success {
+                        final_bytes = cursor.into_inner();
+                        mime = if img.color().has_alpha() { "image/png" } else { "image/jpeg" };
+                    }
+                }
+            }
+        }
+
+        let b64 = BASE64.encode(&final_bytes);
 
         match provider {
             "anthropic" => {

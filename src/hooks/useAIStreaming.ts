@@ -139,6 +139,10 @@ export function useAIStreaming() {
 
           switch (event.type) {
             case "text":
+              if (typeof event.data !== 'string') {
+                console.warn('[useAIStreaming] Received text event with non-string data:', event.data, '— raw JSON:', eventJson);
+                break;
+              }
               textBufferRef.current += event.data;
               if (rafRef.current === null) {
                 rafRef.current = requestAnimationFrame(flushTextBuffer);

@@ -20,6 +20,28 @@ const TEXT_LIKE_EXTS = new Set([
   'yaml', 'yml', 'toml', 'xml', 'sql', 'css', 'sh', 'bash',
 ]);
 
+/** Absolute filesystem path → `file:` URL for Tauri `openUrl` (default PDF handler, often the browser). */
+function fsPathToFileUrl(fsPath: string): string {
+  const norm = fsPath.replace(/\\/g, '/').replace(/\/+$/, '');
+  const win = /^([A-Za-z]):(\/(.*))?$/.exec(norm);
+  if (win) {
+    const drive = win[1] + ':';
+    const rest = (win[3] ?? '')
+      .split('/')
+      .filter(Boolean)
+      .map((s) => encodeURIComponent(s))
+      .join('/');
+    return rest ? `file:///${drive}/${rest}` : `file:///${drive}`;
+  }
+  const abs = norm.startsWith('/') ? norm : `/${norm}`;
+  const tail = abs
+    .split('/')
+    .filter(Boolean)
+    .map((s) => encodeURIComponent(s))
+    .join('/');
+  return `file:///${tail}`;
+}
+
 const SHIKI_LANG_MAP: Record<string, string> = {
   py: 'python', js: 'javascript', ts: 'typescript', jsx: 'javascript',
   tsx: 'typescript', rs: 'rust', go: 'go', java: 'java', cpp: 'cpp',
@@ -127,7 +149,7 @@ function ImagePreview({ file }: { file: PreviewFile }) {
 
 // ─── Markdown preview ─────────────────────────────────────────────────────────
 
-function MarkdownPreview({ file, isDark }: { file: PreviewFile; isDark: boolean }) {
+function MarkdownPreview({ file, isDark, onStatsCalculated }: { file: PreviewFile; isDark: boolean; onStatsCalculated?: (stats: {bytes: number, lines: number}) => void }) {
   const [rawContent, setRawContent] = useState<string | null>(null);
   const [truncated, setTruncated] = useState(false);
   const renderId = useRef(0);
@@ -141,6 +163,11 @@ function MarkdownPreview({ file, isDark }: { file: PreviewFile; isDark: boolean 
       .then(async r => {
         const text = await r.text();
         if (id !== renderId.current) return;
+        
+        const bytes = new TextEncoder().encode(text).length;
+        const lines = text.split('\n').length;
+        onStatsCalculated?.({ bytes, lines });
+
         if (text.length > MAX_PREVIEW_BYTES) {
           setRawContent(text.slice(0, MAX_PREVIEW_BYTES));
           setTruncated(true);
@@ -184,7 +211,6 @@ function MarkdownPreview({ file, isDark }: { file: PreviewFile; isDark: boolean 
     a: ({ node, href, children, ...props }: any) => (
       <ExternalLink
         href={href || ''}
-        className="text-primary underline underline-offset-2 decoration-primary/40 hover:decoration-primary transition-colors"
         {...props}
       >
         {children}
@@ -284,10 +310,10 @@ function PdfPreview({ file, onClose }: { file: PreviewFile; onClose: () => void 
       // Blob URLs have no filesystem path — came from a web drag-drop, can't open externally.
       if (file.path.startsWith('blob:')) return;
       try {
-        const { openPath } = await import('@tauri-apps/plugin-opener');
-        await openPath(file.path);
+        const { openUrl } = await import('@tauri-apps/plugin-opener');
+        await openUrl(fsPathToFileUrl(file.path));
       } catch (e) {
-        console.error('[preview] openPath failed', e);
+        console.error('[preview] openUrl (file) failed', e);
       }
       return;
     }
@@ -388,7 +414,7 @@ function PdfPreview({ file, onClose }: { file: PreviewFile; onClose: () => void 
 
 // ─── Code / text with Shiki ───────────────────────────────────────────────────
 
-function CodeTextPreview({ file, isDark }: { file: PreviewFile; isDark: boolean }) {
+function CodeTextPreview({ file, isDark, onStatsCalculated }: { file: PreviewFile; isDark: boolean; onStatsCalculated?: (stats: {bytes: number, lines: number}) => void }) {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
   const lang = SHIKI_LANG_MAP[ext] ?? 'text';
 
@@ -401,7 +427,14 @@ function CodeTextPreview({ file, isDark }: { file: PreviewFile; isDark: boolean 
     setContent(null);
     fetch(resolveMediaSrc(file.path))
       .then(r => r.text())
-      .then(text => { if (id === renderId.current) setContent(text); })
+      .then(text => { 
+        if (id === renderId.current) {
+          setContent(text); 
+          const bytes = new TextEncoder().encode(text).length;
+          const lines = text.split('\n').length;
+          onStatsCalculated?.({ bytes, lines });
+        }
+      })
       .catch(() => { if (id === renderId.current) setContent('(Could not read file)'); });
     return () => { renderId.current++; };
   }, [file.path]);
@@ -473,17 +506,28 @@ function GenericPreview({ file }: { file: PreviewFile }) {
 // ─── Root modal ───────────────────────────────────────────────────────────────
 
 export function FilePreviewModal({ file, onClose, isDark }: FilePreviewModalProps) {
+  const [fileStats, setFileStats] = useState<{bytes: number, lines: number} | null>(null);
+
   const ext = file?.name.split('.').pop()?.toLowerCase() ?? '';
   const isImage = !!file && IMAGE_EXTS.test(file.name);
   const isMarkdown = !!file && MD_EXT.test(file.name);
   const isPdf = !!file && PDF_EXT.test(file.name);
 
   useEffect(() => {
+    setFileStats(null);
     if (!file) return;
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [file, onClose]);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
 
   return (
     <AnimatePresence>
@@ -520,7 +564,19 @@ export function FilePreviewModal({ file, onClose, isDark }: FilePreviewModalProp
           >
             {!isImage && !isPdf && (
               <div className="flex shrink-0 items-center justify-between border-b border-muted-foreground/15 px-5 py-3.5">
-                <span className="truncate text-sm font-semibold text-foreground/90">{file.name}</span>
+                <div className="flex items-center gap-3">
+                  <span className="truncate text-sm font-semibold text-foreground/90">{file.name}</span>
+                  {fileStats && (
+                    <>
+                      <div className="h-3 w-px bg-muted-foreground/20" />
+                      <div className="flex items-center gap-2.5 text-xs text-muted-foreground/60">
+                        <span>{formatBytes(fileStats.bytes)}</span>
+                        <span className="text-[10px]">•</span>
+                        <span>{fileStats.lines} lines</span>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <button
                   onClick={onClose}
                   className="ml-3 shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
@@ -545,9 +601,9 @@ export function FilePreviewModal({ file, onClose, isDark }: FilePreviewModalProp
             ) : PDF_EXT.test(file.name) ? (
               <PdfPreview file={file} onClose={onClose} />
             ) : MD_EXT.test(file.name) ? (
-              <MarkdownPreview file={file} isDark={isDark} />
+              <MarkdownPreview file={file} isDark={isDark} onStatsCalculated={setFileStats} />
             ) : TEXT_LIKE_EXTS.has(ext) ? (
-              <CodeTextPreview file={file} isDark={isDark} />
+              <CodeTextPreview file={file} isDark={isDark} onStatsCalculated={setFileStats} />
             ) : (
               <GenericPreview file={file} />
             )}

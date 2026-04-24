@@ -43,9 +43,8 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
     if (status === 'transcribing') {
       pollIntervalRef.current = setInterval(async () => {
         try {
-          // #region agent log
-          fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H4',location:'useVoiceTranscription.ts:46',message:'Polling transcription status',data:{status,hasGlobalInvoke:typeof (globalThis as { invoke?: unknown }).invoke !== 'undefined'},timestamp:Date.now()})}).catch(()=>{});
-          // #endregion
+          const invoke = await getTauriInvoke();
+          if (!invoke) return;
           const currentStatus = await invoke<any>('get_transcription_status');
           if (currentStatus.status === 'Completed') {
             const text = currentStatus.data;
@@ -62,9 +61,6 @@ export const useVoiceTranscription = (onTranscriptionComplete?: (text: string) =
             pollIntervalRef.current = null;
           }
         } catch (err) {
-          // #region agent log
-          fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H4',location:'useVoiceTranscription.ts:63',message:'Transcription polling failed',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now()})}).catch(()=>{});
-          // #endregion
           console.error("Failed to poll transcription status:", err);
         }
       }, 500);

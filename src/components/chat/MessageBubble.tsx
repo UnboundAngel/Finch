@@ -112,16 +112,42 @@ export const MessageBubble = memo(function MessageBubble({
     code(props: any) {
       const { children, className, node, ...rest } = props;
       const match = /language-(\w+)/.exec(className || '');
+      const childrenString = String(children).replace(/\n$/, '');
+      const isColorHex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(childrenString.trim());
+
       return match ? (
         <CodeBlock
-          children={String(children).replace(/\n$/, '')}
+          children={childrenString}
           language={match[1]}
           isDark={isDark}
           streaming={isStreamingRef.current}
         />
       ) : (
-        <code className={`px-1.5 py-0.5 rounded text-sm font-mono font-medium break-all whitespace-pre-wrap ${isUserMsg ? 'bg-white/20' : 'bg-muted/80'}`} {...rest}>
-          {children}
+        <code 
+          onClick={(e) => {
+            if (isColorHex) {
+              e.preventDefault();
+              navigator.clipboard.writeText(childrenString.trim());
+            }
+          }}
+          className={cn(`px-1.5 py-[3px] rounded text-sm font-mono break-all whitespace-pre-wrap transition-all duration-200`, 
+            isUserMsg ? 'bg-white/20 font-medium' : 'bg-muted/60 border border-muted-foreground/10',
+            isColorHex ? "inline-flex items-center gap-2 align-middle cursor-pointer hover:bg-muted dark:hover:bg-white/10 hover:shadow-sm" : "font-medium"
+          )} 
+          {...rest}
+        >
+          {isColorHex && (
+            <span 
+              className="relative flex items-center justify-center shrink-0 w-[14px] h-[14px] rounded-[3px] overflow-hidden shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Crect width='2' height='2' fill='%23ccc'/%3E%3Crect x='2' y='2' width='2' height='2' fill='%23ccc'/%3E%3C/svg%3E")`,
+                backgroundSize: '4px 4px'
+              }}
+            >
+               <span className="absolute inset-0" style={{ backgroundColor: childrenString.trim() }} />
+            </span>
+          )}
+          <span className={isColorHex ? "uppercase tracking-widest text-[11px] font-bold" : ""}>{children}</span>
         </code>
       );
     },
@@ -140,7 +166,7 @@ export const MessageBubble = memo(function MessageBubble({
           <MessageSquare className="h-4 w-4 text-primary-foreground" />
         </div>
       )}
-      <div className="flex-1 min-w-0 space-y-2 overflow-hidden">
+      <div className="flex-1 min-w-0 space-y-2 overflow-visible">
         <div className="font-medium text-sm px-1">{msg.role === 'user' ? 'You' : selectedModel}</div>
 
         {msg.role === 'ai' && msg.metadata?.researchEvents && msg.metadata.researchEvents.length > 0 && (
@@ -216,7 +242,7 @@ export const MessageBubble = memo(function MessageBubble({
                         />
                       ) : (
                         seg.content.trim() && seg.content !== 'undefined' ? (
-                          <div key={i} className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 break-words overflow-hidden">
+                          <div key={i} className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 break-words overflow-visible">
                             <ReactMarkdown remarkPlugins={remarkPlugins} components={markdownComponents}>
                               {seg.content}
                             </ReactMarkdown>
@@ -226,7 +252,7 @@ export const MessageBubble = memo(function MessageBubble({
                     )}
                   </div>
                 ) : (
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-primary-foreground break-words overflow-hidden">
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-primary-foreground break-words overflow-visible">
                     <ReactMarkdown remarkPlugins={remarkPlugins} components={markdownComponents}>
                       {msg.content}
                     </ReactMarkdown>

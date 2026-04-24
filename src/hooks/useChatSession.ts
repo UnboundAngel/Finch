@@ -138,13 +138,9 @@ export function useChatSession({
     if (!activeProfileId) return;
     if (!hasInitialized.current && recentChats.length > 0) {
       hasInitialized.current = true;
-      if (!activeSessionId && !isIncognito && messages.length === 0) {
-        const mostRecent = recentChats[0];
-        setActiveSessionId(mostRecent.id);
-        setMessages(mostRecent.messages);
-      }
+      // Intentionally not loading the most recent chat to default to a new chat on startup.
     }
-  }, [recentChats, activeSessionId, isIncognito, messages.length, activeProfileId]);
+  }, [recentChats.length, activeProfileId]);
 
   return {
     messages,

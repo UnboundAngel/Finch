@@ -151,6 +151,12 @@ pub fn pick_and_save_media(
         _ => return Err("Selected item is not a local file".into()),
     };
 
+    // Pre-read metadata check to prevent memory exhaustion on massive files
+    let meta = fs::metadata(&file_path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
+    if meta.len() > 50 * 1024 * 1024 {
+        return Err("File is too large. Maximum allowed size for media import is 50 MB.".into());
+    }
+
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let dir = app_dir.join(subdir);
     if !dir.exists() {

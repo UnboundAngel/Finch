@@ -9,8 +9,8 @@ This project exists in two states: **Public** (Frontend only) and **Private** (F
 > Do not push to `origin` under any circumstances until this notice is removed.
 
 1. **Verify Remote**: Check `git remote -v` to see where you are pushing.
-   - `origin`: Public (`Finch`) -> **SUSPENDED. DO NOT PUSH.**
-   - `full-repo`: Private (`Finch_full`) -> **ALL pushes go here.**
+   - `origin`: Public (`Finch`) → **SUSPENDED. DO NOT PUSH.**
+   - `full-repo`: Private (`Finch_full`) → **ALL pushes go here.**
 
 2. **Sync .gitignore** (for private pushes only):
    - `cp .gitignore.private .gitignore` before staging.
@@ -26,109 +26,224 @@ This project exists in two states: **Public** (Frontend only) and **Private** (F
 Finch is a high-performance desktop AI chat application built with Tauri v2 and React 19. It provides a local-first, extensible interface for interacting with various LLM providers (Anthropic, OpenAI, Gemini, LM Studio, Ollama) and real-time Web Search (Tavily, Brave, SearXNG), while maintaining strict security by routing all model communication through a secure Rust IPC bridge.
 
 ## 2. Branch / OS Setup
-- **main** → Windows (primary machine). Example path: `C:\Random things i dont want deleted\MyPrograms\SB_Projects\Finch_full\`
-- **linux** → Linux laptop (same repo, separate branch). Example path: `~/Desktop/Projects/Finch_full`
+- **main** → Windows (primary machine). Repo path: `C:\Random things i dont want deleted\Finch\finch-sandbox\`
+- **linux** → Linux laptop (same repo, separate branch).
 - Confirm branch and remotes before pushing (see Section 1).
 
 ## 3. Tech Stack
-- **Tauri v2**: Native desktop shell and secure Rust-to-React bridge.
-- **React 19**: Frontend UI framework using the latest concurrent features.
-- **TypeScript**: Type safety across the entire frontend and IPC layer.
-- **Vite**: Ultra-fast build tool and development server.
-- **Tailwind CSS 4**: Utility-first styling with the latest engine optimizations.
-- **Zustand**: Lightweight, hook-based global state management.
-- **Motion (`motion`, `motion/react`)**: Animations and micro-interactions (Framer Motion successor API).
-- **Shadcn/UI + Radix + Base UI**: Component primitives (`components/ui/` at repo root, app shells under `src/components/`).
-- **Shiki**: High-fidelity, theme-aware syntax highlighting for code blocks.
-- **Rust**: High-performance backend logic, IPC handling, and hardware interaction.
-- **whisper-rs & cpal**: Local-first voice transcription and audio device management.
-- **tauri-plugin-store**: Persistent JSON storage for configuration and profiles.
-- **LM Studio / Ollama**: Local LLM providers via OpenAI-compatible endpoints.
-- **Web Search**: Integration with Tavily, Brave, and SearXNG for real-time data.
-- **remark-gfm**: GitHub Flavored Markdown support for the chat parser.
-- **React Markdown 10**: Robust Markdown rendering for AI responses.
-- **Lucide React**: Consistent, lightweight iconography.
+
+### Frontend
+| Package | Version | Role |
+|---|---|---|
+| React | ^19.0.0 | UI framework |
+| TypeScript | ~5.8.2 | Type safety |
+| Vite | ^6.2.0 | Build tool / dev server (port 1420) |
+| Tailwind CSS | ^4.1.14 | Utility-first styling (via `@tailwindcss/vite`) |
+| motion | ^12.38.0 | Animations (Framer Motion successor API) |
+| Zustand | ^5.0.12 | Global state management |
+| Shiki | ^4.0.2 | Syntax highlighting (async singleton) |
+| react-markdown | ^10.1.0 | Markdown rendering |
+| remark-gfm | ^4.0.1 | GitHub Flavored Markdown |
+| sonner | ^2.0.7 | Toast notifications |
+| lucide-react | ^0.546.0 | Icons |
+| @fontsource-variable/geist | ^5.2.8 | Typography |
+| @base-ui/react | ^1.3.0 | Accessible UI primitives |
+| @radix-ui/react-popover | ^1.1.15 | Popover primitive |
+| styled-components | ^6.4.0 | [present in deps, limited use] |
+| @tauri-apps/api | ^2.0.0 | Tauri JS bridge |
+| @tauri-apps/plugin-dialog | ^2.7.0 | Native file dialogs |
+| @tauri-apps/plugin-opener | ^2.5.3 | Open URLs / files in OS |
+
+### Backend (Rust / Tauri)
+| Crate | Role |
+|---|---|
+| tauri 2 | Desktop shell, IPC bridge |
+| tauri-plugin-store 2.4.2 | Persistent JSON key/value store |
+| tauri-plugin-dialog 2 | File/folder picker dialogs |
+| tauri-plugin-opener 2 | OS-level open |
+| reqwest 0.12 | Async HTTP for provider APIs |
+| tokio 1 (full) | Async runtime |
+| serde / serde_json | Serialization |
+| whisper-rs 0.11 | Local Whisper inference |
+| cpal 0.15 | Audio device I/O |
+| rubato 0.15 | Audio resampling |
+| sysinfo 0.33.1 | Hardware info (RAM, CPU count) |
+| image 0.25 | Wallpaper/avatar image processing |
+| base64 0.22 | Image encoding for multimodal payloads |
+| sha2 / hex | Hashing |
+| uuid 1.23 | Unique ID generation |
+| chrono 0.4.44 | Timestamps |
+| windows 0.58.0 | Win32 COM (Windows-specific) |
+| futures-util 0.3 | Stream utilities |
 
 ## 4. Directory Structure
 ```text
 /
-├── .planning/       # GSD session state (STATE.md), phase plans, quick tasks, research
-├── components/ui/   # Shared Shadcn-style primitives (import via @/components/ui/…)
+├── .planning/          # GSD session state (STATE.md), phase plans, quick tasks, research
+├── AGENTS.md           # This file — agent instructions
+├── CLAUDE.md           # Claude-specific instructions (mirrors key rules)
+├── components/ui/      # Shared Shadcn-style primitives (22 files) — import via @/components/ui/…
 ├── src/
-│   ├── components/  # App UI: chat, dashboard, sidebar (split sections), startup, modals, profile
-│   ├── hooks/       # IPC, streaming (useAIStreaming), voice, persistence, shortcuts
-│   ├── lib/         # Utilities, theme, constants
-│   ├── store/       # Zustand slices (chat, model params, profile, …)
-│   ├── types/
-│   └── styles/
-├── src-tauri/src/   # Rust: ipc/, providers/, search, voice, session, media import, …
-├── src-tauri/capabilities/
-├── public/
+│   ├── App.tsx         # Root: profile gate → StartupScreen | Dashboard + Toaster
+│   ├── main.tsx        # React DOM entry point
+│   ├── index.css       # Global styles, Tailwind directives, design tokens, glassmorphic utilities
+│   ├── assets/         # Static assets (images, icons)
+│   ├── components/
+│   │   ├── chat/       # All chat-area UI (15 files)
+│   │   ├── dashboard/  # Layout orchestrators, header, dialogs (8 files)
+│   │   ├── modals/     # ContextOverflowModal
+│   │   ├── profile/    # Avatar/wallpaper pickers, GIF warning (3 files)
+│   │   ├── sidebar/    # Left + right sidebar, sub-components, hooks (3 top + 5 sub + 2 hooks)
+│   │   ├── startup/    # Profile creation/editing/selection, startup screen (4 files)
+│   │   └── ui/         # App-local UI atoms (ExternalLink, Icons)
+│   ├── hooks/          # 11 hooks (streaming, voice, persistence, background, polling…)
+│   ├── lib/            # 11 utility modules (artifact parser/prompt, models, context windows…)
+│   ├── providers/      # React context providers (ModalProvider)
+│   ├── store/          # Zustand slices (chat, modelParams, profile) + index
+│   ├── styles/         # toasts.css
+│   └── types/          # chat.ts (Message, Artifact, ChatSession, Profile, etc.)
+├── src-tauri/
+│   ├── Cargo.toml
+│   ├── capabilities/default.json   # All allowed IPC commands (single file)
+│   ├── permissions/                # [present, contents not audited]
+│   └── src/
+│       ├── lib.rs      # Tauri app setup, plugin registration, invoke_handler
+│       ├── main.rs     # Binary entry point (delegates to lib.rs)
+│       ├── types.rs    # Shared Rust types (AppState, ProviderConfig, StreamingEvent, …)
+│       ├── search.rs   # Web search orchestration (Tavily, Brave, SearXNG)
+│       ├── voice.rs    # VoiceManager: audio capture (CPAL), Whisper inference, preview
+│       ├── download.rs # Voice model marketplace downloader (progress events)
+│       ├── session.rs  # Chat session helpers (file I/O for chats/)
+│       ├── ipc/        # IPC command modules (8 files)
+│       │   ├── mod.rs
+│       │   ├── chat.rs         # send_message, stream_message, abort_generation
+│       │   ├── models.rs       # list_*_models, eject/preload/status, context_intelligence
+│       │   ├── sessions.rs     # list/load/save/delete_chat
+│       │   ├── settings.rs     # provider config, background/media import, hardware info, search config
+│       │   ├── voice.rs        # recording, transcription, preview, device mgmt, model download
+│       │   ├── profiles.rs     # get/save/delete_profile
+│       │   └── media_import.rs # import_user_media, remove_imported_media
+│       └── providers/  # LLM provider clients (5 files)
+│           ├── mod.rs          # prepare_messages, map_model, inject_attachments_into_messages
+│           ├── anthropic.rs    # AnthropicClient: send + streaming
+│           ├── openai.rs       # send + stream_message_openai
+│           ├── gemini.rs       # send + stream_message_gemini
+│           └── local.rs        # send + stream_message_local (Ollama + LM Studio)
 └── docs/
-    ├── README.md    # Index of all documentation
-    ├── product/     # BACKLOG, IDEAS, ROADMAP, scratch todo
-    ├── planning/    # Startup / profile integration plans
-    ├── qa/          # UAT logs
-    ├── architecture/# Active codebase maps only
-    ├── archive/     # Retired plans, migration notes, duplicates (read-only)
-    └── superpowers/ # Specs + execution plans (product strategy, baseline gaps)
+    ├── README.md           # Documentation index
+    ├── architecture/       # codebase.md, Finch Codebase Map (post-split).md
+    ├── product/            # BACKLOG, IDEAS, ROADMAP
+    ├── planning/           # Startup / profile integration plans
+    ├── qa/                 # UAT logs
+    ├── archive/            # Retired plans (read-only)
+    └── superpowers/        # Product strategy specs
 ```
 
 ## 5. Architecture Rules — DO NOT VIOLATE
-- API keys never reach the React renderer. All LLM calls go through Rust IPC only. get_provider_config masks keys for Anthropic, OpenAI, Gemini, Tavily, and Brave.
-- Every new Tauri command requires allow-[command-name] in BOTH src-tauri/capabilities/default.json AND finch.toml. The build passes without it. Runtime throws silently.
-- Tauri v2 Channel uses .onmessage assignment — NOT .onData() method.
-- Tauri automatically converts camelCase JS invoke keys to snake_case Rust args. Send camelCase from JS (e.g. modelId). Tauri maps to model_id in Rust. Never manually snake_case the JS payload.
-- In Tauri v2, use handle.store() via StoreExt — NOT handle.get_store(). get_store() returns None if the JS side hasn't loaded the store yet.
-- Web Search results are injected into the stream via `search_start`, `search_source`, and `search_done` events before the final LLM response.
-- @/ alias resolves to the project root — NOT src/.
-- Shiki is an async singleton. Do not reinitialize it per render.
-- Motion layout/height: `auto` conflicts with Zustand render cycles during slider drag. Use pure CSS max-height transitions for collapsible zones. Reserve Motion for discrete animations (e.g. chevron rotation, icon swaps).
-- Local models use OpenAI-compatible /v1/chat/completions endpoints.
-- Fallback context window for unknown local models: 32k (always overestimate fullness).
+- **API keys never reach the React renderer.** All LLM calls go through Rust IPC only. `get_provider_config` masks keys before returning to JS.
+- **Every new Tauri command requires `allow-[command-name]` in `src-tauri/capabilities/default.json`.** The build passes without it; runtime throws silently.
+- **Tauri v2 Channel uses `.onmessage` assignment** — NOT `.onData()`.
+- **Tauri auto-converts camelCase JS keys to snake_case Rust args.** Send `modelId` from JS; Rust receives `model_id`. Never manually snake_case the JS payload.
+- **Use `handle.store()` via `StoreExt`** — NOT `handle.get_store()`. `get_store()` returns `None` if the JS side hasn't loaded the store yet.
+- **Web Search events arrive before the LLM text.** They are emitted as `search_start`, `search_source`, `search_done` on the channel; `useAIStreaming.ts` flushes any pending text buffer before dispatching these to preserve ordering.
+- **`@/` alias resolves to the project root** — NOT `src/`. Shared UI primitives are at `@/components/ui/…`; app components at `@/src/components/…`.
+- **Shiki is an async singleton.** Initialize once in `CodeBlock.tsx`; do not reinitialize per render.
+- **Motion `layout` + `height: auto` conflicts with Zustand render cycles during slider drag.** Use pure CSS `max-height` transitions for collapsible zones. Reserve Motion for discrete animations (chevron rotation, icon swap, etc.).
+- **Local models use OpenAI-compatible `/v1/chat/completions` endpoints.** Both `local_ollama` and `local_lmstudio` route through `local.rs`.
+- **Fallback context window for unknown local models: 32k** (always overestimate, not underestimate).
+- **`ipc/media_import.rs` exists as a module** but is not directly registered in `lib.rs`'s invoke_handler (its commands are likely routed via `settings.rs`). Verify before adding new media commands.
+- **Artifact parsing is client-side only.** `artifactParser.ts` uses a single-pass regex to extract `<artifact>` XML blocks from the raw stream. No Rust-side artifact events exist yet (Phase B design is documented in `artifactParser.ts` if needed).
+- **`tokensUsed` and `voiceStatus` are excluded from Zustand persistence** (`chatSlice` partializer strips them on hydration).
+- **"Remember me" profile is stored in `localStorage`** under key `finch_remembered_profile`, not in the Tauri store.
 
 ## 6. Planning System & Docs
-The `.planning/` directory holds GSD-style state: **`STATE.md`** (milestone, phase history), **`phases/`** (execution plans), **`quick/`** (small tasks), **`research/`**. Read **`STATE.md`** at session start.
+The `.planning/` directory holds GSD-style state: **`STATE.md`** (milestone, phase history), **`phases/`** (execution plans), **`quick/`** (small tasks), **`research/`**. **Read `STATE.md` at session start.**
 
-User-facing specs, roadmap, UAT, and architecture notes are under **`docs/`** — start from **`docs/README.md`** for the full map (product, planning, qa, architecture, archive, superpowers).
+User-facing specs, roadmap, UAT, and architecture notes are under **`docs/`** — start from **`docs/README.md`** for the full map.
 
 ## 7. State Management
-Zustand is used for global state. Slices are located in `src/store/`:
-- `modelParamsSlice.ts`: LLM parameters (temperature, top_p, etc.) and persistence.
-- `chatSlice.ts`: Chat history, active session management, and streaming state.
-- `profileSlice.ts`: User profiles, preferences, and theme configuration.
-No Redux or Context is used for global state.
+Three Zustand stores (all with `persist` middleware), in `src/store/`:
 
-## 8. Key Providers & IPC Flow
-LLM providers live in `src-tauri/src/providers/` (Anthropic, OpenAI, Gemini, local/Ollama-LMStudio). Chat streaming goes through IPC (e.g. `stream_message` / channel handlers in the chat path). `useAIStreaming` passes `attachments` when present; Rust merges them via `inject_attachments_into_messages` in `providers/mod.rs` into provider-specific payloads. Real-time streaming uses Tauri Channels with `.onmessage`. Stats/tokens surface as structured events at end of stream. Web search uses `search.rs` plus provider modules (Tavily, Brave, SearXNG) and injects `search_*` events before the model reply.
+| Store | Export | Slice | Persisted Key | Purpose |
+|---|---|---|---|---|
+| `useModelParams` | `useModelParams` | `modelParamsSlice.ts` | `finch-model-params` | LLM params (temp, top_p, maxTokens, stopStrings, systemPrompt) |
+| `useChatStore` | `useChatStore` | `chatSlice.ts` | `finch-chat-state` | Provider, model, incognito, sidebar state, dark mode, voice status, model loading progress. Excludes `tokensUsed` + `voiceStatus` from persistence. |
+| `useProfileStore` | `useProfileStore` | `profileSlice.ts` | `finch-profile-state` | Profile list, active profile. Falls back to `localStorage` if not in Tauri. |
 
-## 9. Current State & Priority Work
+No Redux or React Context is used for global state (except `ModalProvider` for modal open/close).
 
-Core phases through sidebar refactor and context intelligence are done. Voice (local Whisper, marketplace download, `start_recording` / `stop_recording`) is implemented end-to-end; `STATE.md` may still list Phase 13 or LM Studio stats polish — treat **STATE.md** + **docs/product/BACKLOG.md** as the live gap list.
+## 8. IPC Flow & Key Providers
 
-### Feature audit (synced with codebase, 2026-04-19)
-
-| Feature | Status |
+### Registered Tauri Commands (as of audit)
+| Module | Commands |
 |---|---|
-| Multi-provider, streaming, Markdown + Shiki, persistence (`save_chat`) | ✅ Wired |
-| Web search (Tavily / Brave / SearXNG) | ✅ Wired |
-| Sidebar search, incognito, profiles, context overflow modal | ✅ Wired |
-| **Attachments → Rust → model** | ✅ Wired (`useAIStreaming` → `attachments`, Rust injection). BACKLOG still tracks **UX**: image thumbnail in input, broader file-picker extensions, multi-file. |
-| **AI message copy** | ✅ Wired (`MessageBubble.tsx`). BACKLOG: layout vs `MetadataRow`, discoverability (often hover). |
-| **Regenerate** | ✅ Wired for **last** assistant message (`ChatArea.tsx` passes `onRegenerate` only there). BACKLOG: extend to more messages, reduce hover-only discovery. |
-| **Auto-named chat titles** | ✅ Wired (`Dashboard.tsx` `autoNameChat` → `send_message` title prompt on first user message). Substring title remains fallback until save/async rename. |
-| **Edit user message + resend** | ✅ Wired (`onEditResend` → truncate → `invokeStream`). |
+| `ipc::chat` | `send_message`, `stream_message`, `abort_generation` |
+| `ipc::settings` | `save_provider_config`, `get_provider_config`, `set_background_image`, `import_user_media`, `remove_imported_media`, `update_search_config`, `get_hardware_info` |
+| `ipc::models` | `list_local_models`, `list_anthropic_models`, `list_openai_models`, `list_gemini_models`, `eject_model`, `preload_model`, `get_model_loaded_status`, `get_context_intelligence` |
+| `ipc::sessions` | `list_chats`, `load_chat`, `save_chat`, `delete_chat` |
+| `ipc::voice` | `start_recording`, `stop_recording`, `start_voice_preview`, `stop_voice_preview`, `get_transcription_status`, `get_voice_meter_level`, `list_audio_devices`, `set_audio_device`, `download_voice_model`, `list_downloaded_voice_models` |
+| `ipc::profiles` | `get_profiles`, `save_profile`, `delete_profile` |
 
-### Current priority
-Baseline work is mostly **polish and parity**, not missing greenfield flows. Follow the ordered **Baseline** section in `docs/product/BACKLOG.md` (AI actions layout/visibility, attachment UX, Advanced settings tab, etc.). Longer-term differentiators stay in the same BACKLOG and in `docs/product/IDEAS.md`.
+### Streaming Event Protocol
+`StreamingEvent` enum (defined in `types.rs`) is serialized to JSON and sent on a Tauri Channel:
+- `text` — streamed token chunk
+- `search_start` — web search initiated (query string)
+- `search_source` — one search result (title, url, duration_ms)
+- `search_done` — search complete
+- `stats` — final generation stats (tokens, tps, stop reason)
 
-### Above-baseline (defer until BACKLOG baseline is closed)
-OmniSearch, vector memory, Artifacts, Finch Projects, Ghost Context, Semantic Vault — see `docs/product/BACKLOG.md` and `docs/product/IDEAS.md`.
+`useAIStreaming.ts` batches `text` events via `requestAnimationFrame` and flushes the buffer synchronously before processing `search_*` and `stats` events.
 
-## 10. Agent Conventions
-- Read STATE.md before starting any task.
-- Surgical edits only. Never output full file contents. Use str_replace or equivalent targeted edits.
-- Never rewrite a file that wasn't explicitly scoped.
+### Attachment Injection
+`useAIStreaming.ts` passes `attachments: { path: string }[]` to `stream_message`. Rust's `inject_attachments_into_messages` in `providers/mod.rs` reads the file, encodes to base64 (images), and merges into the provider-specific payload format.
+
+### App State
+`AppState` (in `types.rs`) holds:
+- `abort_flag: Arc<AtomicBool>` — shared across the `abort_generation` command and active stream
+- `voice_manager: Arc<VoiceManager>` — shared across all voice IPC commands
+
+## 9. Feature Audit (synced with codebase, 2026-04-22)
+
+| Feature | Status | Notes |
+|---|---|---|
+| Multi-provider streaming (Anthropic, OpenAI, Gemini, Ollama, LM Studio) | ✅ Done | All in `ipc/chat.rs` + `providers/` |
+| Markdown + Shiki syntax highlighting | ✅ Done | `MessageBubble.tsx` + `CodeBlock.tsx` |
+| Chat persistence (save/load/delete) | ✅ Done | `ipc/sessions.rs` + `useChatPersistence.ts` |
+| Web search (Tavily / Brave / SearXNG) | ✅ Done | `search.rs`, search events in stream |
+| Sidebar search, incognito mode | ✅ Done | `ChatSidebar.tsx`, `chatSlice.ts` |
+| Profile system (create/edit/delete/select/remember-me) | ✅ Done | `startup/`, `ipc/profiles.rs`, `profileSlice.ts` |
+| Context overflow modal | ✅ Done | `ContextOverflowModal.tsx`, `ModalProvider.tsx` |
+| Artifacts (XML parsing, panel viewer, version history) | ✅ Done | `artifactParser.ts`, `ArtifactPanel.tsx`, `ArtifactCard.tsx` |
+| Attachments → Rust → model (multimodal) | ✅ Done | `inject_attachments_into_messages` in `providers/mod.rs` |
+| AI message copy | ✅ Done | `MessageBubble.tsx` |
+| Regenerate last message | ✅ Done | `ChatArea.tsx` |
+| Edit user message + resend | ✅ Done | `onEditResend` in `ChatArea.tsx` |
+| Auto-named chat titles | ✅ Done | `Dashboard.tsx` `autoNameChat` → `send_message` |
+| Voice (Whisper, marketplace download, meter, preview) | ✅ Done | `voice.rs`, `ipc/voice.rs`, `useVoiceTranscription.ts` |
+| Local model polling / load progress | ✅ Done | `useModelPolling.ts`, `get_model_loaded_status` |
+| Dynamic background + luminance-aware contrast | ✅ Done | `useDynamicBackground.ts`, `luminance.ts` |
+| Custom wallpaper / avatar picker | ✅ Done | `WallpaperPickerDialog.tsx`, `AvatarPickerDialog.tsx` |
+| Thinking / reasoning display | ✅ Done | `ThinkingBox.tsx`, `reasoning` field on `Message` |
+| File preview modal | ✅ Done | `FilePreviewModal.tsx` |
+| Sidebar resize (drag) | ✅ Done | `ChatSidebar.tsx` |
+| Right sidebar (AI params) split into sub-sections | ✅ Done | `sidebar/components/` (OutputSection, ParameterZone, SamplingSection, StopWordsSection, SystemPromptSection) |
+| Model marketplace (voice model download) | ✅ Done | `ModelMarketplace.tsx` |
+| Web search onboarding | ✅ Done | `SearchOnboarding.tsx` |
+
+## 10. Known Gotchas
+- `useVoiceTranscription.ts` contains **leftover debug `fetch` calls** to `http://127.0.0.1:7723` inside the polling loop (lines 47 and 66). These are wrapped in `#region agent log` comments and `catch(()=>{})` guards so they are non-fatal, but they should be cleaned up before production.
+- `ProviderConfig` in `types.rs` uses `get_store` in `lib.rs` setup (line 39–40) — this is the initialization pattern for the Tauri store and intentionally distinct from runtime usage which always uses `handle.store()`.
+- `ipc/media_import.rs` is declared as a `pub mod` in `ipc/mod.rs` but none of its commands appear in `lib.rs`'s `invoke_handler!`. The functions in `settings.rs` (`import_user_media`, `remove_imported_media`) handle that surface instead. The `media_import.rs` module may be vestigial or contain shared helpers — verify before modifying.
+
+## 11. Agent Conventions
+- **Read `STATE.md` before starting any task.**
+- **Surgical edits only.** Never output full file contents unless explicitly asked. Use targeted replacements.
+- **Never rewrite a file that wasn't explicitly scoped.**
 - **Push to `full-repo` (private) only**: `git push full-repo linux:main`. Public repo pushes are suspended — see Section 1.
-- The GSD planning system (get-shit-done-cc) is installed globally. STATE.md is the source of truth.
-- When uncertain about a file's role, read it — do not assume.
+- **When uncertain about a file's role, read it** — do not assume.
+- **Verify all Tauri capability entries** when adding a new `#[command]`. Missing entries fail silently at runtime.
+
+---
+
+## Last Updated
+`2026-04-22T19:25:00-04:00` — Full codebase audit: updated tech stack with exact versions, replaced directory tree with accurate structure (IPC split, new components), updated feature audit table, added Known Gotchas section, corrected all stale file references.

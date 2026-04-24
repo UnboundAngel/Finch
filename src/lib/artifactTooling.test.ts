@@ -31,23 +31,32 @@ function test(name: string, fn: () => void): void {
 
 console.log('\nbuildChatSystemPrompt');
 
-test('leaves the base prompt unchanged when artifact tool is disabled', () => {
+test('appends UI capability instructions when artifact tool is disabled', () => {
   const basePrompt = 'You are helpful.';
-  assert.equal(buildChatSystemPrompt(basePrompt, false), basePrompt);
+  const result = buildChatSystemPrompt(basePrompt, false);
+  assert.ok(result.includes('UI Capabilities'));
+  assert.ok(result.includes(basePrompt));
+  assert.ok(!result.includes('Artifact System'));
 });
 
-test('returns empty string when no base prompt and artifact tool is disabled', () => {
-  assert.equal(buildChatSystemPrompt('', false), '');
+test('returns only UI capabilities when no base prompt and artifact tool is disabled', () => {
+  const result = buildChatSystemPrompt('', false);
+  assert.ok(result.includes('UI Capabilities'));
+  assert.ok(!result.includes('Artifact System'));
 });
 
-test('appends artifact instructions when artifact tool is enabled', () => {
+test('appends artifact and UI instructions when artifact tool is enabled', () => {
   const basePrompt = 'You are helpful.';
   const result = buildChatSystemPrompt(basePrompt, true);
-  assert.equal(result, `${basePrompt}\n\n${ARTIFACT_SYSTEM_INSTRUCTIONS}`);
+  assert.ok(result.includes(basePrompt));
+  assert.ok(result.includes('Artifact System'));
+  assert.ok(result.includes('UI Capabilities'));
 });
 
-test('uses artifact instructions by themselves when enabled without a base prompt', () => {
-  assert.equal(buildChatSystemPrompt('', true), ARTIFACT_SYSTEM_INSTRUCTIONS);
+test('uses artifact and UI instructions when enabled without a base prompt', () => {
+  const result = buildChatSystemPrompt('', true);
+  assert.ok(result.includes('Artifact System'));
+  assert.ok(result.includes('UI Capabilities'));
 });
 
 console.log('\nartifactKindSupportsPreview');

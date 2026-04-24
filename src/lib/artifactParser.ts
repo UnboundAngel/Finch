@@ -40,9 +40,22 @@ function parseAttributes(attrString: string): Record<string, string> {
 }
 
 /**
+ * Returns true if `text` is a known IPC sentinel value that should never be
+ * surfaced to the user. Trims whitespace before comparing so variants like
+ * `" undefined\n"` are also caught.
+ */
+function isUndefinedSentinel(text: string): boolean {
+  return text.trim() === 'undefined';
+}
+
+/**
  * Splits raw message content into interleaved text and artifact segments.
  *
  * - Complete `<artifact ...>...</artifact>` blocks become artifact segments.
+ *   This is intentionally fence-agnostic: small local models frequently wrap
+ *   their artifact output in triple-backtick fences even though the system
+ *   prompt instructs them not to. Suppressing artifacts inside fences would
+ *   silently discard real output from those models.
  * - All other text (including prose, markdown, code fences) becomes text segments.
  * - When `isStreaming` is true, an incomplete opening tag at the very end of the
  *   string is silently swallowed so partial XML never leaks into the rendered view.
@@ -62,17 +75,26 @@ export function parseContentSegments(content: string, isStreaming?: boolean): Co
   while ((match = completeRegex.exec(content)) !== null) {
     // Push any text before this artifact block.
     if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+      const before = content.slice(lastIndex, match.index);
+      // Strip any trailing opening backtick fence that was wrapping the artifact
+      // (e.g. "```jsx\n") so it doesn't appear as stray text in the message.
+      const stripped = before.replace(/```[^\n]*\n?\s*$/, '');
+      if (stripped && !isUndefinedSentinel(stripped)) {
+        segments.push({ type: 'text', content: stripped });
+      }
     }
 
     const attrs = parseAttributes(match[1]);
     versionCounter++;
+    const kind = (attrs.type || 'text') as ArtifactKind;
+    const title = attrs.title || 'Untitled';
+    const stableId = attrs.id || `artifact-${kind}-${title.toLowerCase().replace(/\s+/g, '-')}`;
     segments.push({
       type: 'artifact',
       artifact: {
-        id: attrs.id || `artifact-${versionCounter}`,
-        kind: (attrs.type || 'text') as ArtifactKind,
-        title: attrs.title || 'Untitled',
+        id: stableId,
+        kind,
+        title,
         language: attrs.language,
         content: match[2],
         version: versionCounter,
@@ -81,20 +103,28 @@ export function parseContentSegments(content: string, isStreaming?: boolean): Co
     lastIndex = match.index + match[0].length;
   }
 
-  const remaining = content.slice(lastIndex);
+  let remaining = content.slice(lastIndex);
+
+  // Strip any leading closing backtick fence that was wrapping the artifact
+  // (e.g. "\n```" left behind after the </artifact> tag).
+  remaining = remaining.replace(/^\s*```/, '');
 
   if (isStreaming) {
     // Hide an incomplete opening tag at the tail so raw XML never flashes.
     const incompleteIdx = remaining.search(/<artifact[\s\S]*/);
     if (incompleteIdx !== -1) {
       const beforeIncomplete = remaining.slice(0, incompleteIdx);
-      if (beforeIncomplete) segments.push({ type: 'text', content: beforeIncomplete });
+      if (beforeIncomplete && !isUndefinedSentinel(beforeIncomplete)) {
+        segments.push({ type: 'text', content: beforeIncomplete });
+      }
       // Incomplete artifact is intentionally dropped during streaming.
       return segments;
     }
   }
 
-  if (remaining && remaining !== 'undefined') {
+  if (isUndefinedSentinel(remaining)) {
+    console.warn('[artifactParser] Sentinel "undefined" in content buffer — upstream IPC bug. Content dropped.');
+  } else if (remaining) {
     segments.push({ type: 'text', content: remaining });
   }
 

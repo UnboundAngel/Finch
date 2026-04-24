@@ -147,18 +147,24 @@ function DashboardContent({
     };
   }, [chatSessionActionsRef, session.setMessages, session.setActiveSessionId]);
 
-  const stableSetInput = useCallback((val: string | ((prev: string) => string)) => {
-    setInput(val);
-    handleInputChange();
-  }, [handleInputChange]);
-
   const handleEject = useCallback(() => {
     setSelectedModel('');
     setSelectedProvider('');
     toast.info("Local model unloaded due to inactivity");
   }, [setSelectedModel, setSelectedProvider]);
 
-  useInactivityEject({ provider: selectedProvider, modelId: selectedModel, onEject: handleEject });
+  const { resetTimer } = useInactivityEject({ provider: selectedProvider, modelId: selectedModel, onEject: handleEject });
+
+  const stableHandleInputFocus = useCallback(() => {
+    handleInputFocus();
+    resetTimer();
+  }, [handleInputFocus, resetTimer]);
+
+  const stableSetInput = useCallback((val: string | ((prev: string) => string)) => {
+    setInput(val);
+    handleInputChange();
+    resetTimer();
+  }, [handleInputChange, resetTimer]);
 
   useChatPersistence({
     setRecentChats,
@@ -286,7 +292,7 @@ function DashboardContent({
         isWebSearchActive={isWebSearchActive} setIsWebSearchActive={setIsWebSearchActive}
         isArtifactToolActive={isArtifactToolActive} setIsArtifactToolActive={setIsArtifactToolActive}
         enterToSend={enterToSend} isModelLoaded={selectedModel ? isModelLoaded : true}
-        handleInputFocus={handleInputFocus} isListening={isListening}
+        handleInputFocus={stableHandleInputFocus} isListening={isListening}
         setIsListening={setIsListening} handleChangeBackground={handleChangeBackground}
         setCustomBgDark={setCustomBgDark} setCustomBgLight={setCustomBgLight}
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}

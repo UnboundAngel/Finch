@@ -74,10 +74,10 @@ export const ChatArea = memo(({
 
   return (
     <div
-      className={`flex-1 pt-20 pb-8 pl-6 pr-4 scrollbar-hide min-w-0 ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
+      className={`flex-1 pt-20 pb-8 scrollbar-hide min-w-0 ${messages.length === 0 && !isThinking ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
       style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 72px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 72px)' }}
     >
-      <div className="max-w-3xl mx-auto min-h-full flex flex-col min-w-0">
+      <div className="chat-content-frame min-h-full flex flex-col min-w-0">
         <div className="flex-1 space-y-6">
           {messages.length === 0 && (
             isIncognito ? (

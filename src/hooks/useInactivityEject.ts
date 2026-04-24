@@ -49,9 +49,6 @@ export const useInactivityEject = ({
     timerRef.current = setTimeout(async () => {
       try {
         const { provider: targetProvider, modelId: targetModelId, onEject: ejectCb } = propsRef.current;
-        // #region agent log
-        fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H3',location:'useInactivityEject.ts:54',message:'Auto-eject timer fired',data:{provider:targetProvider,modelId:targetModelId},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         
         await invoke('eject_model', { 
           provider: targetProvider, 
@@ -60,9 +57,6 @@ export const useInactivityEject = ({
         
         ejectCb();
       } catch (err) {
-        // #region agent log
-        fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H3',location:'useInactivityEject.ts:63',message:'Auto-eject failed',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         // Silent catch as per requirements
         console.error('Auto-eject failed:', err);
       }

@@ -19,6 +19,7 @@ import {
 import { SearchOnboarding } from './SearchOnboarding';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { getTauriInvoke, isTauri } from '@/src/lib/tauri-utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProviderConfig {
   active_search_provider?: string;
@@ -81,39 +82,46 @@ export const WebSearchControl = ({
         <Popover open={showOnboarding && !hasSearchKey} onOpenChange={setShowOnboarding}>
           <PopoverAnchor asChild>
             <div className="inline-flex relative">
-              <Button                            
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 rounded-lg transition-all hover:-translate-y-0.5 active:scale-95",
-                  isWebSearchActive 
-                    ? "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-                onClick={() => {
-                  if (!configLoaded) return;
-                  if (!hasSearchKey) {
-                    setOnboardingStep(0);
-                    setShowOnboarding(true);
-                  } else {
-                    const nextState = !isWebSearchActive;
-                    setIsWebSearchActive(nextState);
-                    toast(nextState ? 'Web Research enabled' : 'Web Research disabled');
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (hasSearchKey) {
-                    setIsSearchMenuOpen(true);
-                  } else {
-                    setOnboardingStep(0);
-                    setShowOnboarding(true);
-                  }
-                }}
-              >
-                <Globe className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger render={
+                  <Button                            
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 rounded-lg transition-all hover:-translate-y-0.5 active:scale-95",
+                      isWebSearchActive 
+                        ? "text-blue-500 bg-blue-500/10 hover:bg-blue-500/20" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                    onClick={() => {
+                      if (!configLoaded) return;
+                      if (!hasSearchKey) {
+                        setOnboardingStep(0);
+                        setShowOnboarding(true);
+                      } else {
+                        const nextState = !isWebSearchActive;
+                        setIsWebSearchActive(nextState);
+                        toast(nextState ? 'Web Research enabled' : 'Web Research disabled');
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (hasSearchKey) {
+                        setIsSearchMenuOpen(true);
+                      } else {
+                        setOnboardingStep(0);
+                        setShowOnboarding(true);
+                      }
+                    }}
+                  >
+                    <Globe className="h-4 w-4" />
+                  </Button>
+                } />
+                <TooltipContent side="top" className="text-[11px] py-1.5 px-2.5 z-50">
+                  {isWebSearchActive ? 'Web Research enabled' : 'Web Research disabled'}
+                </TooltipContent>
+              </Tooltip>
               <DropdownMenuTrigger className="absolute inset-0 opacity-0 pointer-events-none" />
               <PopoverTrigger className="absolute inset-0 opacity-0 pointer-events-none" />
             </div>

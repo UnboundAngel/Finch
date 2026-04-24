@@ -46,7 +46,7 @@ export const ExternalLink = ({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "transition-all duration-200 active:scale-[0.98]",
+        "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline decoration-blue-500/30 hover:decoration-blue-500 underline-offset-4 transition-all duration-200 active:scale-[0.98]",
         className
       )}
       {...props}

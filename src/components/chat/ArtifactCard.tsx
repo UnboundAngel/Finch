@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Code2, FileText, Globe, Layers, FileCode2, AlignLeft } from 'lucide-react';
+import { Code2, FileText, Globe, Layers, FileCode2, AlignLeft, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Artifact, ArtifactKind } from '@/src/types/chat';
 
@@ -10,6 +10,7 @@ const KIND_LABELS: Record<ArtifactKind, string> = {
   svg: 'SVG',
   react: 'React',
   text: 'Text',
+  'color-studio': 'Color Palette',
 };
 
 const KIND_ICONS: Record<ArtifactKind, React.ElementType> = {
@@ -19,6 +20,7 @@ const KIND_ICONS: Record<ArtifactKind, React.ElementType> = {
   svg: Layers,
   react: FileCode2,
   text: AlignLeft,
+  'color-studio': Palette,
 };
 
 interface ArtifactCardProps {

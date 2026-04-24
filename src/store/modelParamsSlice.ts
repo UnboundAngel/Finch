@@ -62,9 +62,6 @@ export const createModelParamsSlice: StateCreator<ModelParamsState, [], [], Mode
     
     set({ contextIntelligenceStatus: 'loading' });
     try {
-      // #region agent log
-      fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H2',location:'modelParamsSlice.ts:61',message:'Fetching context intelligence',data:{provider,modelId},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       const info = await invoke<ContextIntelligence>('get_context_intelligence', {
         provider,
         modelId,
@@ -74,9 +71,6 @@ export const createModelParamsSlice: StateCreator<ModelParamsState, [], [], Mode
         contextIntelligenceStatus: 'ready' 
       });
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7723/ingest/61911eee-37e5-42f2-9689-53dd89e5e47b',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'4070ff'},body:JSON.stringify({sessionId:'4070ff',runId:'pre-fix',hypothesisId:'H2',location:'modelParamsSlice.ts:72',message:'Context intelligence fetch failed',data:{provider,modelId,error:error instanceof Error ? error.message : String(error)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       console.error('Failed to fetch context intelligence:', error);
       set({ contextIntelligenceStatus: 'error' });
     }

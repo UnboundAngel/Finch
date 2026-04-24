@@ -10,7 +10,11 @@
     "opener:default",
     {
       "identifier": "opener:allow-open-path",
-      "allow": [{ "path": "**" }]
+      "allow": [{ "path": "$APPLOCALDATA/artifacts/**" }]
+    },
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "file://**" }]
     },
     "core:window:allow-close",
     "core:window:allow-minimize",
@@ -42,6 +46,7 @@
     "allow-remove-imported-media",
     "allow-get-model-loaded-status",
     "allow-get-hardware-info",
+    "allow-get-file-size",
     "allow-get-context-intelligence",
     "allow-start-recording",
     "allow-stop-recording",
@@ -54,6 +59,7 @@
     "allow-download-voice-model",
     "allow-list-downloaded-voice-models",
     "allow-update-search-config",
+    "allow-save-artifact-version",
     "allow-get-profiles",
     "allow-save-profile",
     "allow-delete-profile",

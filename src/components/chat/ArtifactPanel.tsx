@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
-import { X, Copy, Check, Code2, Eye, Download, ExternalLink } from 'lucide-react';
+import { X, Copy, Check, Code2, Eye, Download, ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -13,6 +13,8 @@ import {
   prepareReactPreview,
 } from '@/src/lib/artifactPreviewRuntime';
 import { artifactKindSupportsPreview } from '@/src/lib/artifactTooling';
+import { ColorStudioViewer } from '@/src/components/artifacts/ColorStudioViewer';
+import { ExternalLink } from '@/src/components/ui/ExternalLink';
 
 // Reuse the same global highlighter from CodeBlock to avoid double init cost.
 let panelHighlighter: Highlighter | null = null;
@@ -138,15 +140,12 @@ const MarkdownPreview = ({
     th: ({ node, ...props }: any) => <th className="px-4 py-2 text-left font-semibold border-b border-muted-foreground/10" {...props} />,
     td: ({ node, ...props }: any) => <td className="px-4 py-2 border-b border-muted-foreground/10 align-top" {...props} />,
     a: ({ node, href, children, ...props }: any) => (
-      <a
-        href={href || '#'}
-        target="_blank"
-        rel="noreferrer"
-        className="text-primary underline underline-offset-2 decoration-primary/40 hover:decoration-primary"
+      <ExternalLink
+        href={href || ''}
         {...props}
       >
         {children}
-      </a>
+      </ExternalLink>
     ),
     code({ children, className, inline, ...props }: any) {
       const text = String(children).replace(/\n$/, '');
@@ -244,6 +243,10 @@ const PreviewPane = ({ artifact, isDark }: { artifact: Artifact; isDark: boolean
     );
   }
 
+  if (artifact.kind === 'color-studio') {
+    return <ColorStudioViewer content={artifact.content} />;
+  }
+
   return (
     !htmlSource ? (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -271,6 +274,23 @@ export const ArtifactPanel = memo(function ArtifactPanel({
 }: ArtifactPanelProps) {
   const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
   const [copied, setCopied] = useState(false);
+
+  const stats = useMemo(() => {
+    if (!artifact?.content) return { size: '0 B', lines: 0 };
+    const bytes = new TextEncoder().encode(artifact.content).length;
+    const lines = artifact.content.split('\n').length;
+    
+    let size = '';
+    if (bytes === 0) size = '0 B';
+    else {
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      size = parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    return { size, lines };
+  }, [artifact?.content]);
 
   const isOpen = artifact !== null;
   const canPreview = artifact ? artifactKindSupportsPreview(artifact.kind) : false;
@@ -360,9 +380,17 @@ export const ArtifactPanel = memo(function ArtifactPanel({
                     {artifact.kind}
                     {artifact.language ? ` · ${artifact.language}` : ''}
                   </span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium opacity-80">
+                    <span className="opacity-40 px-0.5">•</span>
+                    <span>{stats.size}</span>
+                    <span className="opacity-40 px-0.5">•</span>
+                    <span>{stats.lines} lines</span>
+                    <span className="opacity-40 px-0.5">•</span>
+                    <span className="opacity-70 font-normal">Formatting may be inconsistent from source</span>
+                  </div>
                   {allVersions.length > 1 && (
-                    <span className="text-[11px] text-muted-foreground font-medium opacity-60">
-                      Version {artifact.version} of {allVersions.length}
+                    <span className="text-[11px] text-muted-foreground font-medium opacity-60 ml-auto">
+                      v{artifact.version}
                     </span>
                   )}
                 </div>
@@ -403,7 +431,7 @@ export const ArtifactPanel = memo(function ArtifactPanel({
                   )}
                   title={artifact?.filePath ? "Open in editor" : "Saving to disk…"}
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLinkIcon className="h-4 w-4" />
                 </button>
                 <button
                   onClick={onClose}

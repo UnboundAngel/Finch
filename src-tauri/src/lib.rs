@@ -52,6 +52,7 @@ pub fn run() {
             ipc::settings::remove_imported_media,
             ipc::settings::update_search_config,
             ipc::settings::get_hardware_info,
+            ipc::settings::get_file_size,
             ipc::models::list_local_models,
             ipc::models::list_anthropic_models,
             ipc::models::list_openai_models,
@@ -76,7 +77,8 @@ pub fn run() {
             ipc::voice::list_downloaded_voice_models,
             ipc::profiles::get_profiles,
             ipc::profiles::save_profile,
-            ipc::profiles::delete_profile
+            ipc::profiles::delete_profile,
+            ipc::artifacts::save_artifact_version
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

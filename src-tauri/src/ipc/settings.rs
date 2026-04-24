@@ -165,3 +165,10 @@ pub async fn get_hardware_info() -> Result<HardwareInfo, String> {
         os_name: System::name().unwrap_or_else(|| "Unknown".to_string()),
     })
 }
+
+#[command]
+pub fn get_file_size(path: String) -> Result<u64, String> {
+    std::fs::metadata(&path)
+        .map(|m| m.len())
+        .map_err(|e| e.to_string())
+}

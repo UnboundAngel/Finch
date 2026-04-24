@@ -157,3 +157,13 @@ commands.allow = ["list_downloaded_voice_models"]
 identifier = "allow-update-search-config"
 description = "Allows updating search provider API keys and settings"
 commands.allow = ["update_search_config"]
+
+[[permission]]
+identifier = "allow-save-artifact-version"
+description = "Allows saving an artifact version to disk under app local data"
+commands.allow = ["save_artifact_version"]
+
+[[permission]]
+identifier = "allow-get-file-size"
+description = "Allows retrieving the size of a file on disk"
+commands.allow = ["get_file_size"]
