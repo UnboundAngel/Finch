@@ -73,9 +73,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       data-node-id={node.id}
       ref={ref}
       className={cn(
-        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl",
+        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl group",
         "hover:border-ring/50 shadow-xl",
-        isSelected && "ring-1 ring-primary/20",
+        isSelected && "border-primary ring-1 ring-primary shadow-lg",
         isStreaming && "animate-pulse pointer-events-none border-primary"
       )}
       onPointerDown={isStreaming ? undefined : (e) => onPointerDown(e, node)}
@@ -83,10 +83,6 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       style={{
         width: `${width}px`,
         transform: `translate(${node.position.x}px, ${node.position.y}px)`,
-        borderColor: isSelected ? (node.palette.colors[0]?.hex || 'var(--primary)') : undefined,
-        boxShadow: isSelected 
-          ? `0 0 25px -5px ${(node.palette.colors[0]?.hex || 'var(--primary)')}44, 0 8px 30px -10px rgba(0,0,0,0.5)` 
-          : '0 4px 20px -10px rgba(0,0,0,0.3)',
       }}
     >
       {toastMessage && (
@@ -139,18 +135,18 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
                 />
               ) : (
                 <Tooltip>
-                  <TooltipTrigger 
-                    onDoubleClick={() => !isStreaming && setIsEditing(true)} 
+                  <TooltipTrigger
+                    onDoubleClick={() => !isStreaming && setIsEditing(true)}
                     className="flex items-center gap-1.5 text-foreground font-semibold text-[15px] font-sans cursor-text group/title"
                   >
                     <span className="whitespace-nowrap overflow-hidden text-ellipsis">{title}</span>
                     {!isStreaming && (
-                      <div 
+                      <div
                         onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-                        onPointerDown={e => e.stopPropagation()} 
+                        onPointerDown={e => e.stopPropagation()}
                         className="bg-transparent border-none cursor-pointer text-muted-foreground p-0.5 flex items-center hover:text-foreground transition-colors"
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                       </div>
                     )}
                   </TooltipTrigger>
@@ -161,15 +157,30 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
                 <span className="text-muted-foreground text-[11px] font-sans">Generated &middot; {getRelativeTime(node.createdAt)}</span>
               </div>
             </div>
-            <div className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-[11px] font-medium font-sans whitespace-nowrap">{colorCount} colors</div>
+            <div className="relative flex-shrink-0 h-6 min-w-[60px] flex items-center justify-end">
+              <div className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-[11px] font-medium font-sans whitespace-nowrap transition-all duration-300 group-hover:opacity-0 group-hover:scale-90 pointer-events-none">
+                {colorCount} colors
+              </div>
+              <Tooltip>
+                <TooltipTrigger
+                  onClick={(e) => { e.stopPropagation(); onEjectNode?.(node); }}
+                  onPointerDown={e => e.stopPropagation()}
+                  className="absolute inset-0 flex items-center justify-center bg-primary text-primary-foreground rounded-full opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 hover:bg-primary/90 shadow-lg cursor-pointer"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
+                  <span className="ml-1 text-[10px] font-bold tracking-tight">SHARE</span>
+                </TooltipTrigger>
+                <TooltipContent side="top">Share to Chat</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
 
           <div className="flex gap-2 mt-5">
             {node.palette.colors.map((c, i) => (
               <Tooltip key={i}>
-                <TooltipTrigger 
-                  onClick={() => handleCopyHex(c.hex)} 
-                  onPointerDown={e => e.stopPropagation()} 
+                <TooltipTrigger
+                  onClick={() => handleCopyHex(c.hex)}
+                  onPointerDown={e => e.stopPropagation()}
                   className="flex-1 aspect-square rounded-lg shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] cursor-copy flex items-center justify-center transition-transform hover:scale-105"
                   style={{ backgroundColor: c.hex }}
                 >
@@ -183,9 +194,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
           <div className="flex gap-2 mt-2">
             {node.palette.colors.map((c, i) => (
               <Tooltip key={i}>
-                <TooltipTrigger 
-                  onClick={() => handleCopyHex(c.hex)} 
-                  onPointerDown={e => e.stopPropagation()} 
+                <TooltipTrigger
+                  onClick={() => handleCopyHex(c.hex)}
+                  onPointerDown={e => e.stopPropagation()}
                   className="flex-1 flex flex-col items-center min-w-0 bg-muted/50 rounded py-1 cursor-copy border border-border/50 hover:bg-muted transition-colors"
                 >
                   <span className="text-muted-foreground text-[10px] font-mono">{c.hex}</span>
@@ -197,12 +208,11 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 
           {(node.palette.description) && (
             <>
-              <div className="h-px bg-border/30 my-4" />
-              <div className="px-1 space-y-1.5">
-                <div className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground/50 font-bold">Concept</div>
-                <p className="text-foreground/90 text-[12px] leading-relaxed font-medium italic">
-                  {node.palette.description.replace(/^#/, '')}
-                </p>
+              <div className="h-px bg-border/50 my-3" />
+              <div className="flex gap-1.5 flex-wrap">
+                {(node.palette.description?.split(',').slice(0, 3))?.map((tag, i) => (
+                  <span key={i} className="text-muted-foreground text-[11px] font-sans">#{tag.trim().toLowerCase()}</span>
+                ))}
               </div>
             </>
           )}
@@ -213,8 +223,8 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
               {node.palette.colors.map(c => (
                 <div key={c.hex} className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]" style={{ backgroundColor: c.hex }} />
-                      <span className="text-[12px] text-foreground font-medium">{c.name}</span>
+                    <div className="w-3 h-3 rounded-full shadow-[inset_0_0_0_1px_rgba(0,0,0,0.1)]" style={{ backgroundColor: c.hex }} />
+                    <span className="text-[12px] text-foreground font-medium">{c.name}</span>
                   </div>
                   <span className="text-[12px] text-muted-foreground font-mono">{c.hex}</span>
                 </div>
@@ -223,57 +233,41 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
           )}
 
           {!isStreaming && (
-            <div className="flex justify-between items-center mt-4">
-              <div className="flex-1">
-                <Tooltip>
-                  <TooltipTrigger 
-                    className="bg-primary/10 text-primary border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-primary/20 hover:scale-105 active:scale-95"
-                    onClick={(e) => { e.stopPropagation(); onRefineNode?.(node); }}
-                    onPointerDown={e => e.stopPropagation()}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-                    Refine
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Refine this palette with AI</TooltipContent>
-                </Tooltip>
+            <div className="flex justify-end items-center mt-4 pt-4 border-t border-border/30 gap-1">
+              <Tooltip>
+                <TooltipTrigger
+                  className="p-1.5 rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center"
+                  onClick={(e) => { e.stopPropagation(); onRefineNode?.(node); }}
+                  onPointerDown={e => e.stopPropagation()}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /><path d="M5 3v4" /><path d="M19 17v4" /><path d="M3 5h4" /><path d="M17 19h4" /></svg>
+                </TooltipTrigger>
+                <TooltipContent side="top">Refine with AI</TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger 
-                    className="bg-muted/50 text-muted-foreground border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 ml-2"
-                    onClick={(e) => { e.stopPropagation(); onEjectNode?.(node); }}
-                    onPointerDown={e => e.stopPropagation()}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                    Eject
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Eject to Chat</TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex gap-2">
-                <Tooltip>
-                  <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }} onPointerDown={e => e.stopPropagation()}>
-                    {isExpanded ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 9l7-7 7 7M5 15l7 7 7-7"/></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>}
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{isExpanded ? 'Hide Breakdown' : 'Show Color Breakdown'}</TooltipContent>
-                </Tooltip>
+              <Tooltip>
+                <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }} onPointerDown={e => e.stopPropagation()}>
+                  {isExpanded ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 9l7-7 7 7M5 15l7 7 7-7" /></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>}
+                </TooltipTrigger>
+                <TooltipContent side="top">{isExpanded ? 'Hide Breakdown' : 'Show Color Breakdown'}</TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(JSON.stringify(node.palette, null, 2)); showToast("Copied JSON!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></TooltipTrigger>
-                  <TooltipContent side="top">Copy as JSON</TooltipContent>
-                </Tooltip>
+              <Tooltip>
+                <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(JSON.stringify(node.palette, null, 2)); showToast("Copied JSON!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg></TooltipTrigger>
+                <TooltipContent side="top">Copy as JSON</TooltipContent>
+              </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); onSaveNode?.(node.id); showToast("Saved to library!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></TooltipTrigger>
-                  <TooltipContent side="top">Save to Library</TooltipContent>
-                </Tooltip>
-              </div>
+              <Tooltip>
+                <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); onSaveNode?.(node.id); showToast("Saved to library!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg></TooltipTrigger>
+                <TooltipContent side="top">Save to Library</TooltipContent>
+              </Tooltip>
             </div>
           )}
         </>
       )}
       {!isStreaming && (
         <div onPointerDown={(e) => onResizePointerDown(e, node)} onPointerUp={onPointerUp} className="absolute right-0 bottom-0 w-4 h-4 cursor-ew-resize flex items-center justify-center text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1L7 7L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1L7 7L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
       )}
     </div>
@@ -282,7 +276,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 
 export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Element {
   const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode, onEjectNode } = props;
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
   const marqueeRef = useRef<HTMLDivElement>(null);
@@ -292,7 +286,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
   const [zoom, setZoom] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [nodeWidths, setNodeWidths] = useState<Record<string, number>>({});
-  
+
   const dragInfo = useRef<DragInfo | null>(null);
   const GRID_SIZE = 32;
 
@@ -322,7 +316,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       containerRef.current?.setPointerCapture(e.pointerId);
       const initialSelection = e.shiftKey ? new Set(selectedIds) : new Set<string>();
       if (!e.shiftKey) setSelectedIds(new Set());
-      
+
       const initialRects: { id: string; rect: DOMRect }[] = [];
       nodes.forEach(node => {
         const el = nodeRefs.current[node.id];
@@ -344,10 +338,10 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
   const handleNodePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, node: PaletteNode) => {
     if (e.button === 1) return;
     if (e.button !== 0) return;
-    
+
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    
+
     let newSelection = new Set(selectedIds);
     if (!newSelection.has(node.id)) {
       if (!e.shiftKey) newSelection = new Set([node.id]);
@@ -356,12 +350,12 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     } else if (e.shiftKey) {
       newSelection.delete(node.id);
       setSelectedIds(newSelection);
-      return; 
+      return;
     }
 
     const initialPositions: Record<string, { x: number, y: number }> = {};
     const toDrag = newSelection.has(node.id) ? Array.from(newSelection) : [node.id];
-    
+
     toDrag.forEach((id: string) => {
       const n = nodes.find(n => n.id === id);
       if (n) initialPositions[id] = { ...n.position };
@@ -423,8 +417,8 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
         };
         const newlySelected = new Set(info.initialSelection);
         info.initialRects.forEach(({ id, rect }) => {
-          const overlap = !(rect.right < screenMarquee.left || rect.left > screenMarquee.right || 
-                            rect.bottom < screenMarquee.top || rect.top > screenMarquee.bottom);
+          const overlap = !(rect.right < screenMarquee.left || rect.left > screenMarquee.right ||
+            rect.bottom < screenMarquee.top || rect.top > screenMarquee.bottom);
           if (overlap) newlySelected.add(id);
         });
         setSelectedIds(newlySelected);
@@ -459,10 +453,10 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     if (info.type === 'pan') {
       setPanOffset({ x: info.initialPanX + (e.clientX - info.startX), y: info.initialPanY + (e.clientY - info.startY) });
       if (containerRef.current) containerRef.current.style.cursor = 'default';
-    } 
+    }
     else if (info.type === 'marquee') {
       if (marqueeRef.current) marqueeRef.current.style.display = 'none';
-    } 
+    }
     else if (info.type === 'node') {
       const worldDx = (e.clientX - info.startX) / zoom;
       const worldDy = (e.clientY - info.startY) / zoom;
@@ -484,7 +478,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       setNodeWidths(prev => ({ ...prev, [info.nodeId]: newWidth }));
       if (onNodeResize) onNodeResize(info.nodeId, newWidth);
     }
-    
+
     dragInfo.current = null;
   }, [onNodeMove, onNodeResize, zoom]);
 
@@ -494,19 +488,19 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       const scale = Math.exp(-e.deltaY * 0.01);
       const newZoom = Math.min(Math.max(0.1, zoom * scale), 5);
       const ratio = newZoom / zoom;
-      
+
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      
+
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      
+
       const newPanX = mouseX - (mouseX - panOffset.x) * ratio;
       const newPanY = mouseY - (mouseY - panOffset.y) * ratio;
-      
+
       setZoom(newZoom);
       setPanOffset({ x: newPanX, y: newPanY });
-      
+
       if (worldRef.current) {
         worldRef.current.style.transform = `translate(${newPanX}px, ${newPanY}px) scale(${newZoom})`;
       }
@@ -516,19 +510,19 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       }
       return;
     }
-    
+
     // Pan
     setPanOffset(prev => {
       const newX = prev.x - e.deltaX;
       const newY = prev.y - e.deltaY;
-      
+
       if (worldRef.current) {
         worldRef.current.style.transform = `translate(${newX}px, ${newY}px) scale(${zoom})`;
       }
       if (containerRef.current) {
         containerRef.current.style.backgroundPosition = `${newX}px ${newY}px`;
       }
-      
+
       return { x: newX, y: newY };
     });
   }, [zoom, panOffset]);
@@ -544,24 +538,24 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
       const w = nodeWidths[node.id] || node.width || 320;
       const el = nodeRefs.current[node.id];
       const h = el ? el.getBoundingClientRect().height / zoom : 300;
-      
+
       if (currentX + w > MAX_WIDTH && currentX > 0) {
         currentX = 0;
         currentY += Math.ceil((rowMaxHeight + SPACING) / GRID_SIZE) * GRID_SIZE;
         rowMaxHeight = 0;
       }
-      
+
       const snappedX = Math.round(currentX / GRID_SIZE) * GRID_SIZE;
       const snappedY = Math.round(currentY / GRID_SIZE) * GRID_SIZE;
-      
+
       if (snappedX !== node.position.x || snappedY !== node.position.y) {
         onNodeMove(node.id, { x: snappedX, y: snappedY });
       }
-      
+
       if (el) {
         el.style.transform = `translate(${snappedX}px, ${snappedY}px)`;
       }
-      
+
       currentX = snappedX + w + SPACING;
       rowMaxHeight = Math.max(rowMaxHeight, h);
     });
@@ -584,8 +578,8 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
           backgroundPosition: `${panOffset.x}px ${panOffset.y}px`
         }}
       >
-        <div 
-          ref={worldRef} 
+        <div
+          ref={worldRef}
           className="absolute top-0 left-0 w-0 h-0 origin-top-left"
           style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})` }}
         >
@@ -627,15 +621,15 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
               onClick={handleCleanUp}
               className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
               Clean Up
             </TooltipTrigger>
             <TooltipContent side="top">Auto-organize nodes</TooltipContent>
           </Tooltip>
         </div>
 
-        <div 
-          ref={marqueeRef} 
+        <div
+          ref={marqueeRef}
           className="absolute hidden border border-primary bg-primary/10 pointer-events-none z-[9999]"
         />
       </div>

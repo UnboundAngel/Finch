@@ -10,14 +10,10 @@ Your ONLY output must be a single raw JSON object containing the palette design.
 
 If you cannot produce a valid palette, you must output {} and nothing else.
 
-Guidelines for Metadata:
-- "theme": Create a punchy, premium name (e.g., "Neon Overdrive", "Violet Vortex").
-- "description": Provide a high-contrast, professional summary. AVOID hashtags. Keep it concise and evocative.
-
 The JSON object must strictly follow this schema:
 {
   "colors": [
-    { "name": "string", "hex": "#HEXCODE", "wcag": "string (optional)" }
+    { "name": "string", "hex": "string", "wcag": "string (optional)" }
   ],
   "theme": "string",
   "description": "string"
@@ -25,23 +21,33 @@ The JSON object must strictly follow this schema:
 
 Example 1:
 {
-  "theme": "Cyberpunk Terminal",
+  "theme": "Ocean Breeze",
   "colors": [
-    { "name": "Deep Void Black", "hex": "#080808", "wcag": "AAA" },
-    { "name": "Matrix Green", "hex": "#00FF41", "wcag": "AA" },
-    { "name": "Neon Pink", "hex": "#FF007F" }
+    { "name": "Deep Blue", "hex": "#0F4C81", "wcag": "AAA" },
+    { "name": "Sand", "hex": "#E6D5B8", "wcag": "AA" }
   ],
-  "description": "A high-contrast terminal palette featuring iconic neon tones against a deep black background."
+  "description": "A calm, coastal palette."
 }
 
 Example 2:
 {
-  "theme": "Arctic Vapor",
+  "theme": "Cyberpunk Neon",
   "colors": [
-    { "name": "Glacier Blue", "hex": "#A0D2EB", "wcag": "AAA" },
-    { "name": "Frost", "hex": "#E1F8FF", "wcag": "AA" }
+    { "name": "Neon Pink", "hex": "#FF007F", "wcag": "AAA" },
+    { "name": "Matrix Green", "hex": "#00FF9D", "wcag": "AA" },
+    { "name": "Dark Void", "hex": "#0B0B1A" }
   ],
-  "description": "Cool, ethereal tones inspired by polar landscapes."
+  "description": "High contrast neon colors over a dark background."
+}
+
+Example 3:
+{
+  "theme": "Minimalist Monochrome",
+  "colors": [
+    { "name": "Charcoal", "hex": "#333333", "wcag": "AAA" },
+    { "name": "Silver", "hex": "#CCCCCC", "wcag": "AA" },
+    { "name": "Ghost White", "hex": "#F8F8F8" }
+  ]
 }
 `.trim();
 
