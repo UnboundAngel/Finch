@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { PaletteNode } from '@/src/store/studioSlice';
 import type { ParsedPalette } from '@/src/lib/jsonParser';
@@ -133,23 +134,24 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
                   className="text-foreground font-semibold text-[15px] font-sans w-full border border-border rounded px-1 outline-none bg-background focus:ring-1 focus:ring-ring"
                 />
               ) : (
-                <div 
-                  onDoubleClick={() => !isStreaming && setIsEditing(true)} 
-                  className="flex items-center gap-1.5 text-foreground font-semibold text-[15px] font-sans cursor-text"
-                  title="Double click to edit"
-                >
-                  <span className="whitespace-nowrap overflow-hidden text-ellipsis">{title}</span>
-                  {!isStreaming && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-                      onPointerDown={e => e.stopPropagation()} 
-                      className="bg-transparent border-none cursor-pointer text-muted-foreground p-0.5 flex items-center hover:text-foreground transition-colors"
-                      title="Rename"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                  )}
-                </div>
+                <Tooltip>
+                  <TooltipTrigger 
+                    onDoubleClick={() => !isStreaming && setIsEditing(true)} 
+                    className="flex items-center gap-1.5 text-foreground font-semibold text-[15px] font-sans cursor-text group/title"
+                  >
+                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">{title}</span>
+                    {!isStreaming && (
+                      <div 
+                        onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                        onPointerDown={e => e.stopPropagation()} 
+                        className="bg-transparent border-none cursor-pointer text-muted-foreground p-0.5 flex items-center hover:text-foreground transition-colors"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </div>
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Double click to rename</TooltipContent>
+                </Tooltip>
               )}
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="text-muted-foreground text-[11px] font-sans">Generated &middot; {getRelativeTime(node.createdAt)}</span>
@@ -160,30 +162,32 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 
           <div className="flex gap-2 mt-5">
             {node.palette.colors.map((c, i) => (
-              <div 
-                key={i} 
-                title={`Copy ${c.hex}`} 
-                onClick={() => handleCopyHex(c.hex)} 
-                onPointerDown={e => e.stopPropagation()} 
-                className="flex-1 aspect-square rounded-lg shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] cursor-copy flex items-center justify-center transition-transform hover:scale-105"
-                style={{ backgroundColor: c.hex }}
-              >
-                {copiedHex === c.hex && <svg className="drop-shadow-md animate-in zoom-in-50 duration-200" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-              </div>
+              <Tooltip key={i}>
+                <TooltipTrigger 
+                  onClick={() => handleCopyHex(c.hex)} 
+                  onPointerDown={e => e.stopPropagation()} 
+                  className="flex-1 aspect-square rounded-lg shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)] cursor-copy flex items-center justify-center transition-transform hover:scale-105"
+                  style={{ backgroundColor: c.hex }}
+                >
+                  {copiedHex === c.hex && <svg className="drop-shadow-md animate-in zoom-in-50 duration-200" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Copy {c.hex}</TooltipContent>
+              </Tooltip>
             ))}
           </div>
 
           <div className="flex gap-2 mt-2">
             {node.palette.colors.map((c, i) => (
-              <div 
-                key={i} 
-                title={`Copy ${c.hex}`} 
-                onClick={() => handleCopyHex(c.hex)} 
-                onPointerDown={e => e.stopPropagation()} 
-                className="flex-1 flex flex-col items-center min-w-0 bg-muted/50 rounded py-1 cursor-copy border border-border/50 hover:bg-muted transition-colors"
-              >
-                <span className="text-muted-foreground text-[10px] font-mono">{c.hex}</span>
-              </div>
+              <Tooltip key={i}>
+                <TooltipTrigger 
+                  onClick={() => handleCopyHex(c.hex)} 
+                  onPointerDown={e => e.stopPropagation()} 
+                  className="flex-1 flex flex-col items-center min-w-0 bg-muted/50 rounded py-1 cursor-copy border border-border/50 hover:bg-muted transition-colors"
+                >
+                  <span className="text-muted-foreground text-[10px] font-mono">{c.hex}</span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Copy {c.hex}</TooltipContent>
+              </Tooltip>
             ))}
           </div>
 
@@ -216,30 +220,47 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
           {!isStreaming && (
             <div className="flex justify-between items-center mt-4">
               <div className="flex-1">
-                <button 
-                  className="bg-primary/10 text-primary border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-primary/20 hover:scale-105 active:scale-95"
-                  onClick={(e) => { e.stopPropagation(); onRefineNode?.(node); }}
-                  onPointerDown={e => e.stopPropagation()}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-                  Refine
-                </button>
-                <button 
-                  className="bg-muted/50 text-muted-foreground border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 ml-2"
-                  onClick={(e) => { e.stopPropagation(); onEjectNode?.(node); }}
-                  onPointerDown={e => e.stopPropagation()}
-                  title="Eject to Chat"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                  Eject
-                </button>
+                <Tooltip>
+                  <TooltipTrigger 
+                    className="bg-primary/10 text-primary border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-primary/20 hover:scale-105 active:scale-95"
+                    onClick={(e) => { e.stopPropagation(); onRefineNode?.(node); }}
+                    onPointerDown={e => e.stopPropagation()}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+                    Refine
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Refine this palette with AI</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger 
+                    className="bg-muted/50 text-muted-foreground border-none cursor-pointer px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 transition-all hover:bg-muted hover:text-foreground hover:scale-105 active:scale-95 ml-2"
+                    onClick={(e) => { e.stopPropagation(); onEjectNode?.(node); }}
+                    onPointerDown={e => e.stopPropagation()}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                    Eject
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Eject to Chat</TooltipContent>
+                </Tooltip>
               </div>
               <div className="flex gap-2">
-                <button className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }} onPointerDown={e => e.stopPropagation()}>
-                  {isExpanded ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 9l7-7 7 7M5 15l7 7 7-7"/></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>}
-                </button>
-                <button className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(JSON.stringify(node.palette, null, 2)); showToast("Copied JSON!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-                <button className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); onSaveNode?.(node.id); showToast("Saved to library!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
+                <Tooltip>
+                  <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsExpanded(prev => !prev); }} onPointerDown={e => e.stopPropagation()}>
+                    {isExpanded ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 9l7-7 7 7M5 15l7 7 7-7"/></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>}
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{isExpanded ? 'Hide Breakdown' : 'Show Color Breakdown'}</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(JSON.stringify(node.palette, null, 2)); showToast("Copied JSON!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></TooltipTrigger>
+                  <TooltipContent side="top">Copy as JSON</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger className="bg-transparent border-none cursor-pointer text-muted-foreground p-1.5 rounded-md flex items-center justify-center transition-colors hover:bg-muted hover:text-foreground" onClick={(e) => { e.stopPropagation(); onSaveNode?.(node.id); showToast("Saved to library!"); }} onPointerDown={e => e.stopPropagation()}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></TooltipTrigger>
+                  <TooltipContent side="top">Save to Library</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           )}
@@ -542,72 +563,77 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
   }, [nodes, nodeWidths, onNodeMove, zoom]);
 
   return (
-    <div
-      ref={containerRef}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onWheel={handleWheel}
-      // INTEGRATION
-      className="relative overflow-hidden w-full h-full bg-transparent touch-none"
-      style={{
-        backgroundImage: 'radial-gradient(#ffffff10 1px, transparent 1px)',
-        backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px`,
-        backgroundPosition: `${panOffset.x}px ${panOffset.y}px`
-      }}
-    >
-      <div 
-        ref={worldRef} 
-        className="absolute top-0 left-0 w-0 h-0 origin-top-left"
-        style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})` }}
+    <TooltipProvider delay={400}>
+      <div
+        ref={containerRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onWheel={handleWheel}
+        // INTEGRATION
+        className="relative overflow-hidden w-full h-full bg-transparent touch-none"
+        style={{
+          backgroundImage: 'radial-gradient(#ffffff10 1px, transparent 1px)',
+          backgroundSize: `${GRID_SIZE * zoom}px ${GRID_SIZE * zoom}px`,
+          backgroundPosition: `${panOffset.x}px ${panOffset.y}px`
+        }}
       >
-        {nodes.map(node => (
-          <PaletteNodeCard
-            key={node.id}
-            node={node}
-            ref={el => { if (el) nodeRefs.current[node.id] = el; else delete nodeRefs.current[node.id]; }}
-            isSelected={selectedIds.has(node.id)}
-            isStreaming={false}
-            width={nodeWidths[node.id] || node.width || 320}
-            onPointerDown={handleNodePointerDown}
-            onPointerUp={handlePointerUp}
-            onResizePointerDown={handleResizePointerDown}
-            onSaveNode={onSaveNode}
-            onRefineNode={onRefineNode}
-            onEjectNode={onEjectNode}
-          />
-        ))}
-        {streamingNode && (
-          <PaletteNodeCard
-            key={streamingNode.id}
-            node={streamingNode as PaletteNode}
-            ref={el => { if (el) nodeRefs.current[streamingNode.id] = el; else delete nodeRefs.current[streamingNode.id]; }}
-            isSelected={false}
-            isStreaming={true}
-            width={nodeWidths[streamingNode.id] || streamingNode.width || 320}
-            onPointerDown={handleNodePointerDown}
-            onPointerUp={handlePointerUp}
-            onResizePointerDown={handleResizePointerDown}
-            onSaveNode={onSaveNode}
-          />
-        )}
-      </div>
-
-      <div className="absolute bottom-6 right-6 z-50">
-        <button
-          onClick={handleCleanUp}
-          className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
+        <div 
+          ref={worldRef} 
+          className="absolute top-0 left-0 w-0 h-0 origin-top-left"
+          style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})` }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          Clean Up
-        </button>
-      </div>
+          {nodes.map(node => (
+            <PaletteNodeCard
+              key={node.id}
+              node={node}
+              ref={el => { if (el) nodeRefs.current[node.id] = el; else delete nodeRefs.current[node.id]; }}
+              isSelected={selectedIds.has(node.id)}
+              isStreaming={false}
+              width={nodeWidths[node.id] || node.width || 320}
+              onPointerDown={handleNodePointerDown}
+              onPointerUp={handlePointerUp}
+              onResizePointerDown={handleResizePointerDown}
+              onSaveNode={onSaveNode}
+              onRefineNode={onRefineNode}
+              onEjectNode={onEjectNode}
+            />
+          ))}
+          {streamingNode && (
+            <PaletteNodeCard
+              key={streamingNode.id}
+              node={streamingNode as PaletteNode}
+              ref={el => { if (el) nodeRefs.current[streamingNode.id] = el; else delete nodeRefs.current[streamingNode.id]; }}
+              isSelected={false}
+              isStreaming={true}
+              width={nodeWidths[streamingNode.id] || streamingNode.width || 320}
+              onPointerDown={handleNodePointerDown}
+              onPointerUp={handlePointerUp}
+              onResizePointerDown={handleResizePointerDown}
+              onSaveNode={onSaveNode}
+            />
+          )}
+        </div>
 
-      <div 
-        ref={marqueeRef} 
-        className="absolute hidden border border-primary bg-primary/10 pointer-events-none z-[9999]"
-      />
-    </div>
+        <div className="absolute bottom-6 right-6 z-50">
+          <Tooltip>
+            <TooltipTrigger
+              onClick={handleCleanUp}
+              className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              Clean Up
+            </TooltipTrigger>
+            <TooltipContent side="top">Auto-organize nodes</TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div 
+          ref={marqueeRef} 
+          className="absolute hidden border border-primary bg-primary/10 pointer-events-none z-[9999]"
+        />
+      </div>
+    </TooltipProvider>
   );
 }
