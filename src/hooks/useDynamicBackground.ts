@@ -8,6 +8,7 @@ interface UseDynamicBackgroundProps {
   customBgDark: string;
   isIncognito: boolean;
   showPinkMode: boolean;
+  activeWorkspace?: 'chat' | 'studio';
 }
 
 export function useDynamicBackground({
@@ -15,13 +16,23 @@ export function useDynamicBackground({
   customBgLight,
   customBgDark,
   isIncognito,
-  showPinkMode
+  showPinkMode,
+  activeWorkspace
 }: UseDynamicBackgroundProps) {
   const [headerContrast, setHeaderContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [sidebarContrast, setSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
   const [rightSidebarContrast, setRightSidebarContrast] = useState<'light' | 'dark'>(isDark ? 'light' : 'dark');
 
   const analyzeBackground = useCallback(async () => {
+    if (activeWorkspace === 'studio') {
+      setHeaderContrast('dark');
+      setSidebarContrast('dark');
+      setRightSidebarContrast('dark');
+      document.documentElement.style.setProperty('--selection-bg', 'oklch(0.6 0.2 300 / 25%)');
+      document.documentElement.style.setProperty('--selection-text', 'oklch(0.95 0.05 300)');
+      return;
+    }
+
     const activeBg = isDark ? customBgDark : customBgLight;
     const isDarkCurrent = isDark;
 
@@ -66,7 +77,7 @@ export function useDynamicBackground({
     } catch (error) {
       console.error('Failed to analyze background luminance:', error);
     }
-  }, [customBgLight, customBgDark, isIncognito, showPinkMode, isDark]);
+  }, [customBgLight, customBgDark, isIncognito, showPinkMode, isDark, activeWorkspace]);
 
   useEffect(() => {
     analyzeBackground();

@@ -3,6 +3,7 @@ export type WebSearchResearchEvent = {
   data?: any;
 };
 
+/** 'color-studio' is a LEGACY artifact kind. */
 export type ArtifactKind = 'code' | 'html' | 'markdown' | 'svg' | 'react' | 'text' | 'color-studio';
 
 export type Artifact = {

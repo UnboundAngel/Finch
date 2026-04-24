@@ -41,6 +41,7 @@ function DashboardContent({
   const isModelLoaded = useChatStore(state => state.isModelLoaded);
   const isModelLoading = useChatStore(state => state.isModelLoading);
   const modelLoadProgress = useChatStore(state => state.modelLoadProgress);
+  const activeWorkspace = useChatStore(state => state.activeWorkspace);
   const voiceStatus = useChatStore(state => state.voiceStatus);
   const activeProfile = useProfileStore((s) => s.activeProfile);
   const profiles = useProfileStore((s) => s.profiles);
@@ -238,13 +239,13 @@ function DashboardContent({
   return (
     <div className={`flex flex-col h-full min-h-0 w-full overflow-hidden font-sans transition-none duration-500 ${isIncognito 
       ? (isDark ? "bg-[#1a1a1a]" : "bg-[#fffcf0]") 
-      : (!isIncognito && (isDark ? customBgDark : customBgLight)) 
+      : (!isIncognito && activeWorkspace !== 'studio' && (isDark ? customBgDark : customBgLight)) 
         ? 'bg-transparent text-foreground has-custom-bg' 
         : showPinkMode 
           ? 'bg-[#fff5f7] text-foreground is-pink-mode' 
           : 'bg-background text-foreground'}`}
       style={{
-        ...(!isIncognito && (isDark ? customBgDark : customBgLight)
+        ...(!isIncognito && activeWorkspace !== 'studio' && (isDark ? customBgDark : customBgLight)
           ? {
               backgroundImage: `url(${resolveMediaSrc(isDark ? customBgDark : customBgLight)})`,
               backgroundSize: 'cover',
@@ -254,7 +255,7 @@ function DashboardContent({
           : {}),
       }}
     >
-      {!isIncognito && !(isDark ? customBgDark : customBgLight) && (
+      {!isIncognito && !(activeWorkspace !== 'studio' && (isDark ? customBgDark : customBgLight)) && (
         <BackgroundPlus 
           plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
           plusSize={40} 

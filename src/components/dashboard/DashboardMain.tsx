@@ -9,6 +9,7 @@ import { ChatInput } from '@/src/components/chat/ChatInput';
 import { RightSidebar } from '@/src/components/sidebar/RightSidebar';
 import { ArtifactPanel } from '@/src/components/chat/ArtifactPanel';
 import { useChatStore } from '@/src/store';
+import { StudioWorkspace } from '@/src/components/studio/StudioWorkspace';
 import type { Artifact } from '@/src/types/chat';
 
 interface DashboardMainProps {
@@ -128,6 +129,7 @@ const RightSidebarContainer = ({ showPinkMode, customBgDark, customBgLight, isDa
 };
 
 export function DashboardMain(props: DashboardMainProps) {
+  const activeWorkspace = useChatStore(state => state.activeWorkspace);
   const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
   const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
   const setIsRightSidebarOpen = useChatStore(state => state.setIsRightSidebarOpen);
@@ -237,12 +239,13 @@ export function DashboardMain(props: DashboardMainProps) {
     setIsLeftSidebarOpen(false);
   };
 
-  // Close both sidebars when entering incognito.
+  // Close both sidebars when entering incognito or switching to studio.
   useEffect(() => {
-    if (!isIncognito) return;
-    setIsLeftSidebarOpen(false);
-    setIsRightSidebarOpen(false);
-  }, [isIncognito, setIsLeftSidebarOpen, setIsRightSidebarOpen]);
+    if (isIncognito || activeWorkspace === 'studio') {
+      setIsLeftSidebarOpen(false);
+      setIsRightSidebarOpen(false);
+    }
+  }, [isIncognito, activeWorkspace, setIsLeftSidebarOpen, setIsRightSidebarOpen]);
 
   const leftSidebarPanelClass = showPinkMode
     ? "bg-[#fff5f7]/85 backdrop-blur-2xl"
@@ -269,7 +272,7 @@ export function DashboardMain(props: DashboardMainProps) {
         >
           <ContextMenu>
             <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
-              {!isIncognito && (
+              {!isIncognito && activeWorkspace !== 'studio' && (
                 <div className="absolute inset-0 pointer-events-none z-[1]">
                   <div className={`absolute inset-0 transition-opacity duration-500 ${(isDark ? customBgDark : customBgLight) ? 'opacity-20 bg-black' : 'opacity-0'}`} />
                 </div>
@@ -282,49 +285,80 @@ export function DashboardMain(props: DashboardMainProps) {
                 plusSize={40}
               />
 
-              <div className="flex-1 relative z-10 flex flex-col min-h-0 px-4">
-                <ChatArea
-                  messages={messages}
-                  isThinking={isThinking}
-                  researchEvents={researchEvents}
-                  selectedModel={selectedModel}
-                  isDark={isDark}
-                  setInput={stableSetInput}
-                  isIncognito={isIncognito}
-                  hasCustomBg={hasCustomBgValue}
-                  isPinkMode={showPinkMode}
-                  voiceStatus={voiceStatus}
-                  userAvatarSrc={userAvatarSrc}
-                  userAvatarLetter={userAvatarLetter}
-                  onRegenerate={onRegenerate}
-                  onEditResend={onEditResend}
-                  onArtifactClick={onArtifactClick}
-                />
-                <div className="relative z-20">
-                  <ChatInput
-                    input={input}
-                    setInput={stableSetInput}
-                    handleSend={handleSend}
-                    onStop={abort}
-                    isThinking={isThinking || isStreaming}
-                    attachedFile={attachedFile}
-                    setAttachedFile={setAttachedFile}
-                    isWebSearchActive={isWebSearchActive}
-                    setIsWebSearchActive={setIsWebSearchActive}
-                    isArtifactToolActive={isArtifactToolActive}
-                    setIsArtifactToolActive={setIsArtifactToolActive}
-                    enterToSend={enterToSend}
-                    isIncognito={isIncognito}
-                    isDark={isDark}
-                    hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
-                    isPinkMode={showPinkMode}
-                    isModelLoaded={selectedModel ? isModelLoaded : true}
-                    onFocus={handleInputFocus}
-                    isListening={isListening}
-                    setIsListening={setIsListening}
-                  />
+              {activeWorkspace === 'studio' ? (
+                <div className="flex-1 w-full h-full relative flex flex-col">
+                  <StudioWorkspace />
+                  {/* Floating Chat Input over the canvas */}
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl z-20 px-4">
+                    <ChatInput
+                      input={input}
+                      setInput={stableSetInput}
+                      handleSend={handleSend}
+                      onStop={abort}
+                      isThinking={isThinking || isStreaming}
+                      attachedFile={attachedFile}
+                      setAttachedFile={setAttachedFile}
+                      isWebSearchActive={isWebSearchActive}
+                      setIsWebSearchActive={setIsWebSearchActive}
+                      isArtifactToolActive={isArtifactToolActive}
+                      setIsArtifactToolActive={setIsArtifactToolActive}
+                      enterToSend={enterToSend}
+                      isIncognito={isIncognito}
+                      isDark={isDark}
+                      hasCustomBg={false}
+                      isPinkMode={showPinkMode}
+                      isModelLoaded={selectedModel ? isModelLoaded : true}
+                      onFocus={handleInputFocus}
+                      isListening={isListening}
+                      setIsListening={setIsListening}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex-1 relative z-10 flex flex-col min-h-0 px-4">
+                  <ChatArea
+                    messages={messages}
+                    isThinking={isThinking}
+                    researchEvents={researchEvents}
+                    selectedModel={selectedModel}
+                    isDark={isDark}
+                    setInput={stableSetInput}
+                    isIncognito={isIncognito}
+                    hasCustomBg={hasCustomBgValue}
+                    isPinkMode={showPinkMode}
+                    voiceStatus={voiceStatus}
+                    userAvatarSrc={userAvatarSrc}
+                    userAvatarLetter={userAvatarLetter}
+                    onRegenerate={onRegenerate}
+                    onEditResend={onEditResend}
+                    onArtifactClick={onArtifactClick}
+                  />
+                  <div className="relative z-20">
+                    <ChatInput
+                      input={input}
+                      setInput={stableSetInput}
+                      handleSend={handleSend}
+                      onStop={abort}
+                      isThinking={isThinking || isStreaming}
+                      attachedFile={attachedFile}
+                      setAttachedFile={setAttachedFile}
+                      isWebSearchActive={isWebSearchActive}
+                      setIsWebSearchActive={setIsWebSearchActive}
+                      isArtifactToolActive={isArtifactToolActive}
+                      setIsArtifactToolActive={setIsArtifactToolActive}
+                      enterToSend={enterToSend}
+                      isIncognito={isIncognito}
+                      isDark={isDark}
+                      hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
+                      isPinkMode={showPinkMode}
+                      isModelLoaded={selectedModel ? isModelLoaded : true}
+                      onFocus={handleInputFocus}
+                      isListening={isListening}
+                      setIsListening={setIsListening}
+                    />
+                  </div>
+                </div>
+              )}
             </ContextMenuTrigger>
 
             <ContextMenuContent className="w-56">
@@ -382,6 +416,7 @@ export function DashboardMain(props: DashboardMainProps) {
             className={`pointer-events-auto ${leftSidebarPanelClass}`}
             contrast={sidebarContrast}
             isPinkMode={showPinkMode}
+            abort={abort}
           />
           {isLeftSidebarOpen && (
             <div

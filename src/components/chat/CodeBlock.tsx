@@ -32,7 +32,7 @@ export const CodeBlock = ({ children, language, isDark, streaming }: CodeBlockPr
 
   const isPaletteLanguage = language === 'palette' || language === 'color' || language === 'colors';
   const paletteColors = isPaletteLanguage
-    ? Array.from(children.matchAll(/(#(?:[0-9a-fA-F]{3,4}){1,2}|rgba?\([^)]+\)|hsla?\([^)]+\))/g)).map(m => m[0])
+    ? Array.from(children.matchAll(/(#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})(?![0-9a-fA-F])|rgba?\([^)]+\)|hsla?\([^)]+\))/gi)).map(m => m[0])
     : [];
 
   useEffect(() => {

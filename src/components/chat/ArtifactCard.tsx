@@ -10,7 +10,7 @@ const KIND_LABELS: Record<ArtifactKind, string> = {
   svg: 'SVG',
   react: 'React',
   text: 'Text',
-  'color-studio': 'Color Palette',
+  'color-studio': 'Color Palette', // LEGACY
 };
 
 const KIND_ICONS: Record<ArtifactKind, React.ElementType> = {
@@ -20,7 +20,7 @@ const KIND_ICONS: Record<ArtifactKind, React.ElementType> = {
   svg: Layers,
   react: FileCode2,
   text: AlignLeft,
-  'color-studio': Palette,
+  'color-studio': Palette, // LEGACY
 };
 
 interface ArtifactCardProps {

@@ -12,9 +12,10 @@ interface ColorStudioPayload {
 
 interface ColorStudioViewerProps {
   content: string;
+  isDark: boolean;
 }
 
-export const ColorStudioViewer = ({ content }: ColorStudioViewerProps) => {
+export const ColorStudioViewer = ({ content, isDark }: ColorStudioViewerProps) => {
   const [showTextPreview, setShowTextPreview] = useState(false);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
@@ -68,9 +69,12 @@ export const ColorStudioViewer = ({ content }: ColorStudioViewerProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-inherit">
+    <div className={cn("flex flex-col h-full", isDark ? "bg-[#111111]" : "bg-white")}>
       {/* Action Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-muted-foreground/10 sticky top-0 bg-inherit z-20 backdrop-blur-md">
+      <div className={cn(
+        "flex items-center justify-between px-6 py-4 border-b border-muted-foreground/10 sticky top-0 z-20 backdrop-blur-md",
+        isDark ? "bg-[#111111]/80" : "bg-white/80"
+      )}>
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Palette className="h-4 w-4 text-primary" />
@@ -129,7 +133,10 @@ export const ColorStudioViewer = ({ content }: ColorStudioViewerProps) => {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="group relative flex flex-col rounded-2xl border border-muted-foreground/10 bg-muted/5 overflow-hidden shadow-sm"
+                  className={cn(
+                    "group relative flex flex-col rounded-2xl border border-muted-foreground/10 overflow-hidden shadow-sm",
+                    isDark ? "bg-white/[0.03]" : "bg-black/[0.02]"
+                  )}
                 >
                   {/* Swatch */}
                   <div 

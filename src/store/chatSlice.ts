@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { getContextWindowSize } from '@/src/lib/contextWindows';
 
 export interface ChatState {
+  activeWorkspace: 'chat' | 'studio';
   selectedProvider: string;
   selectedModel: string;
   isIncognito: boolean;
@@ -17,6 +18,7 @@ export interface ChatState {
   holdToRecord: boolean;
   selectedMicDevice: string;
 
+  setActiveWorkspace: (workspace: 'chat' | 'studio', abortFn?: () => void) => void;
   setSelectedProvider: (provider: string) => void;
   setSelectedModel: (model: string) => void;
   setIsIncognito: (isIncognito: boolean) => void;
@@ -35,6 +37,7 @@ export interface ChatState {
 }
 
 export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set) => ({
+  activeWorkspace: 'chat',
   selectedProvider: 'anthropic',
   selectedModel: 'claude-3-5-sonnet-20240620',
   isIncognito: false,
@@ -50,6 +53,13 @@ export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set)
   holdToRecord: false,
   selectedMicDevice: '',
 
+  setActiveWorkspace: (workspace, abortFn) => {
+    if (abortFn) abortFn();
+    set({ 
+      activeWorkspace: workspace,
+      ...(workspace === 'studio' ? { isIncognito: false, isDark: true } : {})
+    });
+  },
   setSelectedProvider: (provider) => set({ selectedProvider: provider }),
   setSelectedModel: (model) => set({ 
     selectedModel: model,

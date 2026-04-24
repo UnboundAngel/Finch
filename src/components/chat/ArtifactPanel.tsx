@@ -244,7 +244,8 @@ const PreviewPane = ({ artifact, isDark }: { artifact: Artifact; isDark: boolean
   }
 
   if (artifact.kind === 'color-studio') {
-    return <ColorStudioViewer content={artifact.content} />;
+    // LEGACY: Retained for compatibility with older artifacts
+    return <ColorStudioViewer content={artifact.content} isDark={isDark} />;
   }
 
   return (

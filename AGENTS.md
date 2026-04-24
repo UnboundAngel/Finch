@@ -229,6 +229,7 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 | Right sidebar (AI params) split into sub-sections | ✅ Done | `sidebar/components/` (OutputSection, ParameterZone, SamplingSection, StopWordsSection, SystemPromptSection) |
 | Model marketplace (voice model download) | ✅ Done | `ModelMarketplace.tsx` |
 | Web search onboarding | ✅ Done | `SearchOnboarding.tsx` |
+| Studio Workspace (Node-based canvas) | ✅ Done | `StudioWorkspace.tsx`, `StudioCanvas.tsx`, `studioSlice.ts` |
 
 ## 10. Known Gotchas
 - `useVoiceTranscription.ts` contains **leftover debug `fetch` calls** to `http://127.0.0.1:7723` inside the polling loop (lines 47 and 66). These are wrapped in `#region agent log` comments and `catch(()=>{})` guards so they are non-fatal, but they should be cleaned up before production.
@@ -246,4 +247,4 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 ---
 
 ## Last Updated
-`2026-04-22T19:25:00-04:00` — Full codebase audit: updated tech stack with exact versions, replaced directory tree with accurate structure (IPC split, new components), updated feature audit table, added Known Gotchas section, corrected all stale file references.
+`2026-04-24T10:30:00-04:00` — Integrated Studio Workspace: implemented raw-JSON system prompt, streaming skeleton state, and state orchestration. Verified multi-node drag, marquee selection, and real-time palette generation.

@@ -26,6 +26,11 @@ import {
   Search,
   Pin,
   Trash2,
+  Palette,
+  MessageSquare,
+  Layers,
+  Download,
+  Code,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -36,7 +41,7 @@ import {
 import { toast } from 'sonner';
 import { Message, ChatSession } from '../../types/chat';
 import { getChatIcon, isAiNamed } from '../../lib/chatHelpers';
-import { useProfileStore } from '@/src/store';
+import { useProfileStore, useChatStore } from '@/src/store';
 import { PinIconButton } from '@/components/ui/pin-icon-button';
 
 interface ChatSidebarProps {
@@ -68,6 +73,7 @@ interface ChatSidebarProps {
   className?: string;
   contrast?: 'light' | 'dark';
   isPinkMode?: boolean;
+  abort?: () => void;
 }
 
 export const ChatSidebar = ({
@@ -99,7 +105,10 @@ export const ChatSidebar = ({
   className,
   contrast,
   isPinkMode,
+  abort,
 }: ChatSidebarProps) => {
+  const activeWorkspace = useChatStore(state => state.activeWorkspace);
+  const setActiveWorkspace = useChatStore(state => state.setActiveWorkspace);
   const setActiveProfile = useProfileStore(state => state.setActiveProfile);
   const activeProfile = useProfileStore(state => state.activeProfile);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -134,36 +143,133 @@ export const ChatSidebar = ({
 
   return (
     <Sidebar variant="sidebar" className={cn(
-      "!absolute !top-3 !bottom-20 !left-3 !h-auto !rounded-xl !overflow-hidden shadow-xl border border-black/15 dark:border-black/35",
+      activeWorkspace === 'studio' 
+        ? "!absolute !top-16 !bottom-4 !left-4 !h-auto !rounded-2xl !overflow-hidden shadow-2xl border border-white/10"
+        : "!absolute !top-3 !bottom-20 !left-3 !h-auto !rounded-xl !overflow-hidden shadow-xl border border-black/15 dark:border-black/35",
       className
     )}>
       <SidebarHeader className="p-4 select-none">
         <div className="no-drag">
-          <Button
-            variant="ghost"
-            className={`w-full justify-start gap-2 h-8 px-2 rounded-lg transition-none text-sm ${isIncognito ? 'opacity-50 cursor-not-allowed' : (isPinkMode ? 'hover:bg-rose-200/40 text-foreground' : (contrast === 'light' ? 'hover:bg-white/10 text-white' : 'hover:bg-white/8 text-foreground'))}`}
-            onClick={isIncognito ? undefined : handleNewChat}
-            disabled={isIncognito}
-          >
-            <Plus className="h-4 w-4" />
-            <span>New chat</span>
-          </Button>
-          <div className="mt-4 relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 pointer-events-none transition-colors duration-200 group-focus-within:text-muted-foreground" />
-            <Input
-              id="sidebar-search-input"
-              placeholder="Search chats..."
-              className={`pl-9 h-9 rounded-lg border-transparent transition-[background-color,border-color,box-shadow] duration-200 ease-out focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : (contrast === 'light' ? 'bg-white/5 placeholder:text-white/40' : 'bg-muted/50')}`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              disabled={isIncognito}
-            />
+          <div className="flex bg-muted/30 p-1 rounded-xl mb-4">
+            <button 
+              onClick={() => setActiveWorkspace('chat', abort)}
+              className={cn("flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-sm transition-all", activeWorkspace === 'chat' ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground")}
+              title="Chat Workspace"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Chat
+            </button>
+            <button 
+              onClick={() => setActiveWorkspace('studio', abort)}
+              className={cn("flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-sm transition-all", activeWorkspace === 'studio' ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground")}
+              title="Studio Workspace"
+            >
+              <Palette className="w-4 h-4" />
+              Studio
+            </button>
           </div>
+          {activeWorkspace === 'studio' ? (
+            <>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 h-8 px-2 rounded-lg transition-none text-sm ${isIncognito ? 'opacity-50 cursor-not-allowed' : (isPinkMode ? 'hover:bg-rose-200/40 text-foreground' : (contrast === 'light' ? 'hover:bg-white/10 text-white' : 'hover:bg-white/8 text-foreground'))}`}
+                disabled={isIncognito}
+              >
+                <Plus className="h-4 w-4" />
+                <span>New canvas</span>
+              </Button>
+              <div className="mt-4 relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 pointer-events-none transition-colors duration-200 group-focus-within:text-muted-foreground" />
+                <Input
+                  placeholder="Search canvases..."
+                  className={`pl-9 h-9 rounded-lg border-transparent transition-[background-color,border-color,box-shadow] duration-200 ease-out focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : (contrast === 'light' ? 'bg-white/5 placeholder:text-white/40' : 'bg-muted/50')}`}
+                  disabled={isIncognito}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 h-8 px-2 rounded-lg transition-none text-sm ${isIncognito ? 'opacity-50 cursor-not-allowed' : (isPinkMode ? 'hover:bg-rose-200/40 text-foreground' : (contrast === 'light' ? 'hover:bg-white/10 text-white' : 'hover:bg-white/8 text-foreground'))}`}
+                onClick={isIncognito ? undefined : handleNewChat}
+                disabled={isIncognito}
+              >
+                <Plus className="h-4 w-4" />
+                <span>New chat</span>
+              </Button>
+              <div className="mt-4 relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 pointer-events-none transition-colors duration-200 group-focus-within:text-muted-foreground" />
+                <Input
+                  id="sidebar-search-input"
+                  placeholder="Search chats..."
+                  className={`pl-9 h-9 rounded-lg border-transparent transition-[background-color,border-color,box-shadow] duration-200 ease-out focus-visible:bg-background focus-visible:border-primary/50 ${isPinkMode ? 'bg-white/40 placeholder:text-rose-400/70' : (contrast === 'light' ? 'bg-white/5 placeholder:text-white/40' : 'bg-muted/50')}`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={isIncognito}
+                />
+              </div>
+            </>
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent className="scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
-        <>
-          {pinnedChats.length > 0 && (
+        {activeWorkspace === 'studio' ? (
+          <div className="flex flex-col gap-6 pt-2 pb-6">
+            <SidebarGroup>
+              <SidebarGroupLabel className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Studio Tools</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className={`h-8 px-3 rounded-lg group ${contrast === 'dark' ? 'text-black/70 hover:bg-black/5 hover:text-black' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>
+                      <Layers className="w-4 h-4 mr-2" />
+                      <span className="text-sm font-medium">Layer Inspector</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className={`h-8 px-3 rounded-lg group ${contrast === 'dark' ? 'text-black/70 hover:bg-black/5 hover:text-black' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>
+                      <Palette className="w-4 h-4 mr-2" />
+                      <span className="text-sm font-medium">Design Tokens</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className={`h-8 px-3 rounded-lg group ${contrast === 'dark' ? 'text-black/70 hover:bg-black/5 hover:text-black' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>
+                      <Code className="w-4 h-4 mr-2" />
+                      <span className="text-sm font-medium">Export Code</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className={`h-8 px-3 rounded-lg group ${contrast === 'dark' ? 'text-black/70 hover:bg-black/5 hover:text-black' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>
+                      <Download className="w-4 h-4 mr-2" />
+                      <span className="text-sm font-medium">Save Assets</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recent Canvases</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {/* Stub items to show the UI works */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className={`h-8 px-3 rounded-lg group ${contrast === 'dark' ? 'text-black/70 hover:bg-black/5 hover:text-black' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>
+                      <span className="text-sm font-medium flex-1 overflow-hidden whitespace-nowrap text-ellipsis">Finch Landing Page Colors</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton className={`h-8 px-3 rounded-lg group ${contrast === 'dark' ? 'text-black/70 hover:bg-black/5 hover:text-black' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}>
+                      <span className="text-sm font-medium flex-1 overflow-hidden whitespace-nowrap text-ellipsis">Dashboard Theme Options</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        ) : (
+          <>
+            {pinnedChats.length > 0 && (
                 <SidebarGroup className={isIncognito ? 'opacity-50 pointer-events-none' : ''}>
                   <SidebarGroupLabel className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pinned</SidebarGroupLabel>
                   <SidebarGroupContent>
@@ -282,6 +388,7 @@ export const ChatSidebar = ({
                 </SidebarGroup>
           )}
         </>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="px-4 py-2">

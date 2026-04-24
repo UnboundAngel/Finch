@@ -3,8 +3,9 @@ import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
 import type { Artifact, Message, ChatSession, WebSearchResearchEvent } from '@/src/types/chat';
 import { extractArtifacts } from '@/src/lib/artifactParser';
-import { buildChatSystemPrompt } from '@/src/lib/artifactTooling';
-import { useModelParams, useChatStore } from '@/src/store';
+import { buildChatSystemPrompt, STUDIO_SYSTEM_PROMPT } from '@/src/lib/artifactTooling';
+import { useModelParams, useChatStore, useStudioStore } from '@/src/store';
+import { parseLenientJson } from '@/src/lib/jsonParser';
 
 interface SavedArtifactMeta {
   path: string;
@@ -213,9 +214,15 @@ export function useChatEngine({
     setIsThinking(true);
     let isFirstToken = true;
     const aiMessageId = crypto.randomUUID();
-    wasAbortedRef.current = false;
+    const activeWorkspace = useChatStore.getState().activeWorkspace;
+    const composedSystemPrompt = activeWorkspace === 'studio'
+      ? STUDIO_SYSTEM_PROMPT
+      : buildChatSystemPrompt(systemPrompt, isArtifactToolActive);
 
-    const composedSystemPrompt = buildChatSystemPrompt(systemPrompt, isArtifactToolActive);
+    const { addNode, setStreamBuffer, clearBuffer, nodes } = useStudioStore.getState();
+    if (activeWorkspace === 'studio') {
+      clearBuffer();
+    }
 
     const streamParams = {
       systemPrompt: composedSystemPrompt, temperature, topP,
@@ -227,6 +234,15 @@ export function useChatEngine({
       userMessage, selectedModel, selectedProvider,
       (token: string) => {
         if (!token || token === 'undefined') return;
+        if (activeWorkspace === 'studio') {
+          if (isFirstToken) {
+            setIsThinking(false);
+            isFirstToken = false;
+          }
+          setStreamBuffer((prev) => prev + token);
+          return;
+        }
+
         if (isFirstToken) {
           setIsThinking(false);
           isFirstToken = false;
@@ -247,6 +263,7 @@ export function useChatEngine({
         }
       },
       (ev: WebSearchResearchEvent) => {
+        if (activeWorkspace === 'studio') return;
         researchEventsRef.current = [...researchEventsRef.current, ev];
         setResearchEvents(researchEventsRef.current);
         // If an AI streaming message already exists (search event after first token), patch its metadata too
@@ -263,6 +280,17 @@ export function useChatEngine({
         });
       },
       (stats: any) => {
+        if (activeWorkspace === 'studio') {
+          setIsThinking(false);
+          const finalBuffer = useStudioStore.getState().studioStreamBuffer;
+          const parsed = parseLenientJson(finalBuffer);
+          if (parsed) {
+            addNode(parsed);
+          }
+          clearBuffer();
+          return;
+        }
+
         session.setMessages((prev: Message[]) => {
           const last = prev[prev.length - 1];
           if (last?.role === 'ai') {

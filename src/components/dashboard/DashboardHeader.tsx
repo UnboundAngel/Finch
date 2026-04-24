@@ -45,30 +45,32 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const isLeftSidebarOpen = useChatStore(state => state.isLeftSidebarOpen);
   const setIsLeftSidebarOpen = useChatStore(state => state.setIsLeftSidebarOpen);
+  const activeWorkspace = useChatStore(state => state.activeWorkspace);
 
+  const effectiveHeaderContrast = activeWorkspace === 'studio' ? 'light' : headerContrast;
+  const effectiveSidebarContrast = activeWorkspace === 'studio' ? 'light' : sidebarContrast;
 
   return (
     <header
       data-tauri-drag-region
-      className={`h-14 flex items-center justify-between px-4 sticky top-0 z-50 transition-none shrink-0 ${isIncognito
-        ? 'bg-transparent'
-        : showPinkMode
-          ? 'bg-[#fff5f7]/80 backdrop-blur-xl'
-          : 'bg-transparent'
-        }`}
+      className={`h-14 flex items-center justify-between px-4 z-50 transition-none shrink-0 ${
+        activeWorkspace === 'studio'
+          ? 'absolute top-0 left-0 right-0 bg-transparent'
+          : `sticky top-0 ${isIncognito ? 'bg-transparent' : showPinkMode ? 'bg-[#fff5f7]/80 backdrop-blur-xl' : 'bg-transparent'}`
+      }`}
     >
       <div className="flex-1 flex items-center justify-start gap-2 pointer-events-none">
         {!isIncognito && (
           <Button
             variant="ghost"
             size="icon"
-            className={`h-9 w-9 rounded-lg transition-none no-drag pointer-events-auto ${sidebarContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
+            className={`h-9 w-9 rounded-lg transition-none no-drag pointer-events-auto ${effectiveSidebarContrast === 'dark' ? 'hover:bg-black/10 text-black' : 'hover:bg-white/10 text-white'
               }`}
             onClick={() => setIsLeftSidebarOpen(prev => !prev)}
           >
             <img
               src={isLeftSidebarOpen ? "/assets/open-state-left.svg" : "/assets/closed-state-left.svg"}
-              className={`h-5 w-5 transition-none ${sidebarContrast === 'dark' ? 'brightness-0' : 'brightness-0 invert'}`}
+              className={`h-5 w-5 transition-none ${effectiveSidebarContrast === 'dark' ? 'brightness-0' : 'brightness-0 invert'}`}
               alt="Toggle Left Sidebar"
             />
           </Button>
@@ -84,7 +86,7 @@ export function DashboardHeader({
             setSelectedProvider={setSelectedProvider}
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
-            contrast={headerContrast}
+            contrast={effectiveHeaderContrast}
             showLoadRing={isLocalInferenceProvider(selectedProvider) && isModelLoading}
             loadProgress={modelLoadProgress}
           />
@@ -115,23 +117,27 @@ export function DashboardHeader({
       {/* Right Side: System Controls */}
       <div className="flex-1 flex items-center justify-end gap-2 pointer-events-none">
         <div className="flex items-center gap-2 no-drag pointer-events-auto">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleIncognito}
-            className={`h-9 w-9 rounded-lg transition-none ${isIncognito
-              ? (isDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/10")
-              : (headerContrast === 'dark' ? "text-black hover:bg-black/10" : "text-white hover:bg-white/10")
-              }`}
-          >
-            <Ghost className="h-5 w-5" />
-          </Button>
+          {activeWorkspace !== 'studio' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleIncognito}
+              className={`h-9 w-9 rounded-lg transition-none ${isIncognito
+                ? (isDark ? "text-white hover:bg-white/10" : "text-black hover:bg-black/10")
+                : (effectiveHeaderContrast === 'dark' ? "text-black hover:bg-black/10" : "text-white hover:bg-white/10")
+                }`}
+            >
+              <Ghost className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-4 no-drag pointer-events-auto">
-          <Switch checked={isDark} onChange={handleThemeChange} />
-          {!isIncognito && <RightSidebarToggleGated headerContrast={headerContrast} />}
-          <WindowControls isIncognito={isIncognito} contrast={headerContrast} />
+          {activeWorkspace !== 'studio' && (
+            <Switch checked={isDark} onChange={handleThemeChange} />
+          )}
+          {!isIncognito && <RightSidebarToggleGated headerContrast={effectiveHeaderContrast} />}
+          <WindowControls isIncognito={isIncognito} contrast={effectiveHeaderContrast} />
         </div>
       </div>
     </header>
