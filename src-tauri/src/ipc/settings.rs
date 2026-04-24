@@ -1,10 +1,10 @@
-use tauri::{AppHandle, command, Manager};
-use crate::types::{ProviderConfig, HardwareInfo};
 use crate::ipc::media_import::{pick_and_save_media, CompressProfile};
-use tauri_plugin_store::StoreExt;
+use crate::types::{HardwareInfo, ProviderConfig};
 use std::fs;
 use std::path::{Component, PathBuf};
 use sysinfo::System;
+use tauri::{command, AppHandle, Manager};
+use tauri_plugin_store::StoreExt;
 
 #[command]
 pub async fn set_background_image(handle: AppHandle, _mode: String) -> Result<String, String> {
@@ -48,10 +48,14 @@ pub async fn import_user_media(handle: AppHandle, kind: String) -> Result<String
 
 /// kind: `avatar_static` | `avatar_gif` | `background`
 #[command]
-pub async fn process_imported_media(handle: AppHandle, path: String, kind: String) -> Result<String, String> {
+pub async fn process_imported_media(
+    handle: AppHandle,
+    path: String,
+    kind: String,
+) -> Result<String, String> {
     use crate::ipc::media_import::process_and_save_media;
     let target_path = PathBuf::from(path);
-    
+
     match kind.as_str() {
         "avatar_static" => process_and_save_media(
             &handle,
@@ -82,9 +86,7 @@ pub async fn remove_imported_media(handle: AppHandle, path: String) -> Result<()
     let target_canon = target
         .canonicalize()
         .map_err(|_| "File not found or inaccessible".to_string())?;
-    let app_canon = app_dir
-        .canonicalize()
-        .map_err(|e| e.to_string())?;
+    let app_canon = app_dir.canonicalize().map_err(|e| e.to_string())?;
     if !target_canon.starts_with(&app_canon) {
         return Err("Path outside app data directory".into());
     }
@@ -104,12 +106,15 @@ pub async fn remove_imported_media(handle: AppHandle, path: String) -> Result<()
 
 #[command]
 pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderConfig>, String> {
-    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
+    let store = handle
+        .store("finch_config.json")
+        .map_err(|e| e.to_string())?;
     let config = store.get("provider_config");
-    
+
     if let Some(val) = config {
-        let mut provider_config: ProviderConfig = serde_json::from_value(val).map_err(|e| e.to_string())?;
-        
+        let mut provider_config: ProviderConfig =
+            serde_json::from_value(val).map_err(|e| e.to_string())?;
+
         if provider_config.anthropic_api_key.is_some() {
             provider_config.anthropic_api_key = Some("••••••••".to_string());
         }
@@ -134,12 +139,19 @@ pub async fn get_provider_config(handle: AppHandle) -> Result<Option<ProviderCon
 
 #[command]
 pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> Result<(), String> {
-    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
-    
-    let mut current_config_val = store.get("provider_config").unwrap_or(serde_json::json!({}));
+    let store = handle
+        .store("finch_config.json")
+        .map_err(|e| e.to_string())?;
+
+    let mut current_config_val = store
+        .get("provider_config")
+        .unwrap_or(serde_json::json!({}));
     let new_config_val = serde_json::to_value(config).map_err(|e| e.to_string())?;
 
-    if let (Some(current_obj), Some(new_obj)) = (current_config_val.as_object_mut(), new_config_val.as_object()) {
+    if let (Some(current_obj), Some(new_obj)) = (
+        current_config_val.as_object_mut(),
+        new_config_val.as_object(),
+    ) {
         for (k, v) in new_obj {
             if !v.is_null() && v.as_str() != Some("••••••••") {
                 current_obj.insert(k.clone(), v.clone());
@@ -155,8 +167,13 @@ pub async fn save_provider_config(handle: AppHandle, config: ProviderConfig) -> 
 }
 
 #[command]
-pub async fn update_search_config(handle: AppHandle, config: serde_json::Value) -> Result<(), String> {
-    let store = handle.store("finch_config.json").map_err(|e| e.to_string())?;
+pub async fn update_search_config(
+    handle: AppHandle,
+    config: serde_json::Value,
+) -> Result<(), String> {
+    let store = handle
+        .store("finch_config.json")
+        .map_err(|e| e.to_string())?;
     let config_val = store.get("provider_config");
     let mut current_config: ProviderConfig = config_val
         .and_then(|v| serde_json::from_value(v).ok())
@@ -173,11 +190,18 @@ pub async fn update_search_config(handle: AppHandle, config: serde_json::Value) 
                 current_config.brave_api_key = Some(k.to_string());
             }
         }
-        if let Some(u) = obj.get("searxng_url").and_then(|v| v.as_str()) { current_config.searxng_url = Some(u.to_string()); }
-        if let Some(p) = obj.get("active_search_provider").and_then(|v| v.as_str()) { current_config.active_search_provider = Some(p.to_string()); }
+        if let Some(u) = obj.get("searxng_url").and_then(|v| v.as_str()) {
+            current_config.searxng_url = Some(u.to_string());
+        }
+        if let Some(p) = obj.get("active_search_provider").and_then(|v| v.as_str()) {
+            current_config.active_search_provider = Some(p.to_string());
+        }
     }
 
-    store.set("provider_config", serde_json::to_value(current_config).unwrap());
+    store.set(
+        "provider_config",
+        serde_json::to_value(current_config).unwrap(),
+    );
     store.save().map_err(|e| e.to_string())?;
     Ok(())
 }

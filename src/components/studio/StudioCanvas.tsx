@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 import { useStudioStore } from '@/src/store/index';
 import type { PaletteNode } from '@/src/store/studioSlice';
 import type { ParsedPalette } from '@/src/lib/jsonParser';
@@ -12,6 +14,7 @@ export interface StudioCanvasProps {
   onSaveNode?: (id: string) => void;
   onRefineNode?: (node: PaletteNode) => void;
   onEjectNode?: (node: PaletteNode) => void;
+  onDeleteNode?: (id: string) => void;
   isStreaming?: boolean;
   refinementNodeId?: string | null;
 }
@@ -35,6 +38,7 @@ const getRelativeTime = (timestamp: number) => {
 export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   node: PaletteNode;
   isSelected: boolean;
+  selectedCount: number;
   isStreaming: boolean;
   width: number;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>, node: PaletteNode) => void;
@@ -43,10 +47,11 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
   onSaveNode?: (nodeId: string) => void;
   onRefineNode?: (node: PaletteNode) => void;
   onEjectNode?: (node: PaletteNode) => void;
+  onDeleteNode?: (id: string) => void;
   refinementNodeId?: string | null;
   globalIsStreaming?: boolean;
 }>((props, ref) => {
-  const { node, isSelected, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode, onEjectNode, refinementNodeId, globalIsStreaming } = props;
+  const { node, isSelected, selectedCount, isStreaming, width, onPointerDown, onPointerUp, onResizePointerDown, onSaveNode, onRefineNode, onEjectNode, onDeleteNode, refinementNodeId, globalIsStreaming } = props;
 
   const [editedTitle, setEditedTitle] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -88,7 +93,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       data-node-id={node.id}
       ref={ref}
       className={cn(
-        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl",
+        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl select-none origin-top-left transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl",
         !showSkeleton && "group hover:border-ring/50 shadow-xl cursor-grab",
         isSelected && "border-primary ring-1 ring-primary shadow-lg",
         isStreaming && "animate-pulse pointer-events-none border-primary",
@@ -106,6 +111,7 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
           {toastMessage}
         </div>
       )}
+      
       {/* INTEGRATION */}
       {/* Prismatic Diffusion Regeneration Effect */}
       {showSkeleton && (
@@ -130,43 +136,47 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
         </div>
       )}
 
+      <ContextMenu>
+        <ContextMenuTrigger className="block w-full h-full">
+          <div className="w-full h-full p-5 relative">
+
       {/* Main Content (Always rendered but blurred/shifted when loading) */}
       <div className={cn("flex flex-col h-full w-full", showSkeleton && "animate-chromatic-shift opacity-50 grayscale-[0.3] transition-all duration-700 pointer-events-none")}>
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
-              {isEditing ? (
-                <input
-                  autoFocus
-                  defaultValue={title}
-                  onBlur={(e) => { setEditedTitle(e.target.value); setIsEditing(false); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { setEditedTitle(e.currentTarget.value); setIsEditing(false); } e.stopPropagation(); }}
-                  onPointerDown={e => { e.stopPropagation(); }}
-                  className="text-foreground font-semibold text-[15px] font-sans w-full border border-border rounded px-1 outline-none bg-background focus:ring-1 focus:ring-ring"
-                />
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger
-                    onDoubleClick={() => !isStreaming && setIsEditing(true)}
-                    className="flex items-center gap-1.5 text-foreground font-semibold text-[15px] font-sans cursor-text group/title"
-                  >
-                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">{title}</span>
-                    {!isStreaming && (
-                      <div
-                        onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-                        onPointerDown={e => e.stopPropagation()}
-                        className="bg-transparent border-none cursor-pointer text-muted-foreground p-0.5 flex items-center hover:text-foreground transition-colors"
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                      </div>
-                    )}
-                  </TooltipTrigger>
-                  <TooltipContent side="top">Double click to rename</TooltipContent>
-                </Tooltip>
-              )}
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-muted-foreground text-[11px] font-sans">Generated &middot; {getRelativeTime(node.createdAt)}</span>
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    defaultValue={title}
+                    onBlur={(e) => { setEditedTitle(e.target.value); setIsEditing(false); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { setEditedTitle(e.currentTarget.value); setIsEditing(false); } e.stopPropagation(); }}
+                    onPointerDown={e => { e.stopPropagation(); }}
+                    className="text-foreground font-semibold text-[15px] font-sans w-full border border-border rounded px-1 outline-none bg-background focus:ring-1 focus:ring-ring"
+                  />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger
+                      onDoubleClick={() => !isStreaming && setIsEditing(true)}
+                      className="flex items-center gap-1.5 text-foreground font-semibold text-[15px] font-sans cursor-text group/title"
+                    >
+                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">{title}</span>
+                      {!isStreaming && (
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                          onPointerDown={e => e.stopPropagation()}
+                          className="bg-transparent border-none cursor-pointer text-muted-foreground p-0.5 flex items-center hover:text-foreground transition-colors"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                        </div>
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Double click to rename</TooltipContent>
+                  </Tooltip>
+                )}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-muted-foreground text-[11px] font-sans">Generated &middot; {getRelativeTime(node.createdAt)}</span>
+                </div>
               </div>
-            </div>
             <div className="relative flex-shrink-0 h-6 min-w-[60px] flex items-center justify-end">
               <div className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-[11px] font-medium font-sans whitespace-nowrap transition-all duration-300 group-hover:opacity-0 group-hover:scale-90 pointer-events-none">
                 {colorCount} colors
@@ -286,12 +296,37 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
             <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 1L7 7L1 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
         )}
-      </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48 bg-card/80 backdrop-blur-xl border-border/50 shadow-2xl z-[1000]">
+        <ContextMenuItem 
+          onSelect={() => { 
+            onDeleteNode?.(node.id); 
+          }}
+          className="text-destructive focus:text-destructive focus:bg-destructive/10 flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors pointer-events-auto"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+          <span className="font-semibold text-xs">{isSelected && props.selectedCount > 1 ? `Delete ${props.selectedCount} Nodes` : 'Delete Node'}</span>
+        </ContextMenuItem>
+        <ContextMenuItem 
+           onSelect={() => { 
+             setIsRegenerating(true);
+             setIsExpanded(false);
+             onRefineNode?.(node); 
+           }}
+           className="flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors pointer-events-auto"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>
+          <span className="font-semibold text-xs text-foreground/90">Regenerate</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+    </div>
   );
 }));
 
 export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Element {
-  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode, onEjectNode, isStreaming, refinementNodeId } = props;
+  const { nodes, streamingNode, onNodeMove, onNodeResize, onSaveNode, onRefineNode, onEjectNode, onDeleteNode, isStreaming, refinementNodeId } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -305,6 +340,22 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [nodeWidths, setNodeWidths] = useState<Record<string, number>>({});
+
+  const handleDeleteNode = useCallback((id: string) => {
+    if (selectedIds.has(id) && selectedIds.size > 1) {
+      const idsToDelete = Array.from(selectedIds);
+      useStudioStore.getState().deleteNodes(idsToDelete);
+      setSelectedIds(new Set());
+      toast.info(`Deleted ${idsToDelete.length} nodes`);
+    } else {
+      onDeleteNode?.(id);
+      if (selectedIds.has(id)) {
+        const next = new Set(selectedIds);
+        next.delete(id);
+        setSelectedIds(next);
+      }
+    }
+  }, [selectedIds, onDeleteNode]);
 
   const dragInfo = useRef<DragInfo | null>(null);
   const GRID_SIZE = 32;
@@ -395,6 +446,18 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
 
   const handleNodePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, node: PaletteNode) => {
     if (e.button === 1) return;
+    
+    // Select on right click if not already selected
+    if (e.button === 2) {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+      if (!selectedIds.has(node.id)) {
+        setSelectedIds(new Set([node.id]));
+      }
+      return;
+    }
+
     if (e.button !== 0) return;
 
     e.stopPropagation();
@@ -543,8 +606,8 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     if (e.ctrlKey || e.metaKey) {
       // Zoom
-      const scale = Math.exp(-e.deltaY * 0.01);
-      const newZoom = Math.min(Math.max(0.1, zoom * scale), 5);
+      const scale = Math.exp(-e.deltaY * 0.003); // Reduced sensitivity for smoother zoom
+      const newZoom = Math.min(Math.max(0.25, zoom * scale), 2.5); // Constrained limits
       const ratio = newZoom / zoom;
 
       const rect = containerRef.current?.getBoundingClientRect();
@@ -636,6 +699,39 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
     }
   }, [nodes, nodeWidths, onNodeMove, zoom, setPanOffset]);
 
+  const handleCenterCanvas = useCallback(() => {
+    const allNodes = streamingNode ? [...nodes, streamingNode] : nodes;
+    if (!containerRef.current) return;
+    
+    if (allNodes.length === 0) {
+      setPanOffset({ x: 0, y: 0 });
+      return;
+    }
+
+    const containerWidth = containerRef.current.clientWidth;
+    const containerHeight = containerRef.current.clientHeight;
+
+    if (containerWidth === 0 || containerHeight === 0) return;
+
+    // Calculate bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    allNodes.forEach(node => {
+      const w = nodeWidths[node.id] || node.width || 320;
+      minX = Math.min(minX, node.position.x);
+      minY = Math.min(minY, node.position.y);
+      maxX = Math.max(maxX, node.position.x + w);
+      maxY = Math.max(maxY, node.position.y + 450); // Estimated height
+    });
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    setPanOffset({
+      x: containerWidth / 2 - (centerX * zoom),
+      y: containerHeight / 2 - (centerY * zoom)
+    });
+  }, [nodes, streamingNode, zoom, setPanOffset, nodeWidths]);
+
   return (
     <TooltipProvider delay={400}>
       <div
@@ -645,6 +741,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
+        onContextMenu={(e) => e.preventDefault()}
         // INTEGRATION
         className="relative overflow-hidden w-full h-full bg-transparent touch-none"
         style={{
@@ -664,6 +761,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
               node={node}
               ref={el => { if (el) nodeRefs.current[node.id] = el; else delete nodeRefs.current[node.id]; }}
               isSelected={selectedIds.has(node.id)}
+              selectedCount={selectedIds.size}
               isStreaming={false}
               width={nodeWidths[node.id] || node.width || 320}
               onPointerDown={handleNodePointerDown}
@@ -672,6 +770,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
               onSaveNode={onSaveNode}
               onRefineNode={onRefineNode}
               onEjectNode={onEjectNode}
+              onDeleteNode={handleDeleteNode}
               refinementNodeId={refinementNodeId}
               globalIsStreaming={isStreaming}
             />
@@ -682,6 +781,7 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
               node={streamingNode as PaletteNode}
               ref={el => { if (el) nodeRefs.current[streamingNode.id] = el; else delete nodeRefs.current[streamingNode.id]; }}
               isSelected={false}
+              selectedCount={0}
               isStreaming={true}
               width={nodeWidths[streamingNode.id] || streamingNode.width || 320}
               onPointerDown={handleNodePointerDown}
@@ -692,7 +792,30 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
           )}
         </div>
 
-        <div className="absolute bottom-6 right-6 z-50">
+        <div className="absolute bottom-6 right-6 z-50 flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger render={(props) => (
+              <button
+                {...props}
+                onClick={(e) => {
+                  props.onClick?.(e);
+                  handleCenterCanvas();
+                }}
+                className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-all active:scale-95 flex items-center gap-2 group"
+              >
+                <svg className="text-muted-foreground group-hover:text-primary transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+                  <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+                  <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                  <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                  <circle cx="12" cy="12" r="1" />
+                </svg>
+                Center
+              </button>
+            )} />
+            <TooltipContent side="top">Recenter view on all nodes</TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger render={(props) => (
               <button
@@ -701,9 +824,14 @@ export default function StudioCanvas(props: StudioCanvasProps): React.JSX.Elemen
                   props.onClick?.(e);
                   handleCleanUp();
                 }}
-                className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
+                className="bg-background/80 backdrop-blur-md border border-border shadow-sm text-foreground px-4 py-2 rounded-full text-sm font-medium hover:bg-muted transition-all active:scale-95 flex items-center gap-2 group"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                <svg className="text-muted-foreground group-hover:text-primary transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
                 Clean Up
               </button>
             )} />

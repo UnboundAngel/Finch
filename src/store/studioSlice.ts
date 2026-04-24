@@ -24,6 +24,8 @@ export interface StudioState {
   setRefinementNodeId: (id: string | null) => void;
   setPanOffset: (offset: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => void;
   setZoom: (zoom: number | ((prev: number) => number)) => void;
+  deleteNode: (id: string) => void;
+  deleteNodes: (ids: string[]) => void;
 }
 
 export const createStudioSlice: StateCreator<StudioState, [], [], StudioState> = (set) => ({
@@ -57,5 +59,11 @@ export const createStudioSlice: StateCreator<StudioState, [], [], StudioState> =
   })),
   setZoom: (zoom) => set((state) => ({ 
     zoom: typeof zoom === 'function' ? zoom(state.zoom) : zoom 
+  })),
+  deleteNode: (id) => set((state) => ({
+    nodes: state.nodes.filter(n => n.id !== id)
+  })),
+  deleteNodes: (ids) => set((state) => ({
+    nodes: state.nodes.filter(n => !ids.includes(n.id))
   }))
 });

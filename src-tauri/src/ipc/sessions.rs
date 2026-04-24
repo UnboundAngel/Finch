@@ -1,5 +1,8 @@
-use tauri::{AppHandle, command};
-use crate::session::{ChatSession, list_chats as list_chats_fn, load_chat as load_chat_fn, save_chat as save_chat_fn, delete_chat as delete_chat_fn};
+use crate::session::{
+    delete_chat as delete_chat_fn, list_chats as list_chats_fn, load_chat as load_chat_fn,
+    save_chat as save_chat_fn, ChatSession,
+};
+use tauri::{command, AppHandle};
 
 #[command]
 pub async fn list_chats(

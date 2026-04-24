@@ -64,7 +64,13 @@ fn ext_for(kind: &str, language: Option<&str>) -> &'static str {
 /// Sanitize an artifact id or session id to a safe directory/file name component.
 fn sanitize(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 
@@ -109,7 +115,12 @@ pub async fn save_artifact_version(
     }
 
     // Atomic write: tmp file then rename.
-    let tmp = dir.join(format!(".tmp_v{}_{}.{}", args.version, std::process::id(), ext));
+    let tmp = dir.join(format!(
+        ".tmp_v{}_{}.{}",
+        args.version,
+        std::process::id(),
+        ext
+    ));
     fs::write(&tmp, &args.content).map_err(|e| format!("Failed to write tmp artifact: {e}"))?;
     fs::rename(&tmp, &dest).map_err(|e| {
         let _ = fs::remove_file(&tmp);

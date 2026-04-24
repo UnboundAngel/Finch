@@ -1,15 +1,15 @@
-mod search;
-mod voice;
 mod download;
-mod types;
-mod session;
-mod providers;
 mod ipc;
+mod providers;
+mod search;
+mod session;
+mod types;
+mod voice;
 
-use types::AppState;
+use std::fs;
 use tauri::Manager;
 use tauri_plugin_store::StoreExt;
-use std::fs;
+use types::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -20,7 +20,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let app_dir = app.path().app_data_dir()?;
-            
+
             // Ensure required directories exist
             let dirs = [
                 app_dir.join("chats"),
@@ -38,11 +38,11 @@ pub fn run() {
             // Initialize store
             let _ = app.get_store("finch_config.json");
             let _ = app.get_store("finch_profiles.json");
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            ipc::chat::send_message, 
+            ipc::chat::send_message,
             ipc::chat::stream_message,
             ipc::chat::abort_generation,
             ipc::settings::save_provider_config,

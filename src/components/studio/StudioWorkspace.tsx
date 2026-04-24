@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 interface StudioWorkspaceProps {
   messages: Message[];
   setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
-  onSend: () => void;
+  onSend: (overrideInput?: string) => void;
   isStreaming: boolean;
 }
 
@@ -22,6 +22,7 @@ export function StudioWorkspace({ messages, setMessages, onSend, isStreaming }: 
   const refinementNodeId = useStudioStore(state => state.refinementNodeId);
   const setRefinementNodeId = useStudioStore(state => state.setRefinementNodeId);
   const addNode = useStudioStore(state => state.addNode);
+  const deleteNode = useStudioStore(state => state.deleteNode);
 
   // Clear refinement ID when generation finishes so the node is no longer in "skeleton" mode
   useEffect(() => {
@@ -55,23 +56,33 @@ export function StudioWorkspace({ messages, setMessages, onSend, isStreaming }: 
 
   const handleRefineNode = (node: any) => {
     setRefinementNodeId(node.id);
-    const variationPrompt = `${node.sourcePrompt}\n\nChange it up. Create a unique variation while keeping the core theme.`;
+    const validSource = (node.sourcePrompt && node.sourcePrompt !== "undefined")
+      ? node.sourcePrompt
+      : "";
+    const rawSeed = validSource.split('\n\nChange it up.')[0]?.trim();
+    const promptSeed = rawSeed || 
+      (node.palette?.theme ? `A color palette themed around "${node.palette.theme}"` : 'A color palette');
+
+    const variationPrompt = `${promptSeed}\n\nChange it up. Create a unique variation while keeping the core theme.`;
     setInput(variationPrompt);
     
-    if (isLocalInferenceProvider(selectedProvider) && !isModelLoaded) {
-      invoke('preload_model', { provider: selectedProvider, modelId: selectedModel });
-      setIsModelLoading(true);
-      setWaitingForLoadToRegen(true);
-    } else {
-      // Small timeout to ensure input state is synced with useChatEngine's inputRef
-      setTimeout(() => onSend(), 50);
+    try {
+      if (isLocalInferenceProvider(selectedProvider) && !isModelLoaded) {
+        invoke('preload_model', { provider: selectedProvider, modelId: selectedModel });
+        setIsModelLoading(true);
+        setWaitingForLoadToRegen(true);
+      } else {
+        onSend(variationPrompt);
+      }
+    } catch (err) {
+      console.error('StudioWorkspace: handleRefineNode failed:', err);
     }
   };
 
   useEffect(() => {
     if (waitingForLoadToRegen && isModelLoaded) {
       setWaitingForLoadToRegen(false);
-      onSend();
+      onSend(useChatStore.getState().input);
     }
   }, [waitingForLoadToRegen, isModelLoaded, onSend]);
 
@@ -134,6 +145,7 @@ export function StudioWorkspace({ messages, setMessages, onSend, isStreaming }: 
         onNodeMove={updateNodePosition} 
         onRefineNode={handleRefineNode}
         onEjectNode={handleEjectNode}
+        onDeleteNode={deleteNode}
         isStreaming={isStreaming}
         refinementNodeId={refinementNodeId}
       />

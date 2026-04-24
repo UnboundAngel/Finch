@@ -1,8 +1,8 @@
-use tauri::{AppHandle, command, State, Manager};
+use crate::download::{download_model, ModelManifest};
 use crate::types::AppState;
 use crate::voice::VoiceStatus;
-use crate::download::{ModelManifest, download_model};
 use std::fs;
+use tauri::{command, AppHandle, Manager, State};
 
 #[command]
 pub async fn start_recording(handle: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
@@ -10,7 +10,11 @@ pub async fn start_recording(handle: AppHandle, state: State<'_, AppState>) -> R
 }
 
 #[command]
-pub async fn stop_recording(handle: AppHandle, state: State<'_, AppState>, model_id: Option<String>) -> Result<(), String> {
+pub async fn stop_recording(
+    handle: AppHandle,
+    state: State<'_, AppState>,
+    model_id: Option<String>,
+) -> Result<(), String> {
     state.voice_manager.stop_recording(handle, model_id)
 }
 
@@ -20,7 +24,10 @@ pub async fn get_transcription_status(state: State<'_, AppState>) -> Result<Voic
 }
 
 #[command]
-pub async fn start_voice_preview(handle: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+pub async fn start_voice_preview(
+    handle: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
     state.voice_manager.start_preview(handle)
 }
 
@@ -47,7 +54,10 @@ pub async fn set_audio_device(state: State<'_, AppState>, name: String) -> Resul
 }
 
 #[command]
-pub async fn download_voice_model(handle: AppHandle, manifest: ModelManifest) -> Result<(), String> {
+pub async fn download_voice_model(
+    handle: AppHandle,
+    manifest: ModelManifest,
+) -> Result<(), String> {
     download_model(handle, manifest).await
 }
 
@@ -55,7 +65,7 @@ pub async fn download_voice_model(handle: AppHandle, manifest: ModelManifest) ->
 pub async fn list_downloaded_voice_models(handle: AppHandle) -> Result<Vec<String>, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let whisper_dir = app_dir.join("models").join("whisper");
-    
+
     if !whisper_dir.exists() {
         return Ok(vec![]);
     }

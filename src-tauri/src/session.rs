@@ -1,9 +1,9 @@
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
 use std::fs;
+use tauri::{AppHandle, Manager};
 use tokio::fs as tokio_fs;
 use uuid::Uuid;
-use chrono::Utc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatSession {
@@ -34,7 +34,7 @@ pub async fn list_chats(
 ) -> Result<Vec<ChatSession>, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chats_dir = app_dir.join("chats");
-    
+
     if !chats_dir.exists() {
         return Ok(vec![]);
     }
@@ -63,7 +63,7 @@ pub async fn list_chats(
 pub async fn load_chat(handle: AppHandle, id: String) -> Result<ChatSession, String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chat_path = app_dir.join("chats").join(format!("{}.json", id));
-    
+
     if !chat_path.exists() {
         return Err("Chat not found".to_string());
     }
@@ -74,12 +74,16 @@ pub async fn load_chat(handle: AppHandle, id: String) -> Result<ChatSession, Str
 }
 
 pub async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<String, String> {
-    let app_dir = handle.path().app_data_dir().map_err(|e| format!("Could not resolve app data dir: {}", e))?;
+    let app_dir = handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Could not resolve app data dir: {}", e))?;
     let chats_dir = app_dir.join("chats");
-    
+
     // Ensure the entire path exists
     if !chats_dir.exists() {
-        fs::create_dir_all(&chats_dir).map_err(|e| format!("Failed to create chats directory at {:?}: {}", chats_dir, e))?;
+        fs::create_dir_all(&chats_dir)
+            .map_err(|e| format!("Failed to create chats directory at {:?}: {}", chats_dir, e))?;
     }
 
     if chat.id.is_empty() {
@@ -90,12 +94,14 @@ pub async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<Strin
 
     let id = chat.id.clone();
     let chat_path = chats_dir.join(format!("{}.json", id));
-    
+
     let json = tokio::task::spawn_blocking(move || serde_json::to_string_pretty(&chat))
         .await
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())?;
-    tokio_fs::write(&chat_path, json).await.map_err(|e| format!("Failed to write chat file to {:?}: {}", chat_path, e))?;
+    tokio_fs::write(&chat_path, json)
+        .await
+        .map_err(|e| format!("Failed to write chat file to {:?}: {}", chat_path, e))?;
 
     Ok(id)
 }
@@ -103,7 +109,7 @@ pub async fn save_chat(handle: AppHandle, mut chat: ChatSession) -> Result<Strin
 pub async fn delete_chat(handle: AppHandle, id: String) -> Result<(), String> {
     let app_dir = handle.path().app_data_dir().map_err(|e| e.to_string())?;
     let chat_path = app_dir.join("chats").join(format!("{}.json", id));
-    
+
     if chat_path.exists() {
         fs::remove_file(chat_path).map_err(|e| e.to_string())?;
     }

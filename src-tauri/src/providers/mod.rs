@@ -1,10 +1,10 @@
 pub mod anthropic;
-pub mod openai;
 pub mod gemini;
 pub mod local;
+pub mod openai;
 
-use crate::types::{ChatMessage, AttachmentInput};
 use crate::providers::anthropic::Message as AnthropicMessage;
+use crate::types::{AttachmentInput, ChatMessage};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use std::path::Path;
 
@@ -16,11 +16,11 @@ pub fn trim_history(
     mut history: Vec<ChatMessage>,
     budget: usize,
     current_prompt: &str,
-    system_prompt: &Option<String>
+    system_prompt: &Option<String>,
 ) -> Vec<ChatMessage> {
-    let mut current_total = estimate_tokens(current_prompt) + 
-        estimate_tokens(system_prompt.as_deref().unwrap_or(""));
-    
+    let mut current_total =
+        estimate_tokens(current_prompt) + estimate_tokens(system_prompt.as_deref().unwrap_or(""));
+
     // Calculate initial history tokens
     for m in &history {
         current_total += estimate_tokens(&m.content);
@@ -47,7 +47,12 @@ pub fn get_context_window(provider: &str, model: &str) -> u32 {
             }
         }
         "openai" => {
-            if m.contains("gpt-4o") || m.starts_with("o1") || m.starts_with("o3") || m.starts_with("o4") || m.contains("gpt-4-turbo") {
+            if m.contains("gpt-4o")
+                || m.starts_with("o1")
+                || m.starts_with("o3")
+                || m.starts_with("o4")
+                || m.contains("gpt-4-turbo")
+            {
                 128_000
             } else if m.contains("gpt-4") {
                 8_192
@@ -92,7 +97,11 @@ pub fn prepare_messages(
         "gemini" => {
             let mut contents = Vec::new();
             for m in trimmed_history {
-                let role = if m.role == "assistant" { "model" } else { "user" };
+                let role = if m.role == "assistant" {
+                    "model"
+                } else {
+                    "user"
+                };
                 contents.push(serde_json::json!({
                     "role": role,
                     "parts": [{ "text": m.content }]
@@ -142,9 +151,10 @@ pub fn inject_attachments_into_messages(
     }
     let msgs = messages.as_array_mut().ok_or("messages is not an array")?;
     // Find the last user/user-role message
-    let last_user_idx = msgs.iter().rposition(|m| {
-        m.get("role").and_then(|r| r.as_str()) == Some("user")
-    }).ok_or("no user message found")?;
+    let last_user_idx = msgs
+        .iter()
+        .rposition(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"))
+        .ok_or("no user message found")?;
 
     const MAX_ATTACHMENT_BYTES: u64 = 15 * 1024 * 1024; // 15 MB
 
@@ -153,31 +163,47 @@ pub fn inject_attachments_into_messages(
         let meta = std::fs::metadata(path)
             .map_err(|e| format!("Cannot stat attachment {}: {}", attachment.path, e))?;
         if meta.len() > MAX_ATTACHMENT_BYTES {
-            return Err(format!("Attachment {} exceeds 15 MB limit", attachment.path));
+            return Err(format!(
+                "Attachment {} exceeds 15 MB limit",
+                attachment.path
+            ));
         }
         let bytes = std::fs::read(path)
             .map_err(|e| format!("Failed to read attachment {}: {}", attachment.path, e))?;
-        
+
         let mut mime = detect_mime(path);
         let mut final_bytes = bytes;
 
         // Auto-downscale large images to save tokens and avoid context rot
         if mime.starts_with("image/") && mime != "image/gif" {
-            let max_edge = if provider.starts_with("local_") { 1024 } else { 2048 };
+            let max_edge = if provider.starts_with("local_") {
+                1024
+            } else {
+                2048
+            };
             if let Ok(img) = image::load_from_memory(&final_bytes) {
                 if img.width() > max_edge || img.height() > max_edge {
-                    let resized = img.resize(max_edge, max_edge, image::imageops::FilterType::Triangle);
+                    let resized =
+                        img.resize(max_edge, max_edge, image::imageops::FilterType::Triangle);
                     let mut cursor = std::io::Cursor::new(Vec::new());
-                    
+
                     let encode_success = if img.color().has_alpha() {
-                        resized.write_to(&mut cursor, image::ImageFormat::Png).is_ok()
+                        resized
+                            .write_to(&mut cursor, image::ImageFormat::Png)
+                            .is_ok()
                     } else {
-                        resized.write_to(&mut cursor, image::ImageFormat::Jpeg).is_ok()
+                        resized
+                            .write_to(&mut cursor, image::ImageFormat::Jpeg)
+                            .is_ok()
                     };
 
                     if encode_success {
                         final_bytes = cursor.into_inner();
-                        mime = if img.color().has_alpha() { "image/png" } else { "image/jpeg" };
+                        mime = if img.color().has_alpha() {
+                            "image/png"
+                        } else {
+                            "image/jpeg"
+                        };
                     }
                 }
             }
@@ -210,7 +236,9 @@ pub fn inject_attachments_into_messages(
                     msg["parts"] = serde_json::json!([]);
                 }
                 if let Some(parts) = msg["parts"].as_array_mut() {
-                    parts.push(serde_json::json!({ "inlineData": { "mimeType": mime, "data": b64 } }));
+                    parts.push(
+                        serde_json::json!({ "inlineData": { "mimeType": mime, "data": b64 } }),
+                    );
                 }
             }
             "local_ollama" => {

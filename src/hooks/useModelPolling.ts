@@ -58,6 +58,7 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
   const isTyping = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartRef = useRef<number | null>(null);
+  const consecutiveFailuresRef = useRef(0);
 
   const handleInputChange = useCallback(() => {
     isTyping.current = true;
@@ -118,6 +119,8 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
           modelId: selectedModel,
         });
 
+        consecutiveFailuresRef.current = 0; // Reset on any successful communication
+
         if (latestLoaded !== status) {
           setIsModelLoaded(status);
           latestLoaded = status;
@@ -142,9 +145,12 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
         }
       } catch (e) {
         console.error('[POLL ERROR]', e);
-        if (latestLoaded !== false) {
-          latestLoaded = false;
-          setIsModelLoaded(false);
+        consecutiveFailuresRef.current += 1;
+        if (consecutiveFailuresRef.current >= 3) {
+          if (latestLoaded !== false) {
+            latestLoaded = false;
+            setIsModelLoaded(false);
+          }
         }
       } finally {
         inFlight = false;

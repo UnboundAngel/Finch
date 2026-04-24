@@ -1,9 +1,9 @@
 use crate::types::{ProviderConfig, StreamingEvent};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::ipc::Channel;
 use futures_util::StreamExt;
 use serde_json::Value;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use tauri::ipc::Channel;
 
 /// Non-stream `generateContent` responses can include multiple `parts` (e.g. reasoning vs text).
 /// Scan for the first non-empty `text` field instead of assuming `parts[0]` is plain text.
@@ -30,10 +30,17 @@ fn gemini_generate_error_hint(json: &Value) -> String {
     {
         return format!("prompt blocked: {}", r);
     }
-    if let Some(m) = json.get("error").and_then(|e| e.get("message")).and_then(|x| x.as_str()) {
+    if let Some(m) = json
+        .get("error")
+        .and_then(|e| e.get("message"))
+        .and_then(|x| x.as_str())
+    {
         return format!("api error: {}", m);
     }
-    if let Some(fr) = json.pointer("/candidates/0/finishReason").and_then(|v| v.as_str()) {
+    if let Some(fr) = json
+        .pointer("/candidates/0/finishReason")
+        .and_then(|v| v.as_str())
+    {
         return format!("finishReason={}", fr);
     }
     "no structured error in body".to_string()
@@ -49,10 +56,16 @@ pub async fn send_message_gemini(
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>,
 ) -> Result<String, String> {
-    let api_key = config.gemini_api_key.as_ref().ok_or("Gemini API key not set")?;
+    let api_key = config
+        .gemini_api_key
+        .as_ref()
+        .ok_or("Gemini API key not set")?;
     let client = reqwest::Client::new();
-    let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}", model, api_key);
-    
+    let url = format!(
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+        model, api_key
+    );
+
     let mut body = serde_json::json!({
         "contents": messages,
     });
@@ -65,12 +78,18 @@ pub async fn send_message_gemini(
 
     let mut generation_config = serde_json::json!({});
     if let Some(obj) = generation_config.as_object_mut() {
-        if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
-        if let Some(p) = top_p { obj.insert("topP".to_string(), serde_json::json!(p)); }
-        if let Some(m) = max_tokens { obj.insert("maxOutputTokens".to_string(), serde_json::json!(m)); }
-        if let Some(s) = stop_strings { 
+        if let Some(t) = temperature {
+            obj.insert("temperature".to_string(), serde_json::json!(t));
+        }
+        if let Some(p) = top_p {
+            obj.insert("topP".to_string(), serde_json::json!(p));
+        }
+        if let Some(m) = max_tokens {
+            obj.insert("maxOutputTokens".to_string(), serde_json::json!(m));
+        }
+        if let Some(s) = stop_strings {
             if !s.is_empty() {
-                obj.insert("stopSequences".to_string(), serde_json::json!(s)); 
+                obj.insert("stopSequences".to_string(), serde_json::json!(s));
             }
         }
     }
@@ -81,7 +100,8 @@ pub async fn send_message_gemini(
         }
     }
 
-    let resp = client.post(url)
+    let resp = client
+        .post(url)
         .json(&body)
         .send()
         .await
@@ -109,9 +129,12 @@ pub async fn stream_message_gemini(
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>,
     channel: Channel<String>,
-    abort_flag: Arc<AtomicBool>
+    abort_flag: Arc<AtomicBool>,
 ) -> Result<(), String> {
-    let api_key = config.gemini_api_key.as_ref().ok_or("Gemini API key not set")?;
+    let api_key = config
+        .gemini_api_key
+        .as_ref()
+        .ok_or("Gemini API key not set")?;
     let client = reqwest::Client::new();
     let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:streamGenerateContent?alt=sse&key={}", model, api_key);
 
@@ -127,12 +150,18 @@ pub async fn stream_message_gemini(
 
     let mut generation_config = serde_json::json!({});
     if let Some(obj) = generation_config.as_object_mut() {
-        if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
-        if let Some(p) = top_p { obj.insert("topP".to_string(), serde_json::json!(p)); }
-        if let Some(m) = max_tokens { obj.insert("maxOutputTokens".to_string(), serde_json::json!(m)); }
-        if let Some(s) = stop_strings { 
+        if let Some(t) = temperature {
+            obj.insert("temperature".to_string(), serde_json::json!(t));
+        }
+        if let Some(p) = top_p {
+            obj.insert("topP".to_string(), serde_json::json!(p));
+        }
+        if let Some(m) = max_tokens {
+            obj.insert("maxOutputTokens".to_string(), serde_json::json!(m));
+        }
+        if let Some(s) = stop_strings {
             if !s.is_empty() {
-                obj.insert("stopSequences".to_string(), serde_json::json!(s)); 
+                obj.insert("stopSequences".to_string(), serde_json::json!(s));
             }
         }
     }
@@ -143,7 +172,8 @@ pub async fn stream_message_gemini(
         }
     }
 
-    let resp = client.post(url)
+    let resp = client
+        .post(url)
         .json(&body)
         .send()
         .await
@@ -187,7 +217,12 @@ pub async fn stream_message_gemini(
                                     if let Some(text) = part.get("text").and_then(|v| v.as_str()) {
                                         if !text.is_empty() {
                                             manual_token_count += 1;
-                                            let _ = channel.send(serde_json::to_string(&StreamingEvent::Text(text.to_string())).unwrap());
+                                            let _ = channel.send(
+                                                serde_json::to_string(&StreamingEvent::Text(
+                                                    text.to_string(),
+                                                ))
+                                                .unwrap(),
+                                            );
                                         }
                                     }
                                 }
@@ -202,8 +237,14 @@ pub async fn stream_message_gemini(
                         }
                     }
                     if let Some(usage) = json.get("usageMetadata") {
-                        let input = usage.get("promptTokenCount").and_then(|v| v.as_u64()).unwrap_or(0);
-                        let output = usage.get("candidatesTokenCount").and_then(|v| v.as_u64()).unwrap_or(0);
+                        let input = usage
+                            .get("promptTokenCount")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0);
+                        let output = usage
+                            .get("candidatesTokenCount")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0);
                         if input > 0 || output > 0 {
                             total_tokens = input + output;
                         }
@@ -214,9 +255,11 @@ pub async fn stream_message_gemini(
             }
         }
     }
-    if total_tokens == 0 { total_tokens = manual_token_count; }
-    let stats_val = serde_json::json!({ 
-        "stop_reason": stop_reason, 
+    if total_tokens == 0 {
+        total_tokens = manual_token_count;
+    }
+    let stats_val = serde_json::json!({
+        "stop_reason": stop_reason,
         "total_tokens": total_tokens,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens

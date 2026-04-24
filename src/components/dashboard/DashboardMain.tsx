@@ -270,21 +270,6 @@ export function DashboardMain(props: DashboardMainProps) {
               : "bg-transparent"
           }`}
         >
-          <ContextMenu>
-            <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
-              {!isIncognito && activeWorkspace !== 'studio' && (
-                <div className="absolute inset-0 pointer-events-none z-[1]">
-                  <div className={`absolute inset-0 transition-opacity duration-500 ${(isDark ? customBgDark : customBgLight) ? 'opacity-20 bg-black' : 'opacity-0'}`} />
-                </div>
-              )}
-
-              <BackgroundPlus
-                plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
-                className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.2]" : "opacity-[0.12] dark:opacity-[0.15]"}`}
-                fade={true}
-                plusSize={40}
-              />
-
               {activeWorkspace === 'studio' ? (
                 <div className="flex-1 w-full h-full relative flex flex-col">
                   <StudioWorkspace 
@@ -320,66 +305,81 @@ export function DashboardMain(props: DashboardMainProps) {
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 relative z-10 flex flex-col min-h-0 px-4">
-                  <ChatArea
-                    messages={messages}
-                    isThinking={isThinking}
-                    researchEvents={researchEvents}
-                    selectedModel={selectedModel}
-                    isDark={isDark}
-                    setInput={stableSetInput}
-                    isIncognito={isIncognito}
-                    hasCustomBg={hasCustomBgValue}
-                    isPinkMode={showPinkMode}
-                    voiceStatus={voiceStatus}
-                    userAvatarSrc={userAvatarSrc}
-                    userAvatarLetter={userAvatarLetter}
-                    onRegenerate={onRegenerate}
-                    onEditResend={onEditResend}
-                    onArtifactClick={onArtifactClick}
-                  />
-                  <div className="relative z-20">
-                    <ChatInput
-                      input={input}
-                      setInput={stableSetInput}
-                      handleSend={handleSend}
-                      onStop={abort}
-                      isThinking={isThinking || isStreaming}
-                      attachedFile={attachedFile}
-                      setAttachedFile={setAttachedFile}
-                      isWebSearchActive={isWebSearchActive}
-                      setIsWebSearchActive={setIsWebSearchActive}
-                      isArtifactToolActive={isArtifactToolActive}
-                      setIsArtifactToolActive={setIsArtifactToolActive}
-                      enterToSend={enterToSend}
-                      isIncognito={isIncognito}
-                      isDark={isDark}
-                      hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
-                      isPinkMode={showPinkMode}
-                      isModelLoaded={selectedModel ? isModelLoaded : true}
-                      onFocus={handleInputFocus}
-                      isListening={isListening}
-                      setIsListening={setIsListening}
-                    />
-                  </div>
-                </div>
-              )}
-            </ContextMenuTrigger>
+                <ContextMenu>
+                  <ContextMenuTrigger className="flex-1 flex flex-col min-w-0 min-h-0 relative">
+                    {!isIncognito && (
+                      <div className="absolute inset-0 pointer-events-none z-[1]">
+                        <div className={`absolute inset-0 transition-opacity duration-500 ${(isDark ? customBgDark : customBgLight) ? 'opacity-20 bg-black' : 'opacity-0'}`} />
+                      </div>
+                    )}
 
-            <ContextMenuContent className="w-56">
-              <ContextMenuItem onClick={handleChangeBackground}>
-                Change Background
-              </ContextMenuItem>
-              {(isDark ? customBgDark : customBgLight) && (
-                <ContextMenuItem
-                  onClick={() => isDark ? setCustomBgDark('') : setCustomBgLight('')}
-                  className="text-destructive"
-                >
-                  Remove Background
-                </ContextMenuItem>
+                    <BackgroundPlus
+                      plusColor={showPinkMode ? "#10b981" : (isDark ? "#fb3a5d" : "#6366f1")}
+                      className={`absolute inset-0 z-0 ${showPinkMode ? "opacity-[0.2]" : "opacity-[0.12] dark:opacity-[0.15]"}`}
+                      fade={true}
+                      plusSize={40}
+                    />
+
+                    <div className="flex-1 relative z-10 flex flex-col min-h-0 px-4">
+                      <ChatArea
+                        messages={messages}
+                        isThinking={isThinking}
+                        researchEvents={researchEvents}
+                        selectedModel={selectedModel}
+                        isDark={isDark}
+                        setInput={stableSetInput}
+                        isIncognito={isIncognito}
+                        hasCustomBg={hasCustomBgValue}
+                        isPinkMode={showPinkMode}
+                        voiceStatus={voiceStatus}
+                        userAvatarSrc={userAvatarSrc}
+                        userAvatarLetter={userAvatarLetter}
+                        onRegenerate={onRegenerate}
+                        onEditResend={onEditResend}
+                        onArtifactClick={onArtifactClick}
+                      />
+                      <div className="relative z-20">
+                        <ChatInput
+                          input={input}
+                          setInput={stableSetInput}
+                          handleSend={handleSend}
+                          onStop={abort}
+                          isThinking={isThinking || isStreaming}
+                          attachedFile={attachedFile}
+                          setAttachedFile={setAttachedFile}
+                          isWebSearchActive={isWebSearchActive}
+                          setIsWebSearchActive={setIsWebSearchActive}
+                          isArtifactToolActive={isArtifactToolActive}
+                          setIsArtifactToolActive={setIsArtifactToolActive}
+                          enterToSend={enterToSend}
+                          isIncognito={isIncognito}
+                          isDark={isDark}
+                          hasCustomBg={!!(!isIncognito && (isDark ? customBgDark : customBgLight))}
+                          isPinkMode={showPinkMode}
+                          isModelLoaded={selectedModel ? isModelLoaded : true}
+                          onFocus={handleInputFocus}
+                          isListening={isListening}
+                          setIsListening={setIsListening}
+                        />
+                      </div>
+                    </div>
+                  </ContextMenuTrigger>
+
+                  <ContextMenuContent className="w-56">
+                    <ContextMenuItem onClick={handleChangeBackground}>
+                      Change Background
+                    </ContextMenuItem>
+                    {(isDark ? customBgDark : customBgLight) && (
+                      <ContextMenuItem
+                        onClick={() => isDark ? setCustomBgDark('') : setCustomBgLight('')}
+                        className="text-destructive"
+                      >
+                        Remove Background
+                      </ContextMenuItem>
+                    )}
+                  </ContextMenuContent>
+                </ContextMenu>
               )}
-            </ContextMenuContent>
-          </ContextMenu>
         </main>
       </div>
 

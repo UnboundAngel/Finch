@@ -1,8 +1,8 @@
 use crate::types::{ProviderConfig, StreamingEvent};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use tauri::ipc::Channel;
 use futures_util::StreamExt;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use tauri::ipc::Channel;
 
 pub async fn send_message_local(
     config: &ProviderConfig,
@@ -18,8 +18,9 @@ pub async fn send_message_local(
         config.ollama_endpoint.as_ref()
     } else {
         config.lmstudio_endpoint.as_ref()
-    }.ok_or("Local endpoint not configured")?;
-    
+    }
+    .ok_or("Local endpoint not configured")?;
+
     let url = format!("{}/v1/chat/completions", endpoint.trim_end_matches('/'));
 
     let mut body = serde_json::json!({
@@ -29,14 +30,23 @@ pub async fn send_message_local(
     });
 
     if let Some(obj) = body.as_object_mut() {
-        if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
-        if let Some(p) = top_p { obj.insert("top_p".to_string(), serde_json::json!(p)); }
-        if let Some(m) = max_tokens { obj.insert("max_tokens".to_string(), serde_json::json!(m)); }
-        if let Some(s) = stop_strings { obj.insert("stop".to_string(), serde_json::json!(s)); }
+        if let Some(t) = temperature {
+            obj.insert("temperature".to_string(), serde_json::json!(t));
+        }
+        if let Some(p) = top_p {
+            obj.insert("top_p".to_string(), serde_json::json!(p));
+        }
+        if let Some(m) = max_tokens {
+            obj.insert("max_tokens".to_string(), serde_json::json!(m));
+        }
+        if let Some(s) = stop_strings {
+            obj.insert("stop".to_string(), serde_json::json!(s));
+        }
     }
 
     let client = reqwest::Client::new();
-    let resp = client.post(url)
+    let resp = client
+        .post(url)
         .json(&body)
         .send()
         .await
@@ -59,14 +69,15 @@ pub async fn stream_message_local(
     max_tokens: Option<u32>,
     stop_strings: Option<Vec<String>>,
     channel: Channel<String>,
-    abort_flag: Arc<AtomicBool>
+    abort_flag: Arc<AtomicBool>,
 ) -> Result<(), String> {
     let endpoint = if provider == "local_ollama" {
         config.ollama_endpoint.as_ref()
     } else {
         config.lmstudio_endpoint.as_ref()
-    }.ok_or("Local endpoint not configured")?;
-    
+    }
+    .ok_or("Local endpoint not configured")?;
+
     let url = format!("{}/v1/chat/completions", endpoint.trim_end_matches('/'));
 
     let mut req_body = serde_json::json!({
@@ -76,18 +87,34 @@ pub async fn stream_message_local(
     });
 
     if let Some(obj) = req_body.as_object_mut() {
-        if let Some(t) = temperature { obj.insert("temperature".to_string(), serde_json::json!(t)); }
-        if let Some(p) = top_p { obj.insert("top_p".to_string(), serde_json::json!(p)); }
-        if let Some(m) = max_tokens { obj.insert("max_tokens".to_string(), serde_json::json!(m)); }
-        if let Some(s) = stop_strings { obj.insert("stop".to_string(), serde_json::json!(s)); }
+        if let Some(t) = temperature {
+            obj.insert("temperature".to_string(), serde_json::json!(t));
+        }
+        if let Some(p) = top_p {
+            obj.insert("top_p".to_string(), serde_json::json!(p));
+        }
+        if let Some(m) = max_tokens {
+            obj.insert("max_tokens".to_string(), serde_json::json!(m));
+        }
+        if let Some(s) = stop_strings {
+            obj.insert("stop".to_string(), serde_json::json!(s));
+        }
 
         if provider == "local_lmstudio" {
-            obj.insert("stream_options".to_string(), serde_json::json!({"include_usage": true}));
+            obj.insert(
+                "stream_options".to_string(),
+                serde_json::json!({"include_usage": true}),
+            );
         }
     }
 
     let client = reqwest::Client::new();
-    let resp = client.post(url).json(&req_body).send().await.map_err(|e| e.to_string())?;
+    let resp = client
+        .post(url)
+        .json(&req_body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
 
     let mut stream = resp.bytes_stream();
     let mut buffer = String::new();
@@ -114,7 +141,9 @@ pub async fn stream_message_local(
 
             if line.starts_with("data: ") {
                 let data = &line[6..];
-                if data == "[DONE]" { break; }
+                if data == "[DONE]" {
+                    break;
+                }
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
                     if let Some(choices) = json.get("choices").and_then(|c| c.as_array()) {
                         if !choices.is_empty() {
@@ -124,8 +153,12 @@ pub async fn stream_message_local(
                                 }
                                 last_token_time = Some(std::time::Instant::now());
                                 manual_token_count += 1;
-                                let _ = channel.send(serde_json::to_string(&StreamingEvent::Text(content.to_string())).unwrap());
-
+                                let _ = channel.send(
+                                    serde_json::to_string(&StreamingEvent::Text(
+                                        content.to_string(),
+                                    ))
+                                    .unwrap(),
+                                );
                             }
                             if let Some(reason) = choices[0]["finish_reason"].as_str() {
                                 stop_reason = match reason {
@@ -139,25 +172,38 @@ pub async fn stream_message_local(
 
                     // Extract stats/usage
                     if let Some(usage) = json.get("usage") {
-                        let prompt_tokens = usage.get("prompt_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
-                        let completion_tokens = usage.get("completion_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+                        let prompt_tokens = usage
+                            .get("prompt_tokens")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0);
+                        let completion_tokens = usage
+                            .get("completion_tokens")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0);
 
                         if prompt_tokens > 0 || completion_tokens > 0 {
                             total_tokens = prompt_tokens + completion_tokens;
                             lm_stats["input_tokens"] = serde_json::json!(prompt_tokens);
                             lm_stats["output_tokens"] = serde_json::json!(completion_tokens);
 
-                            if let Some(eval_ms) = usage.get("eval_duration").and_then(|v| v.as_f64()) {
+                            if let Some(eval_ms) =
+                                usage.get("eval_duration").and_then(|v| v.as_f64())
+                            {
                                 let duration_sec = eval_ms / 1000.0;
                                 if duration_sec > 0.0 {
                                     lm_stats["total_duration"] = serde_json::json!(eval_ms);
-                                    lm_stats["tokens_per_second"] = serde_json::json!(completion_tokens as f64 / duration_sec);
+                                    lm_stats["tokens_per_second"] =
+                                        serde_json::json!(completion_tokens as f64 / duration_sec);
                                 }
-                            } else if let (Some(first), Some(last)) = (first_token_time, last_token_time) {
+                            } else if let (Some(first), Some(last)) =
+                                (first_token_time, last_token_time)
+                            {
                                 let duration_ms = last.duration_since(first).as_millis() as f64;
                                 if duration_ms > 0.0 {
                                     lm_stats["total_duration"] = serde_json::json!(duration_ms);
-                                    lm_stats["tokens_per_second"] = serde_json::json!(completion_tokens as f64 / (duration_ms / 1000.0));
+                                    lm_stats["tokens_per_second"] = serde_json::json!(
+                                        completion_tokens as f64 / (duration_ms / 1000.0)
+                                    );
                                 }
                             }
                         }
@@ -189,11 +235,16 @@ pub async fn stream_message_local(
         }
     }
 
-    if total_tokens == 0 { total_tokens = manual_token_count; }
-    let mut final_stats = serde_json::json!({ "stop_reason": stop_reason, "total_tokens": total_tokens });
+    if total_tokens == 0 {
+        total_tokens = manual_token_count;
+    }
+    let mut final_stats =
+        serde_json::json!({ "stop_reason": stop_reason, "total_tokens": total_tokens });
     if let Some(obj) = final_stats.as_object_mut() {
         if let Some(lm_obj) = lm_stats.as_object() {
-            for (k, v) in lm_obj { obj.insert(k.clone(), v.clone()); }
+            for (k, v) in lm_obj {
+                obj.insert(k.clone(), v.clone());
+            }
         }
     }
     let _ = channel.send(serde_json::to_string(&StreamingEvent::Stats(final_stats)).unwrap());

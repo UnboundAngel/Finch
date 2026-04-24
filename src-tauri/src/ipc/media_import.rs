@@ -98,7 +98,12 @@ fn compress_gif(src: &Path, dest: &Path, max_edge: u32, max_frames: usize) -> Re
     Ok(())
 }
 
-fn compress_static(src: &Path, dir: &Path, id: Uuid, profile: CompressProfile) -> Result<PathBuf, String> {
+fn compress_static(
+    src: &Path,
+    dir: &Path,
+    id: Uuid,
+    profile: CompressProfile,
+) -> Result<PathBuf, String> {
     let img = image::open(src).map_err(|e| e.to_string())?;
     let img = img.thumbnail(profile.max_static_edge, profile.max_static_edge);
 
@@ -107,7 +112,12 @@ fn compress_static(src: &Path, dir: &Path, id: Uuid, profile: CompressProfile) -
         let rgba = img.to_rgba8();
         let mut f = BufWriter::new(File::create(&path).map_err(|e| e.to_string())?);
         WebPEncoder::new_lossless(&mut f)
-            .write_image(rgba.as_raw(), rgba.width(), rgba.height(), ExtendedColorType::Rgba8)
+            .write_image(
+                rgba.as_raw(),
+                rgba.width(),
+                rgba.height(),
+                ExtendedColorType::Rgba8,
+            )
             .map_err(|e| e.to_string())?;
         Ok(path)
     } else {
@@ -115,17 +125,19 @@ fn compress_static(src: &Path, dir: &Path, id: Uuid, profile: CompressProfile) -
         let rgb = img.to_rgb8();
         let mut f = BufWriter::new(File::create(&path).map_err(|e| e.to_string())?);
         JpegEncoder::new_with_quality(&mut f, profile.jpeg_quality)
-            .write_image(rgb.as_raw(), rgb.width(), rgb.height(), ExtendedColorType::Rgb8)
+            .write_image(
+                rgb.as_raw(),
+                rgb.width(),
+                rgb.height(),
+                ExtendedColorType::Rgb8,
+            )
             .map_err(|e| e.to_string())?;
         Ok(path)
     }
 }
 
 fn fallback_copy(src: &Path, dir: &Path, id: Uuid) -> Result<PathBuf, String> {
-    let ext = src
-        .extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("bin");
+    let ext = src.extension().and_then(|s| s.to_str()).unwrap_or("bin");
     let dest = dir.join(format!("{id}.{ext}"));
     fs::copy(src, &dest).map_err(|e| e.to_string())?;
     Ok(dest)
@@ -139,7 +151,8 @@ pub fn process_and_save_media(
     profile: CompressProfile,
 ) -> Result<String, String> {
     // Pre-read metadata check to prevent memory exhaustion on massive files
-    let meta = fs::metadata(file_path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
+    let meta =
+        fs::metadata(file_path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
     if meta.len() > 50 * 1024 * 1024 {
         return Err("File is too large. Maximum allowed size for media import is 50 MB.".into());
     }

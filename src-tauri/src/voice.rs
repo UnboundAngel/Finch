@@ -1,8 +1,8 @@
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicU32, Ordering};
-use tauri::{AppHandle, Manager, Runtime};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use whisper_rs::{WhisperContext, WhisperContextParameters, FullParams, SamplingStrategy};
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Manager, Runtime};
+use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
 #[derive(Debug, serde::Serialize, Clone)]
 #[serde(tag = "status", content = "data")]
@@ -44,15 +44,13 @@ impl VoiceManager {
             unsafe {
                 let _ = windows::Win32::System::Com::CoInitializeEx(
                     None,
-                    windows::Win32::System::Com::COINIT_APARTMENTTHREADED
+                    windows::Win32::System::Com::COINIT_APARTMENTTHREADED,
                 );
             }
         }
 
         let host = cpal::default_host();
-        let default_name = host
-            .default_input_device()
-            .and_then(|d| d.name().ok());
+        let default_name = host.default_input_device().and_then(|d| d.name().ok());
 
         match host.input_devices() {
             Ok(devices) => {
@@ -78,7 +76,7 @@ impl VoiceManager {
                 let device_names = deduped;
                 println!("Detected audio devices: {:?}", device_names);
                 device_names
-            },
+            }
             Err(e) => {
                 eprintln!("Failed to list input devices: {}", e);
                 Vec::new()
@@ -125,11 +123,12 @@ impl VoiceManager {
         }
 
         let host = cpal::default_host();
-        
+
         let device = {
             let selected = self.selected_device.lock().unwrap();
             if let Some(name) = &*selected {
-                let alias_selected = name.starts_with("Default - ") || name.starts_with("Communications - ");
+                let alias_selected =
+                    name.starts_with("Default - ") || name.starts_with("Communications - ");
                 if alias_selected {
                     host.default_input_device()
                         .ok_or_else(|| "No default input device found".to_string())?
@@ -145,8 +144,7 @@ impl VoiceManager {
             }
         };
 
-        let config = device.default_input_config()
-            .map_err(|e| e.to_string())?;
+        let config = device.default_input_config().map_err(|e| e.to_string())?;
 
         let buffer = self.buffer.clone();
         let meter_level_bits = self.meter_level_bits.clone();
@@ -160,47 +158,46 @@ impl VoiceManager {
         self.meter_level_bits.store(0, Ordering::Relaxed);
 
         let err_cb = move |err| eprintln!("an error occurred on stream: {}", err);
-        
-        let stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => {
-                device.build_input_stream(
-                    &config.into(),
-                    move |data: &[f32], _: &_| {
-                        if !data.is_empty() {
-                            let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
-                            let rms = (sum_sq / data.len() as f32).sqrt();
-                            let boosted = rms * 14.0;
-                            let normalized_volume = (1.0 - (-boosted).exp()).clamp(0.0, 1.0);
-                            meter_level_bits.store(normalized_volume.to_bits(), Ordering::Relaxed);
-                        }
 
-                        if !is_preview {
-                            let mut b = buffer.lock().unwrap();
-                            if sample_rate == 16000.0 && channels == 1 {
-                                b.extend_from_slice(data);
-                            } else {
-                                let step = sample_rate / 16000.0;
-                                let mut i = 0.0;
-                                while (i as usize) < data.len() {
-                                    let idx = (i as usize) - ((i as usize) % channels);
-                                    b.push(data[idx]);
-                                    i += step * (channels as f32);
-                                }
+        let stream = match config.sample_format() {
+            cpal::SampleFormat::F32 => device.build_input_stream(
+                &config.into(),
+                move |data: &[f32], _: &_| {
+                    if !data.is_empty() {
+                        let sum_sq: f32 = data.iter().map(|&x| x * x).sum();
+                        let rms = (sum_sq / data.len() as f32).sqrt();
+                        let boosted = rms * 14.0;
+                        let normalized_volume = (1.0 - (-boosted).exp()).clamp(0.0, 1.0);
+                        meter_level_bits.store(normalized_volume.to_bits(), Ordering::Relaxed);
+                    }
+
+                    if !is_preview {
+                        let mut b = buffer.lock().unwrap();
+                        if sample_rate == 16000.0 && channels == 1 {
+                            b.extend_from_slice(data);
+                        } else {
+                            let step = sample_rate / 16000.0;
+                            let mut i = 0.0;
+                            while (i as usize) < data.len() {
+                                let idx = (i as usize) - ((i as usize) % channels);
+                                b.push(data[idx]);
+                                i += step * (channels as f32);
                             }
                         }
-                    },
-                    err_cb,
-                    None
-                )
-            },
+                    }
+                },
+                err_cb,
+                None,
+            ),
             _ => return Err("Unsupported sample format. Only F32 is supported for now.".into()),
-        }.map_err(|e| e.to_string())?;
+        }
+        .map_err(|e| e.to_string())?;
 
         stream.play().map_err(|e| e.to_string())?;
-        
+
         let mut s_lock = self.stream.lock().unwrap();
         *s_lock = Some(stream);
-        
+
         if !is_preview {
             let mut s = self.status.lock().unwrap();
             *s = VoiceStatus::Recording;
@@ -213,7 +210,11 @@ impl VoiceManager {
         self.start_recording_internal(false)
     }
 
-    pub fn stop_recording<R: Runtime>(&self, app_handle: AppHandle<R>, model_id: Option<String>) -> Result<(), String> {
+    pub fn stop_recording<R: Runtime>(
+        &self,
+        app_handle: AppHandle<R>,
+        model_id: Option<String>,
+    ) -> Result<(), String> {
         // Stop and drop the stream
         {
             let mut s_lock = self.stream.lock().unwrap();
@@ -234,17 +235,26 @@ impl VoiceManager {
         tokio::task::spawn_blocking(move || {
             let model_path = if let Some(id) = model_id {
                 let app_dir = app_handle.path().app_data_dir().unwrap();
-                let path = app_dir.join("models").join("whisper").join(format!("{}.bin", id));
+                let path = app_dir
+                    .join("models")
+                    .join("whisper")
+                    .join(format!("{}.bin", id));
                 if path.exists() {
                     path
                 } else {
                     let mut s = status.lock().unwrap();
-                    *s = VoiceStatus::Error(format!("Model '{}' not found. Please download it from the marketplace.", id));
+                    *s = VoiceStatus::Error(format!(
+                        "Model '{}' not found. Please download it from the marketplace.",
+                        id
+                    ));
                     return;
                 }
             } else {
                 let mut s = status.lock().unwrap();
-                *s = VoiceStatus::Error("No voice model selected. Please download one from the marketplace.".to_string());
+                *s = VoiceStatus::Error(
+                    "No voice model selected. Please download one from the marketplace."
+                        .to_string(),
+                );
                 return;
             };
 
@@ -253,7 +263,7 @@ impl VoiceManager {
             if ctx_guard.is_none() {
                 match WhisperContext::new_with_params(
                     model_path.to_str().unwrap(),
-                    WhisperContextParameters::default()
+                    WhisperContextParameters::default(),
                 ) {
                     Ok(ctx) => *ctx_guard = Some(ctx),
                     Err(e) => {
@@ -266,7 +276,7 @@ impl VoiceManager {
 
             let ctx = ctx_guard.as_mut().unwrap();
             let mut state = ctx.create_state().expect("failed to create state");
-            
+
             let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 0 });
             params.set_n_threads(4);
             params.set_language(Some("en"));
@@ -276,7 +286,7 @@ impl VoiceManager {
             params.set_print_timestamps(false);
 
             let audio_data = buffer.lock().unwrap();
-            
+
             match state.full(params, &audio_data) {
                 Ok(_) => {
                     let num_segments = state.full_n_segments().expect("failed to get segments");
@@ -288,7 +298,7 @@ impl VoiceManager {
                     }
                     let mut s = status.lock().unwrap();
                     *s = VoiceStatus::Completed(result.trim().to_string());
-                },
+                }
                 Err(e) => {
                     let mut s = status.lock().unwrap();
                     *s = VoiceStatus::Error(format!("Inference failed: {}", e));

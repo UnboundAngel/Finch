@@ -1,12 +1,12 @@
 //! Anthropic REST / SSE JSON shapes — many fields exist only for `Deserialize` and are not read in-app.
 #![allow(dead_code)]
 
+use futures_util::StreamExt;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use reqwest::Client;
-use futures_util::StreamExt;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Message {
@@ -66,7 +66,10 @@ pub enum AnthropicEvent {
     #[serde(rename = "content_block_stop")]
     ContentBlockStop { index: u32 },
     #[serde(rename = "message_delta")]
-    MessageDelta { delta: DeltaMessage, usage: UsageMessageDelta },
+    MessageDelta {
+        delta: DeltaMessage,
+        usage: UsageMessageDelta,
+    },
     #[serde(rename = "message_stop")]
     MessageStop,
     #[serde(rename = "ping")]
@@ -111,8 +114,12 @@ impl AnthropicClient {
         }
     }
 
-    pub async fn call_anthropic(&self, request: AnthropicRequest) -> Result<AnthropicResponse, String> {
-        let response = self.client
+    pub async fn call_anthropic(
+        &self,
+        request: AnthropicRequest,
+    ) -> Result<AnthropicResponse, String> {
+        let response = self
+            .client
             .post("https://api.anthropic.com/v1/messages")
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")
@@ -136,12 +143,13 @@ impl AnthropicClient {
     }
 
     pub async fn stream_anthropic(
-        &self, 
-        request: AnthropicRequest, 
+        &self,
+        request: AnthropicRequest,
         channel: tauri::ipc::Channel<String>,
-        abort_flag: Arc<AtomicBool>
+        abort_flag: Arc<AtomicBool>,
     ) -> Result<(), String> {
-        let response = self.client
+        let response = self
+            .client
             .post("https://api.anthropic.com/v1/messages")
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")
@@ -187,7 +195,12 @@ impl AnthropicClient {
                             }
                             AnthropicEvent::ContentBlockDelta { delta, .. } => {
                                 if delta.r#type == "text_delta" {
-                                    let _ = channel.send(serde_json::to_string(&crate::types::StreamingEvent::Text(delta.text)).unwrap());
+                                    let _ = channel.send(
+                                        serde_json::to_string(&crate::types::StreamingEvent::Text(
+                                            delta.text,
+                                        ))
+                                        .unwrap(),
+                                    );
                                 }
                             }
                             AnthropicEvent::MessageDelta { delta, usage } => {
@@ -217,7 +230,8 @@ impl AnthropicClient {
             "input_tokens": input_tokens,
             "output_tokens": output_tokens
         });
-        let _ = channel.send(serde_json::to_string(&crate::types::StreamingEvent::Stats(stats_val)).unwrap());
+        let _ = channel
+            .send(serde_json::to_string(&crate::types::StreamingEvent::Stats(stats_val)).unwrap());
 
         Ok(())
     }

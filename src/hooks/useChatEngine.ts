@@ -116,6 +116,7 @@ export function useChatEngine({
   const [researchEvents, setResearchEvents] = useState<WebSearchResearchEvent[]>([]);
   const researchEventsRef = useRef<WebSearchResearchEvent[]>([]);
   const wasAbortedRef = useRef(false);
+  const refinementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const messagesRef = useRef<Message[]>([]);
   messagesRef.current = session.messages;
@@ -216,17 +217,27 @@ export function useChatEngine({
     const aiMessageId = crypto.randomUUID();
     const activeWorkspace = useChatStore.getState().activeWorkspace;
 
-    const { addNode, updateNodePalette, setStreamBuffer, clearBuffer, nodes, refinementNodeId, setRefinementNodeId } = useStudioStore.getState();
+    const { addNode, updateNodePalette, setStreamBuffer, clearBuffer, nodes, refinementNodeId: targetNodeId, setRefinementNodeId } = useStudioStore.getState();
     if (activeWorkspace === 'studio') {
       clearBuffer();
+      if (targetNodeId) {
+        if (refinementTimeoutRef.current) clearTimeout(refinementTimeoutRef.current);
+        refinementTimeoutRef.current = setTimeout(() => {
+          const { refinementNodeId: currentId, setRefinementNodeId: clearRef } = useStudioStore.getState();
+          if (currentId) {
+            clearRef(null);
+            setIsThinking(false);
+          }
+        }, 30000);
+      }
     }
 
     let composedSystemPrompt = activeWorkspace === 'studio'
       ? STUDIO_SYSTEM_PROMPT
       : buildChatSystemPrompt(systemPrompt, isArtifactToolActive);
 
-    if (activeWorkspace === 'studio' && refinementNodeId) {
-      const node = nodes.find(n => n.id === refinementNodeId);
+    if (activeWorkspace === 'studio' && targetNodeId) {
+      const node = nodes.find(n => n.id === targetNodeId);
       if (node) {
         composedSystemPrompt = `${STUDIO_SYSTEM_PROMPT}\n\nRefinement Context: You are refining an existing palette. Here is the current node data:\n${JSON.stringify(node.palette, null, 2)}\n\nIMPORTANT: The user wants to modify this specific palette. Use their new instructions to generate an updated version of the JSON.`;
       }
@@ -290,18 +301,23 @@ export function useChatEngine({
       (stats: any) => {
         if (activeWorkspace === 'studio') {
           setIsThinking(false);
-          const finalBuffer = useStudioStore.getState().studioStreamBuffer;
-          const parsed = parseLenientJson(finalBuffer);
-          const { refinementNodeId, updateNodePalette, addNode, setRefinementNodeId } = useStudioStore.getState();
+          const { studioStreamBuffer } = useStudioStore.getState();
+          const parsed = parseLenientJson(studioStreamBuffer);
+          const { updateNodePalette, addNode, setRefinementNodeId, nodes } = useStudioStore.getState();
 
           if (parsed) {
-            if (refinementNodeId) {
-              updateNodePalette(refinementNodeId, parsed, userMessage);
-              setRefinementNodeId(null);
+            if (targetNodeId) {
+              const originalNode = nodes.find(n => n.id === targetNodeId);
+              const rawPrompt = originalNode?.sourcePrompt || userMessage || "";
+              const seedPrompt = rawPrompt.split('\n\nChange it up.')[0]?.trim() || "A color palette";
+              updateNodePalette(targetNodeId, parsed, seedPrompt);
             } else {
               addNode(parsed, userMessage);
             }
           }
+
+          // Unconditionally clear refinement state to prevent indefinite loading animations
+          setRefinementNodeId(null);
           clearBuffer();
           return;
         }
@@ -315,14 +331,14 @@ export function useChatEngine({
             if (wasAborted) mergedStats.stopReason = 'user_stopped';
             const parsedArtifacts = extractArtifacts(last.content);
             // Preserve researchEvents from the streaming message — stats payload never includes it
-            const final = [...prev.slice(0, -1), { 
-              ...last, 
-              streaming: false, 
-              metadata: { 
-                ...last.metadata, 
-                ...mergedStats, 
+            const final = [...prev.slice(0, -1), {
+              ...last,
+              streaming: false,
+              metadata: {
+                ...last.metadata,
+                ...mergedStats,
                 artifacts: parsedArtifacts,
-              } 
+              }
             }];
             setTimeout(() => updateActiveSessionInList(final), 0);
 
@@ -346,22 +362,37 @@ export function useChatEngine({
         setIsThinking(false);
       },
       (err: any) => {
+        if (refinementTimeoutRef.current) {
+          clearTimeout(refinementTimeoutRef.current);
+          refinementTimeoutRef.current = null;
+        }
         setIsThinking(false);
+        setRefinementNodeId(null);
         toast.error(`That reply went sideways: ${err}`);
       },
       streamParams,
-      (activeWorkspace === 'studio' && refinementNodeId) ? [] : historyWithUserMsg,
+      (activeWorkspace === 'studio' && targetNodeId) ? [] : historyWithUserMsg,
       attachmentPath ? [{ path: attachmentPath }] : undefined,
     );
   }, [selectedModel, selectedProvider, isWebSearchActive, isArtifactToolActive, streamMessage, session, updateActiveSessionInList]);
 
   // Refs for stable callbacks used across send/autoName — updated each render so
   // useCallback deps stay narrow without stale closures.
-  const handleSendRef = useRef<(bypassCheck?: boolean) => Promise<void>>(async () => {});
-  const autoNameChatRef = useRef<(msg: string) => Promise<void>>(async () => {});
+  const handleSendRef = useRef<(bypassCheck?: boolean) => Promise<void>>(async () => { });
+  const autoNameChatRef = useRef<(msg: string) => Promise<void>>(async () => { });
 
-  const handleSend = useCallback(async (bypassCheck = false) => {
-    const currentInput = inputRef.current;
+  const handleSend = useCallback(async (overrideInput?: string | boolean, bypassCheck = false) => {
+    // Handle the case where the first argument might be the bypassCheck boolean (from older calls)
+    let actualOverride: string | undefined = undefined;
+    let actualBypass = bypassCheck;
+
+    if (typeof overrideInput === 'boolean') {
+      actualBypass = overrideInput;
+    } else {
+      actualOverride = overrideInput;
+    }
+
+    const currentInput = actualOverride || inputRef.current;
     if (!currentInput.trim() || isThinking || isStreaming) return;
     const { maxTokens, contextIntelligence: ci } = useModelParams.getState();
     if (!bypassCheck && maxTokens > (ci?.hardware_safe_limit || 8192)) {
@@ -400,7 +431,7 @@ export function useChatEngine({
   const handleRegenerate = useCallback(async (messageId?: string) => {
     if (isThinking || isStreaming) return;
     const msgs = messagesRef.current;
-    
+
     let lastUserIdx = -1;
     if (messageId) {
       const aiIdx = msgs.findIndex(m => m.id === messageId);
