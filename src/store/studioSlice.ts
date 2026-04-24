@@ -7,12 +7,13 @@ export interface PaletteNode {
   width?: number;
   palette: ParsedPalette;
   createdAt: number;
+  sourcePrompt: string;
 }
 
 export interface StudioState {
   nodes: PaletteNode[];
   studioStreamBuffer: string;
-  addNode: (palette: ParsedPalette) => void;
+  addNode: (palette: ParsedPalette, sourcePrompt: string) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   setStreamBuffer: (buffer: string | ((prev: string) => string)) => void;
   clearBuffer: () => void;
@@ -21,12 +22,13 @@ export interface StudioState {
 export const createStudioSlice: StateCreator<StudioState, [], [], StudioState> = (set) => ({
   nodes: [],
   studioStreamBuffer: '',
-  addNode: (palette) => set((state) => ({
+  addNode: (palette, sourcePrompt) => set((state) => ({
     nodes: [...state.nodes, {
       id: crypto.randomUUID(),
       position: { x: 100 + state.nodes.length * 320, y: 100 },
       palette,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      sourcePrompt
     }]
   })),
   updateNodePosition: (id, position) => set((state) => ({

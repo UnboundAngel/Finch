@@ -285,7 +285,7 @@ export function useChatEngine({
           const finalBuffer = useStudioStore.getState().studioStreamBuffer;
           const parsed = parseLenientJson(finalBuffer);
           if (parsed) {
-            addNode(parsed);
+            addNode(parsed, userMessage);
           }
           clearBuffer();
           return;

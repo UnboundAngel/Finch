@@ -17,7 +17,8 @@ export function StudioWorkspace() {
       id: 'streaming-node',
       position: { x: 100 + nodes.length * 320, y: 100 },
       palette: parsed,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      sourcePrompt: ''
     };
   }, [studioStreamBuffer, nodes.length]);
 

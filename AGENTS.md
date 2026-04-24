@@ -240,4 +240,4 @@ No Redux or React Context is used for global state (except `ModalProvider` for m
 ---
 
 ## Last Updated
-`2026-04-24T12:15:00-04:00` — Simplified repository protocol: removed dual-repository (public/private) mode references and standardized on the private `Finch_full` repository (`origin`). Swapped `.gitignore` to the private version permanently.
+`2026-04-24T12:00:00-04:00` — Optimized Studio Workspace performance: fixed node dragging lag by disabling transition-all on active nodes and eliminated layout thrashing in marquee selection by caching bounding rects. Updated documentation with Studio-specific performance mandates.
