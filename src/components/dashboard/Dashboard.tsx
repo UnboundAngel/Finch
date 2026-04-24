@@ -40,6 +40,7 @@ function DashboardContent({
   const isIncognito = useChatStore(state => state.isIncognito);
   const isModelLoaded = useChatStore(state => state.isModelLoaded);
   const isModelLoading = useChatStore(state => state.isModelLoading);
+  const setIsModelLoaded = useChatStore(state => state.setIsModelLoaded);
   const modelLoadProgress = useChatStore(state => state.modelLoadProgress);
   const activeWorkspace = useChatStore(state => state.activeWorkspace);
   const voiceStatus = useChatStore(state => state.voiceStatus);
