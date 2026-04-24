@@ -10,44 +10,38 @@ Your ONLY output must be a single raw JSON object containing the palette design.
 
 If you cannot produce a valid palette, you must output {} and nothing else.
 
+Guidelines for Metadata:
+- "theme": Create a punchy, premium name (e.g., "NEON OVERDRIVE", "VIOLET VORTEX").
+- "description": Provide a high-contrast, professional summary. AVOID hashtags. Use uppercase for emphasis if it fits the vibe.
+
 The JSON object must strictly follow this schema:
 {
   "colors": [
-    { "name": "string", "hex": "string", "wcag": "string (optional)" }
+    { "name": "string", "hex": "#HEXCODE", "wcag": "string (optional)" }
   ],
-  "theme": "string (optional)",
-  "description": "string (optional)"
+  "theme": "string",
+  "description": "string"
 }
 
 Example 1:
 {
-  "theme": "Ocean Breeze",
+  "theme": "CYBERPUNK TERMINAL",
   "colors": [
-    { "name": "Deep Blue", "hex": "#0F4C81", "wcag": "AAA" },
-    { "name": "Sand", "hex": "#E6D5B8", "wcag": "AA" }
+    { "name": "Deep Void Black", "hex": "#080808", "wcag": "AAA" },
+    { "name": "Matrix Green", "hex": "#00FF41", "wcag": "AA" },
+    { "name": "Neon Pink", "hex": "#FF007F" }
   ],
-  "description": "A calm, coastal palette."
+  "description": "A HIGH CONTRAST TERMINAL PALETTE FEATURING ICONIC NEON TONES AGAINST A DEEP BLACK BACKGROUND."
 }
 
 Example 2:
 {
-  "theme": "Cyberpunk Neon",
+  "theme": "ARCTIC VAPOR",
   "colors": [
-    { "name": "Neon Pink", "hex": "#FF007F", "wcag": "AAA" },
-    { "name": "Matrix Green", "hex": "#00FF9D", "wcag": "AA" },
-    { "name": "Dark Void", "hex": "#0B0B1A" }
+    { "name": "Glacier Blue", "hex": "#A0D2EB", "wcag": "AAA" },
+    { "name": "Frost", "hex": "#E1F8FF", "wcag": "AA" }
   ],
-  "description": "High contrast neon colors over a dark background."
-}
-
-Example 3:
-{
-  "theme": "Minimalist Monochrome",
-  "colors": [
-    { "name": "Charcoal", "hex": "#333333", "wcag": "AAA" },
-    { "name": "Silver", "hex": "#CCCCCC", "wcag": "AA" },
-    { "name": "Ghost White", "hex": "#F8F8F8" }
-  ]
+  "description": "COOL, ETHEREAL TONES INSPIRED BY POLAR LANDSCAPES."
 }
 `.trim();
 

@@ -73,9 +73,9 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       data-node-id={node.id}
       ref={ref}
       className={cn(
-        "absolute bg-card text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-[border-color,box-shadow] duration-200 box-border",
-        "hover:border-ring shadow-sm",
-        isSelected && "border-primary ring-1 ring-primary shadow-lg",
+        "absolute bg-card/70 text-card-foreground border border-border rounded-2xl p-5 select-none origin-top-left cursor-grab transition-[border-color,box-shadow,background-color] duration-300 box-border backdrop-blur-xl",
+        "hover:border-ring/50 shadow-xl",
+        isSelected && "ring-1 ring-primary/20",
         isStreaming && "animate-pulse pointer-events-none border-primary"
       )}
       onPointerDown={isStreaming ? undefined : (e) => onPointerDown(e, node)}
@@ -83,6 +83,10 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
       style={{
         width: `${width}px`,
         transform: `translate(${node.position.x}px, ${node.position.y}px)`,
+        borderColor: isSelected ? (node.palette.colors[0]?.hex || 'var(--primary)') : undefined,
+        boxShadow: isSelected 
+          ? `0 0 25px -5px ${(node.palette.colors[0]?.hex || 'var(--primary)')}44, 0 8px 30px -10px rgba(0,0,0,0.5)` 
+          : '0 4px 20px -10px rgba(0,0,0,0.3)',
       }}
     >
       {toastMessage && (
@@ -193,11 +197,11 @@ export const PaletteNodeCard = React.memo(forwardRef<HTMLDivElement, {
 
           {(node.palette.description) && (
             <>
-              <div className="h-px bg-border/50 my-3" />
-              <div className="flex gap-1.5 flex-wrap">
-                {(node.palette.description?.split(',').slice(0, 3))?.map((tag, i) => (
-                  <span key={i} className="text-muted-foreground text-[11px] font-sans">#{tag.trim().toLowerCase()}</span>
-                ))}
+              <div className="h-px bg-border/30 my-4" />
+              <div className="px-1">
+                <p className="text-foreground/80 text-[11px] leading-relaxed font-medium uppercase tracking-wider italic">
+                  {node.palette.description.replace(/^#/, '')}
+                </p>
               </div>
             </>
           )}
