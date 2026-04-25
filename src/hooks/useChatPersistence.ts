@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ChatSession } from '../types/chat';
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 import { isTauri } from '@/src/lib/tauri-utils';
 
 interface UseChatPersistenceProps {
@@ -105,6 +106,7 @@ export const useChatPersistence = ({
                 console.log('Migration complete. LocalStorage cleared.');
               }
             } catch (e) {
+              toast.error('Failed to migrate legacy chats');
               console.error('Failed to migrate legacy chats:', e);
             }
           }
@@ -118,6 +120,7 @@ export const useChatPersistence = ({
         setRecentChats(chats);
         isLoaded.current = true;
       } catch (e) {
+        toast.error('Failed to load persisted data');
         console.error('Failed to load persisted data:', e);
       }
     };
@@ -151,6 +154,7 @@ export const useChatPersistence = ({
           },
         });
       } catch (e) {
+        toast.error('Failed to save settings');
         console.error('Failed to save settings:', e);
       }
     };

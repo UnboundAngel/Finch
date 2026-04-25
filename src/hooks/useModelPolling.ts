@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { invoke } from '@tauri-apps/api/core';
 import { useChatStore } from '../store';
 import { isLocalInferenceProvider } from '../lib/providers';
@@ -59,6 +60,7 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartRef = useRef<number | null>(null);
   const consecutiveFailuresRef = useRef(0);
+  const toastShownRef = useRef(false);
 
   const handleInputChange = useCallback(() => {
     isTyping.current = true;
@@ -120,6 +122,7 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
         });
 
         consecutiveFailuresRef.current = 0; // Reset on any successful communication
+        toastShownRef.current = false;
 
         if (latestLoaded !== status) {
           setIsModelLoaded(status);
@@ -146,6 +149,13 @@ export function useModelPolling(selectedModel: string, selectedProvider: string)
       } catch (e) {
         console.error('[POLL ERROR]', e);
         consecutiveFailuresRef.current += 1;
+
+        // Only toast once per failure streak to avoid noise
+        if (!toastShownRef.current && consecutiveFailuresRef.current >= 2) {
+          toast.error('Connection lost to local inference server');
+          toastShownRef.current = true;
+        }
+
         if (consecutiveFailuresRef.current >= 3) {
           if (latestLoaded !== false) {
             latestLoaded = false;

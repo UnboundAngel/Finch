@@ -70,6 +70,8 @@ pub enum StreamingEvent {
     SearchDone,
     #[serde(rename = "stats")]
     Stats(serde_json::Value),
+    #[serde(rename = "error")]
+    Error(String),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

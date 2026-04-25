@@ -293,18 +293,6 @@ pub async fn preload_model(
     provider: String,
     model_id: String,
 ) -> Result<(), String> {
-    // #region agent log
-    {
-        use std::io::Write;
-        if let Ok(mut f) = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("debug-69f910.log")
-        {
-            let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H3\",\"location\":\"models.rs:preload_model\",\"message\":\"preload_model entered\",\"data\":{{\"provider\":\"{}\",\"model_id\":\"{}\"}},\"timestamp\":0}}", provider, model_id);
-        }
-    }
-    // #endregion
 
     let store = handle
         .store("finch_config.json")
@@ -312,30 +300,6 @@ pub async fn preload_model(
     let config_val = store.get("provider_config");
     let config: Option<ProviderConfig> = config_val.and_then(|v| serde_json::from_value(v).ok());
 
-    // #region agent log
-    {
-        use std::io::Write;
-        let has_config = config.is_some();
-        let endpoint_check = match provider.as_str() {
-            "local_lmstudio" => config
-                .as_ref()
-                .and_then(|c| c.lmstudio_endpoint.as_deref().map(|s| s.to_string()))
-                .unwrap_or_else(|| "MISSING".to_string()),
-            "local_ollama" => config
-                .as_ref()
-                .and_then(|c| c.ollama_endpoint.as_deref().map(|s| s.to_string()))
-                .unwrap_or_else(|| "MISSING".to_string()),
-            _ => "n/a".to_string(),
-        };
-        if let Ok(mut f) = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open("debug-69f910.log")
-        {
-            let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H3\",\"location\":\"models.rs:preload_model\",\"message\":\"config read\",\"data\":{{\"has_config\":{},\"endpoint\":\"{}\"}},\"timestamp\":0}}", has_config, endpoint_check);
-        }
-    }
-    // #endregion
 
     // Long timeout: large models can take several minutes to load.
     let client = reqwest::ClientBuilder::new()
@@ -373,18 +337,6 @@ pub async fn preload_model(
             // Use LM Studio's explicit model load endpoint so selecting a model
             // preloads it immediately (before the user sends a message).
             let url = format!("{}/api/v1/models/load", endpoint.trim_end_matches('/'));
-            // #region agent log
-            {
-                use std::io::Write;
-                if let Ok(mut f) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("debug-69f910.log")
-                {
-                    let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H4\",\"location\":\"models.rs:preload_model\",\"message\":\"about to POST load\",\"data\":{{\"url\":\"{}\",\"model_id\":\"{}\"}},\"timestamp\":0}}", url, model_id);
-                }
-            }
-            // #endregion
             let resp = client
                 .post(url)
                 .json(&serde_json::json!({
@@ -394,18 +346,6 @@ pub async fn preload_model(
                 .await
                 .map_err(|e| e.to_string())?;
             let status = resp.status();
-            // #region agent log
-            {
-                use std::io::Write;
-                if let Ok(mut f) = std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("debug-69f910.log")
-                {
-                    let _ = writeln!(f, "{{\"sessionId\":\"69f910\",\"hypothesisId\":\"H4\",\"location\":\"models.rs:preload_model\",\"message\":\"POST load response\",\"data\":{{\"status\":{}}},\"timestamp\":0}}", status.as_u16());
-                }
-            }
-            // #endregion
             resp.error_for_status().map_err(|e| e.to_string())?;
             Ok(())
         }

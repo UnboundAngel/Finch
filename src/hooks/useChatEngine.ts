@@ -203,7 +203,10 @@ export function useChatEngine({
         pendingAutoTitleBySessionIdRef.current.delete(sid);
       }
       setRecentChats((prev: any) => [sessionToSave, ...prev.filter((c: any) => c.id !== savedId)].sort((a, b) => (a.pinned === b.pinned ? b.timestamp - a.timestamp : a.pinned ? -1 : 1)));
-    } catch (err) { console.error('Failed to save chat:', err); }
+    } catch (err) {
+      toast.error('Failed to save chat');
+      console.error('Failed to save chat:', err);
+    }
   }, [isIncognito, session.activeSessionIdRef, session.setActiveSessionId, activeProfile?.id, selectedModel, selectedProvider, setRecentChats]);
 
   const invokeStream = useCallback((

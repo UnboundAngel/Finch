@@ -108,6 +108,11 @@ pub async fn stream_message_openai(
         .await
         .map_err(|e| e.to_string())?;
 
+    if !resp.status().is_success() {
+        let error_text = resp.text().await.unwrap_or_else(|_| "Could not read error body".to_string());
+        return Err(format!("OpenAI API error ({}): {}", resp.status(), error_text));
+    }
+
     let mut stream = resp.bytes_stream();
     let mut buffer = String::new();
     let mut total_tokens = 0;
@@ -137,12 +142,14 @@ pub async fn stream_message_openai(
                         if !choices.is_empty() {
                             if let Some(content) = choices[0]["delta"]["content"].as_str() {
                                 manual_token_count += 1;
-                                let _ = channel.send(
-                                    serde_json::to_string(&StreamingEvent::Text(
-                                        content.to_string(),
-                                    ))
-                                    .unwrap(),
-                                );
+                                let event = StreamingEvent::Text(content.to_string());
+                                match serde_json::to_string(&event) {
+                                    Ok(json) => { let _ = channel.send(json); }
+                                    Err(e) => {
+                                        let _ = channel.send(serde_json::to_string(&StreamingEvent::Error(e.to_string())).unwrap_or_default());
+                                        return Err(format!("Serialization error: {}", e));
+                                    }
+                                }
                             }
                             if let Some(reason) = choices[0]["finish_reason"].as_str() {
                                 stop_reason = match reason {
@@ -177,7 +184,15 @@ pub async fn stream_message_openai(
     }
     let final_stats =
         serde_json::json!({ "stop_reason": stop_reason, "total_tokens": total_tokens });
-    let _ = channel.send(serde_json::to_string(&StreamingEvent::Stats(final_stats)).unwrap());
+    
+    let stats_event = StreamingEvent::Stats(final_stats);
+    match serde_json::to_string(&stats_event) {
+        Ok(json) => { let _ = channel.send(json); }
+        Err(e) => {
+            let _ = channel.send(serde_json::to_string(&StreamingEvent::Error(e.to_string())).unwrap_or_default());
+            return Err(format!("Stats serialization error: {}", e));
+        }
+    }
 
     Ok(())
 }

@@ -13,8 +13,16 @@ use types::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let _guard = sentry::init(sentry::ClientOptions {
+        dsn: option_env!("SENTRY_DSN").map(|d| d.parse().unwrap()),
+        release: sentry::release_name!(),
+        auto_session_tracking: true,
+        ..Default::default()
+    });
+
     tauri::Builder::default()
         .manage(AppState::default())
+        .plugin(tauri_plugin_sentry::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -35,9 +43,18 @@ pub fn run() {
                 }
             }
 
-            // Initialize store
-            let _ = app.get_store("finch_config.json");
-            let _ = app.get_store("finch_profiles.json");
+            // Initialize stores safely
+            let config_res = app.get_store("finch_config.json");
+            if config_res.is_err() {
+                eprintln!("CRITICAL: Failed to initialize finch_config.json store. Using defaults.");
+                let _ = app.emit("store-error", "finch_config.json initialization failed");
+            }
+
+            let profiles_res = app.get_store("finch_profiles.json");
+            if profiles_res.is_err() {
+                eprintln!("CRITICAL: Failed to initialize finch_profiles.json store. Using defaults.");
+                let _ = app.emit("store-error", "finch_profiles.json initialization failed");
+            }
 
             Ok(())
         })

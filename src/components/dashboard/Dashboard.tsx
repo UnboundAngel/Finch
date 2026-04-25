@@ -67,7 +67,13 @@ function DashboardContent({
   attachedFileRef.current = attachedFile;
 
   const { openOverflowModal, setIsProfileOpen, setIsSettingsOpen } = useModals();
-  const { streamMessage, abort, isStreaming } = useAIStreaming();
+  const { streamMessage, abort, isStreaming, error } = useAIStreaming();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const appliedProfileKey = useRef<string | null>(null);
 

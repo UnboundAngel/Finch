@@ -85,7 +85,7 @@ impl VoiceManager {
     }
 
     pub fn set_device(&self, name: String) {
-        let mut dev = self.selected_device.lock().unwrap();
+        let mut dev = self.selected_device.lock().unwrap_or_else(|e| e.into_inner());
         *dev = Some(name);
     }
 
@@ -94,16 +94,16 @@ impl VoiceManager {
     }
 
     pub fn start_preview<R: Runtime>(&self, _app_handle: AppHandle<R>) -> Result<(), String> {
-        if self.stream.lock().unwrap().is_some() {
+        if self.stream.lock().unwrap_or_else(|e| e.into_inner()).is_some() {
             return Ok(());
         }
         self.start_recording_internal(true)
     }
 
     pub fn stop_preview(&self) {
-        let mut s_lock = self.stream.lock().unwrap();
+        let mut s_lock = self.stream.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(_) = &*s_lock {
-            let status = self.status.lock().unwrap();
+            let status = self.status.lock().unwrap_or_else(|e| e.into_inner());
             if matches!(*status, VoiceStatus::Idle) {
                 *s_lock = None;
                 self.meter_level_bits.store(0, Ordering::Relaxed);
@@ -125,7 +125,7 @@ impl VoiceManager {
         let host = cpal::default_host();
 
         let device = {
-            let selected = self.selected_device.lock().unwrap();
+            let selected = self.selected_device.lock().unwrap_or_else(|e| e.into_inner());
             if let Some(name) = &*selected {
                 let alias_selected =
                     name.starts_with("Default - ") || name.starts_with("Communications - ");
@@ -152,7 +152,7 @@ impl VoiceManager {
         let channels = config.channels() as usize;
 
         if !is_preview {
-            let mut b = buffer.lock().unwrap();
+            let mut b = buffer.lock().unwrap_or_else(|e| e.into_inner());
             b.clear();
         }
         self.meter_level_bits.store(0, Ordering::Relaxed);
@@ -172,7 +172,7 @@ impl VoiceManager {
                     }
 
                     if !is_preview {
-                        let mut b = buffer.lock().unwrap();
+                        let mut b = buffer.lock().unwrap_or_else(|e| e.into_inner());
                         if sample_rate == 16000.0 && channels == 1 {
                             b.extend_from_slice(data);
                         } else {
@@ -195,11 +195,11 @@ impl VoiceManager {
 
         stream.play().map_err(|e| e.to_string())?;
 
-        let mut s_lock = self.stream.lock().unwrap();
+        let mut s_lock = self.stream.lock().unwrap_or_else(|e| e.into_inner());
         *s_lock = Some(stream);
 
         if !is_preview {
-            let mut s = self.status.lock().unwrap();
+            let mut s = self.status.lock().unwrap_or_else(|e| e.into_inner());
             *s = VoiceStatus::Recording;
         }
 
@@ -217,7 +217,7 @@ impl VoiceManager {
     ) -> Result<(), String> {
         // Stop and drop the stream
         {
-            let mut s_lock = self.stream.lock().unwrap();
+            let mut s_lock = self.stream.lock().unwrap_or_else(|e| e.into_inner());
             *s_lock = None;
         }
         self.meter_level_bits.store(0, Ordering::Relaxed);
@@ -227,14 +227,21 @@ impl VoiceManager {
         let context_lock = self.context.clone();
 
         {
-            let mut s = status.lock().unwrap();
+            let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
             *s = VoiceStatus::Transcribing;
         }
 
         // Spawn inference task
         tokio::task::spawn_blocking(move || {
             let model_path = if let Some(id) = model_id {
-                let app_dir = app_handle.path().app_data_dir().unwrap();
+                let app_dir = match app_handle.path().app_data_dir() {
+                    Ok(path) => path,
+                    Err(e) => {
+                        let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+                        *s = VoiceStatus::Error(format!("Failed to get app data directory: {}", e));
+                        return;
+                    }
+                };
                 let path = app_dir
                     .join("models")
                     .join("whisper")
@@ -242,7 +249,7 @@ impl VoiceManager {
                 if path.exists() {
                     path
                 } else {
-                    let mut s = status.lock().unwrap();
+                    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
                     *s = VoiceStatus::Error(format!(
                         "Model '{}' not found. Please download it from the marketplace.",
                         id
@@ -250,7 +257,7 @@ impl VoiceManager {
                     return;
                 }
             } else {
-                let mut s = status.lock().unwrap();
+                let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
                 *s = VoiceStatus::Error(
                     "No voice model selected. Please download one from the marketplace."
                         .to_string(),
@@ -259,23 +266,45 @@ impl VoiceManager {
             };
 
             // Lazy load context
-            let mut ctx_guard = context_lock.lock().unwrap();
+            let mut ctx_guard = context_lock.lock().unwrap_or_else(|e| e.into_inner());
             if ctx_guard.is_none() {
+                let path_str = match model_path.to_str() {
+                    Some(s) => s,
+                    None => {
+                        let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+                        *s = VoiceStatus::Error("Invalid model path (not UTF-8)".to_string());
+                        return;
+                    }
+                };
                 match WhisperContext::new_with_params(
-                    model_path.to_str().unwrap(),
+                    path_str,
                     WhisperContextParameters::default(),
                 ) {
                     Ok(ctx) => *ctx_guard = Some(ctx),
                     Err(e) => {
-                        let mut s = status.lock().unwrap();
+                        let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
                         *s = VoiceStatus::Error(format!("Failed to load model: {}", e));
                         return;
                     }
                 }
             }
 
-            let ctx = ctx_guard.as_mut().unwrap();
-            let mut state = ctx.create_state().expect("failed to create state");
+            let ctx = match ctx_guard.as_mut() {
+                Some(c) => c,
+                None => {
+                    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+                    *s = VoiceStatus::Error("Whisper context was unexpectedly empty".to_string());
+                    return;
+                }
+            };
+            let mut state = match ctx.create_state() {
+                Ok(s) => s,
+                Err(e) => {
+                    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+                    *s = VoiceStatus::Error(format!("Failed to create state: {}", e));
+                    return;
+                }
+            };
 
             let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 0 });
             params.set_n_threads(4);
@@ -285,22 +314,27 @@ impl VoiceManager {
             params.set_print_realtime(false);
             params.set_print_timestamps(false);
 
-            let audio_data = buffer.lock().unwrap();
+            let audio_data = buffer.lock().unwrap_or_else(|e| e.into_inner());
 
             match state.full(params, &audio_data) {
                 Ok(_) => {
-                    let num_segments = state.full_n_segments().expect("failed to get segments");
+                    let num_segments = state.full_n_segments();
+                    if num_segments < 0 {
+                        let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+                        *s = VoiceStatus::Error("Failed to get segments".to_string());
+                        return;
+                    }
                     let mut result = String::new();
                     for i in 0..num_segments {
                         if let Ok(segment) = state.full_get_segment_text(i) {
                             result.push_str(&segment);
                         }
                     }
-                    let mut s = status.lock().unwrap();
+                    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
                     *s = VoiceStatus::Completed(result.trim().to_string());
                 }
                 Err(e) => {
-                    let mut s = status.lock().unwrap();
+                    let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
                     *s = VoiceStatus::Error(format!("Inference failed: {}", e));
                 }
             }
@@ -310,7 +344,7 @@ impl VoiceManager {
     }
 
     pub fn get_status(&self) -> VoiceStatus {
-        self.status.lock().unwrap().clone()
+        self.status.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 }
 

@@ -181,11 +181,7 @@ pub async fn stream_message_gemini(
 
     let status = resp.status();
     if !status.is_success() {
-        let body_text = resp.text().await.unwrap_or_default();
-        let hint = serde_json::from_str::<serde_json::Value>(&body_text)
-            .map(|j| gemini_generate_error_hint(&j))
-            .unwrap_or_else(|_| body_text.chars().take(300).collect());
-        return Err(format!("Gemini stream_message: http {}, {}", status, hint));
+        return Err(format!("Provider error: {}", status).into());
     }
 
     let mut stream = resp.bytes_stream();
@@ -217,12 +213,14 @@ pub async fn stream_message_gemini(
                                     if let Some(text) = part.get("text").and_then(|v| v.as_str()) {
                                         if !text.is_empty() {
                                             manual_token_count += 1;
-                                            let _ = channel.send(
-                                                serde_json::to_string(&StreamingEvent::Text(
-                                                    text.to_string(),
-                                                ))
-                                                .unwrap(),
-                                            );
+                                            let event = StreamingEvent::Text(text.to_string());
+                                            match serde_json::to_string(&event) {
+                                                Ok(json) => { let _ = channel.send(json); }
+                                                Err(e) => {
+                                                    let _ = channel.send(serde_json::to_string(&StreamingEvent::Error(e.to_string())).unwrap_or_default());
+                                                    return Err(format!("Serialization error: {}", e));
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -264,6 +262,15 @@ pub async fn stream_message_gemini(
         "input_tokens": input_tokens,
         "output_tokens": output_tokens
     });
-    let _ = channel.send(serde_json::to_string(&StreamingEvent::Stats(stats_val)).unwrap());
+    
+    let stats_event = StreamingEvent::Stats(stats_val);
+    match serde_json::to_string(&stats_event) {
+        Ok(json) => { let _ = channel.send(json); }
+        Err(e) => {
+            let _ = channel.send(serde_json::to_string(&StreamingEvent::Error(e.to_string())).unwrap_or_default());
+            return Err(format!("Stats serialization error: {}", e));
+        }
+    }
+
     Ok(())
 }

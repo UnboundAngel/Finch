@@ -130,8 +130,7 @@ impl AnthropicClient {
             .map_err(|e| e.to_string())?;
 
         if !response.status().is_success() {
-            let error_text = response.text().await.map_err(|e| e.to_string())?;
-            return Err(format!("Anthropic API error: {}", error_text));
+            return Err(format!("Provider error: {}", response.status()).into());
         }
 
         let anthropic_response = response
@@ -160,8 +159,7 @@ impl AnthropicClient {
             .map_err(|e| e.to_string())?;
 
         if !response.status().is_success() {
-            let error_text = response.text().await.map_err(|e| e.to_string())?;
-            return Err(format!("Anthropic API error: {}", error_text));
+            return Err(format!("Provider error: {}", response.status()).into());
         }
 
         let mut stream = response.bytes_stream();
@@ -195,12 +193,14 @@ impl AnthropicClient {
                             }
                             AnthropicEvent::ContentBlockDelta { delta, .. } => {
                                 if delta.r#type == "text_delta" {
-                                    let _ = channel.send(
-                                        serde_json::to_string(&crate::types::StreamingEvent::Text(
-                                            delta.text,
-                                        ))
-                                        .unwrap(),
-                                    );
+                                    let event = crate::types::StreamingEvent::Text(delta.text);
+                                    match serde_json::to_string(&event) {
+                                        Ok(json) => { let _ = channel.send(json); }
+                                        Err(e) => {
+                                            let _ = channel.send(serde_json::to_string(&crate::types::StreamingEvent::Error(e.to_string())).unwrap_or_default());
+                                            return Err(format!("Serialization error: {}", e));
+                                        }
+                                    }
                                 }
                             }
                             AnthropicEvent::MessageDelta { delta, usage } => {
@@ -230,8 +230,15 @@ impl AnthropicClient {
             "input_tokens": input_tokens,
             "output_tokens": output_tokens
         });
-        let _ = channel
-            .send(serde_json::to_string(&crate::types::StreamingEvent::Stats(stats_val)).unwrap());
+        
+        let stats_event = crate::types::StreamingEvent::Stats(stats_val);
+        match serde_json::to_string(&stats_event) {
+            Ok(json) => { let _ = channel.send(json); }
+            Err(e) => {
+                let _ = channel.send(serde_json::to_string(&crate::types::StreamingEvent::Error(e.to_string())).unwrap_or_default());
+                return Err(format!("Stats serialization error: {}", e));
+            }
+        }
 
         Ok(())
     }

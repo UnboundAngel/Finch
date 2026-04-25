@@ -1,0 +1,21 @@
+---
+description: Skill routing for Finch project
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Skill Routing
+
+## gstack (general)
+When asked to review code, find bugs, or audit security — use gstack skills from ~/.claude/skills/gstack/:
+- /review → Staff Engineer code review
+- /qa-only → QA report only, no changes  
+- /investigate → Root cause debugging
+- /cso → Security audit (OWASP + STRIDE)
+- /plan-eng-review → Architecture review
+
+## FENCH QA Skill (project-specific)
+When asked to audit Finch, check production readiness, review performance, or do a UX audit:
+Load .agent/skills/finch-qa-auditor/SKILL.md and follow its instructions exactly.
+
+Always read AGENTS.md and .planning/STATE.md before any audit task.

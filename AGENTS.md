@@ -85,7 +85,7 @@ Tauri v2 + React 19 + TypeScript desktop AI chat app. Multiple LLM providers (An
 - **`ipc/settings.rs` — `remove_imported_media` whitelist:** Hardcoded dirs (`backgrounds`, `avatars`). New media types must be added here or deletion silently fails.
 - **`ipc/media_import.rs` — Mod isolation:** Declared in `ipc/mod.rs` but not in `lib.rs` invoke_handler. Commands are routed via `settings.rs` instead. Verify before adding new media commands.
 - **`studioSlice.ts` — `crypto.randomUUID()`:** Safe in Tauri (always secure context). Mock it in web-fallback / test environments.
-- **`ipc/models.rs` — Stale debug telemetry:** `#region agent log` blocks with hardcoded `sessionId: "69f910"` writing to `debug-69f910.log`. Remove these. Do not add new `#region agent log` blocks.
+- **`ipc/models.rs` - Debug Telemetry:** Do not add `#region agent log` blocks or hardcoded session IDs to IPC commands.
 
 ## 9. Agent Conventions
 - **Read `STATE.md` before starting any task.**
@@ -98,3 +98,19 @@ Tauri v2 + React 19 + TypeScript desktop AI chat app. Multiple LLM providers (An
 ---
 
 `Last updated: 2026-04-25` — Trim pass: removed version tables, feature audit (moved to docs/), redundant IPC registry, duplicate convention bullets. Cursor-optimized for signal density. Audit fixes: added `artifacts/` to component directory, corrected `useChatStore` partializer exclusions (`activeWorkspace` was missing).
+
+## gstack Skills
+Available skills via gstack — invoke by name:
+- /review — Staff Engineer code review: finds bugs that pass CI but blow up in production
+- /qa-only — QA Reporter: find bugs, report only, no code changes
+- /investigate — Root-cause debugger: no fixes without investigation
+- /cso — Chief Security Officer: OWASP Top 10 + STRIDE threat model
+- /plan-eng-review — Eng Manager review: lock architecture, data flow, edge cases, tests
+
+## FENCH QA Skill
+A custom FENCH-specific audit skill lives at:
+  .agent/skills/finch-qa-auditor/SKILL.md
+
+Trigger with: "audit Finch", "QA audit", "production readiness check", "find performance issues", "cold-start UX review"
+
+Modes: full | architecture | performance | ux | security | stability | gap-analysis

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { invoke, Channel } from "@tauri-apps/api/core";
 import { isTauri } from '@/src/lib/tauri-utils';
 import { useChatStore } from '@/src/store/index';
+import { toast } from 'sonner';
 
 import { Message } from '../types/chat';
 
@@ -197,6 +198,15 @@ export function useAIStreaming() {
 
               // Increment global token counter
               useChatStore.getState().incrementTokensUsed(inputTokens + outputTokens);
+              break;
+            }
+
+            case "error": {
+              const errorMsg = event.data;
+              toast.error(errorMsg);
+              setError(errorMsg);
+              setIsStreaming(false);
+              onError?.(errorMsg);
               break;
             }
           }
