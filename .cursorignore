@@ -1,0 +1,27 @@
+# .cursorignore - AGGRESSIVE (Blocks AI Access AND Indexing)
+# These files are invisible to the agent and the indexer.
+
+# --- Core Dependencies & Build Artifacts ---
+node_modules/
+src-tauri/target/
+dist/
+.git/
+.vscode/
+
+# --- Lock Files ---
+package-lock.json
+yarn.lock
+Cargo.lock
+
+# --- Build Output & Logs ---
+src-tauri/gen/
+.playwright-mcp/
+*.log
+
+# --- Large Library Files (Non-Architectural) ---
+framer.js
+lucide.js
+
+# --- Archive & Research ---
+docs/archive/
+.planning/research/

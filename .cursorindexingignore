@@ -1,0 +1,18 @@
+# .cursorindexingignore - Indexing Exclusions Only
+# Agent can still read these via @File, but they won't bloat the index.
+
+# --- Documentation ---
+docs/
+!docs/README.md
+
+# --- Planning ---
+.planning/
+!.planning/STATE.md
+!.planning/phases/
+
+# --- Specified Exclusions ---
+src-tauri/src/voice.rs
+src-tauri/src/download.rs
+
+# --- Large Non-Architectural Files ---
+# (Files > 500 lines that aren't core architecture are handled in .cursorignore)

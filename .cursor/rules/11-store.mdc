@@ -1,0 +1,27 @@
+---
+description: Zustand store discipline. Slice patterns, persistence rules.
+alwaysApply: false
+globs:
+  - "src/store/**/*.ts"
+---
+
+# Zustand Store Architecture
+
+## Store Registry
+→ For current registry, see AGENTS.md [7. State Management].
+
+## Implementation
+- Slice signature: `StateCreator<T, [], [], T> = (set, get) => ({ ... })`
+- Factory naming: `createXSlice`
+- Booleans: `isX` (e.g. `isIncognito`). Actions: `setX` (e.g. `setSelectedProvider`).
+
+→ For current persistence exclusion keys, see AGENTS.md Section 7.
+
+## Constraints
+- Adding a 5th store is forbidden.
+- Zero cross-slice imports. Slices must not depend on each other.
+- Do not read from one slice inside another's action; use the combined hook in the consumer.
+- React Context is forbidden for state covered by these slices.
+
+## Profile Fallback
+If Tauri is unavailable, `profileSlice` falls back to `localStorage` key `finch_remembered_profile`. Do not change this key.

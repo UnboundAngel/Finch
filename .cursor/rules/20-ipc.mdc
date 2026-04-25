@@ -1,0 +1,41 @@
+---
+description: Tauri IPC command and event patterns
+alwaysApply: false
+globs:
+  - "src-tauri/src/ipc/**/*.rs"
+---
+
+# Tauri IPC Patterns
+
+## Module Map (Registered Commands)
+→ For current registry, see AGENTS.md [8. IPC Flow & Key Providers].
+
+## Command Structure
+- Signature: `#[command] pub async fn ...`
+- Global state: `State<'_, AppState>` (abort_flag, voice_manager).
+- Store access: `handle.store()` via `AppHandle`. NEVER `handle.get_store()` in runtime code (the call in the `lib.rs` store initialization block is the documented init exception).
+- Return: `Result<T, String>`.
+
+## Three-Step Registration (all required, in order)
+1. Define `#[command]` in the appropriate `ipc/*.rs` module.
+2. Add to `invoke_handler!` macro in `src-tauri/src/lib.rs`.
+3. Add `allow-{kebab-case-name}` to `src-tauri/capabilities/default.json`.
+
+Missing any one fails silently at runtime. Verify all three on every new command.
+
+## Naming
+- Rust: `snake_case` (e.g. `stream_message`).
+- Frontend `invoke`: use `camelCase`; Tauri auto-converts. Do not manually convert.
+
+## Streaming (`tauri::ipc::Channel<String>`)
+→ For current StreamingEvent variants, see AGENTS.md Section 8.
+- Tauri v2 uses `.onmessage` assignment, NOT `.onData()` (that's v1).
+- Frontend (`useAIStreaming.ts`) batches `Text` via `requestAnimationFrame` and flushes the buffer before processing `search_*` and `stats` events. Preserve this ordering.
+
+## Architecture
+- Heavy lifting (web search, attachment encoding) happens in Rust BEFORE calling the LLM provider. Do not move to JS.
+- Aborts: `state.abort_flag` with `Ordering::SeqCst`. Check every loop tick.
+
+## Security
+- `get_provider_config` masks all API keys with `••••••••` before returning to JS. This is intentional — never "fix" masked values or treat them as a bug.
+- `save_provider_config` ignores mask strings to avoid overwriting real keys in `finch_config.json`. Any new provider config fields containing API keys must follow this same mask-on-read / ignore-on-write pattern.

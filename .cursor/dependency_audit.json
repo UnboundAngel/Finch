@@ -1,0 +1,61 @@
+{
+  "boundary_violations": [
+    {
+      "file": "src-tauri/src/ipc/chat.rs",
+      "imports": "crate::providers::anthropic::{AnthropicClient,AnthropicRequest}",
+      "boundary_crossed": "ipc -> providers not in mod.rs",
+      "severity": "medium"
+    },
+    {
+      "file": "src-tauri/src/ipc/chat.rs",
+      "imports": "crate::providers::gemini::{send_message_gemini,stream_message_gemini}",
+      "boundary_crossed": "ipc -> providers not in mod.rs",
+      "severity": "medium"
+    },
+    {
+      "file": "src-tauri/src/ipc/chat.rs",
+      "imports": "crate::providers::local::{send_message_local,stream_message_local}",
+      "boundary_crossed": "ipc -> providers not in mod.rs",
+      "severity": "medium"
+    },
+    {
+      "file": "src-tauri/src/ipc/chat.rs",
+      "imports": "crate::providers::openai::{send_message_openai,stream_message_openai}",
+      "boundary_crossed": "ipc -> providers not in mod.rs",
+      "severity": "medium"
+    },
+    {
+      "file": "src-tauri/src/ipc/chat.rs",
+      "imports": "crate::providers::{inject_attachments_into_messages,map_model,prepare_messages}",
+      "boundary_crossed": "ipc -> providers not in mod.rs",
+      "severity": "medium"
+    }
+  ],
+  "circular_deps": [],
+  "store_cross_imports": [],
+  "files_with_5plus_imports_from_other_dirs": [
+    {
+      "file": "src/components/dashboard/Dashboard.tsx",
+      "import_count": 6,
+      "spread_across_dirs": [
+        "src/types",
+        "src/hooks",
+        "src/store",
+        "src/providers",
+        "src/lib",
+        "src/components/profile"
+      ]
+    },
+    {
+      "file": "src/components/dashboard/DashboardMain.tsx",
+      "import_count": 5,
+      "spread_across_dirs": [
+        "src/components/sidebar",
+        "src/components/chat",
+        "src/store",
+        "src/components/studio",
+        "src/types"
+      ]
+    }
+  ]
+}

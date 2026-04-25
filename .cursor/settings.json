@@ -1,0 +1,19 @@
+{
+  "plugins": {
+    "context7-plugin": {
+      "enabled": true
+    },
+    "cursor-team-kit": {
+      "enabled": true
+    },
+    "tavily": {
+      "enabled": true
+    },
+    "shadcn": {
+      "enabled": true
+    },
+    "gsap-skills": {
+      "enabled": true
+    }
+  }
+}

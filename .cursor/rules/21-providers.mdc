@@ -1,0 +1,40 @@
+---
+description: LLM provider implementation patterns in Rust
+alwaysApply: false
+globs:
+  - "src-tauri/src/providers/**/*.rs"
+---
+
+# LLM Provider Patterns
+
+## Current Providers
+→ For current registry, see AGENTS.md [8. IPC Flow & Key Providers].
+
+## Architecture
+- `ipc/chat.rs` is the orchestrator. It imports from each provider module — this is the documented pattern.
+- Providers do NOT call each other and do NOT reach back into `ipc/`.
+
+## Provider Interface (for new providers)
+1. `send_message_{name}` → `Result<String, String>` (simple request/response)
+2. `stream_message_{name}` → SSE/streaming loop emitting `StreamingEvent` variants on the channel. Final event MUST be `Stats` with `stop_reason` and token counts.
+
+## Mandatory Shared Helpers (in `mod.rs` — do NOT reimplement)
+- `prepare_messages` + `trim_history` — context windowing & budget allocation
+- `map_model(model_name: &str)` — Finch internal IDs → provider-specific IDs
+- `estimate_tokens(text: &str)` — `char_count / 4`
+- `inject_attachments_into_messages` — base64 encoding & image downscaling
+
+## Constraints
+- Max attachment size: 15MB. Reject above this.
+- Image downscaling: 1024px (local), 2048px (remote).
+- Fallback context window for unknown local models: 32k. Always overestimate.
+
+## Serde
+Each provider defines its own request/response structs matching the provider's REST/SSE shape. Do not share these across providers.
+
+## Abort Discipline
+- Streaming loops MUST check `state.abort_flag.load(Ordering::SeqCst)` every iteration.
+- On abort, emit a final `Stats` event with `stop_reason: "aborted"` before exiting.
+
+## Security
+- Providers receive plaintext API keys from the Tauri store. This is correct and intentional — masking happens at the IPC boundary in `ipc/settings.rs`, not here. Do not mask keys inside provider functions.

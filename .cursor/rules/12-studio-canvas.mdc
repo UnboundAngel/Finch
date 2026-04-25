@@ -1,0 +1,36 @@
+---
+description: Studio Canvas performance mandates. Direct DOM mutation patterns.
+alwaysApply: false
+globs:
+  - "src/components/studio/**/*.ts"
+  - "src/components/studio/**/*.tsx"
+---
+
+# Studio Canvas Performance
+
+**Core principle**: Bypass React render cycles for high-frequency interactions (drag, resize, pan). Use direct DOM mutation via `el.style.transform`.
+
+## Direct DOM Mutation
+- Mutate styles during `pointermove` for 60fps.
+- Sync to Zustand ONLY on `pointerup` (single state commit per gesture).
+- Never trigger React state updates or store syncs per-frame.
+
+## Style Constraints
+- Forbid `transition-all` on canvas nodes. Use specific properties: `transition-[border-color,box-shadow,opacity]`.
+- *Audit Note*: `transition-all` violations exist in `StudioCanvas.tsx` (Regeneration Effect, Main Content, Color Badge, Share Button, Regenerate Button, Center Button, and Clean Up Button). Refactor only if touched; do not run a global fix.
+
+## Marquee Selection
+- Cache `getBoundingClientRect()` ONCE at `pointerdown`.
+- Never call `getBoundingClientRect` or trigger layout inside `pointermove`.
+
+## Zoom & Coordinates
+- Apply `scale()` to the world container.
+- World coords: `worldPos = screenDelta / zoom`.
+- Anchor zoom to cursor position.
+
+## Snap-to-Grid
+- 32px constant. Apply to both manual drag AND the "Clean Up" action.
+
+## Animation Conflicts
+- Do NOT combine motion's `layout` prop with `height: auto` on nodes containing sliders or other state-updating-during-interaction elements.
+- Use CSS `max-height` transitions for collapsible/variable-height zones.

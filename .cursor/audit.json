@@ -1,0 +1,1693 @@
+{
+  "frontend_files": {
+    "components": [
+      {
+        "path": "src/App.tsx",
+        "lines": 69,
+        "exports": [
+          "App"
+        ],
+        "imports_from": [
+          "react",
+          "@/src/components/dashboard/Dashboard",
+          "sonner",
+          "./store",
+          "./components/startup/StartupScreen"
+        ]
+      },
+      {
+        "path": "src/components/artifacts/ColorStudioViewer.tsx",
+        "lines": 238,
+        "exports": [
+          "ColorStudioViewer"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "motion/react",
+          "@/lib/utils",
+          "@/src/lib/colorUtils",
+          "sonner"
+        ]
+      },
+      {
+        "path": "src/components/chat/ArtifactCard.tsx",
+        "lines": 107,
+        "exports": [
+          "ArtifactCard"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@/lib/utils",
+          "@/src/types/chat"
+        ]
+      },
+      {
+        "path": "src/components/chat/ArtifactControl.tsx",
+        "lines": 56,
+        "exports": [
+          "ArtifactControl"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "sonner",
+          "@/components/ui/button",
+          "@/lib/utils",
+          "@/components/ui/tooltip"
+        ]
+      },
+      {
+        "path": "src/components/chat/ArtifactPanel.tsx",
+        "lines": 526,
+        "exports": [
+          "ArtifactPanel"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "sonner",
+          "motion/react",
+          "react-markdown",
+          "remark-gfm",
+          "@/lib/utils",
+          "shiki",
+          "@/src/types/chat",
+          "@/src/lib/artifactTooling",
+          "@/src/components/artifacts/ColorStudioViewer",
+          "@/src/components/ui/ExternalLink"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/chat/ChatArea.tsx",
+        "lines": 195,
+        "exports": [
+          "ChatArea"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/button",
+          "lucide-react",
+          "sonner",
+          "./MessageBubble",
+          "./ThinkingBox",
+          "../../types/chat",
+          "@/components/ui/tooltip",
+          "./SearchStatus"
+        ]
+      },
+      {
+        "path": "src/components/chat/ChatInput.tsx",
+        "lines": 681,
+        "exports": [
+          "ChatInput"
+        ],
+        "imports_from": [
+          "react",
+          "react-dom",
+          "@/components/ui/button",
+          "lucide-react",
+          "sonner",
+          "@/lib/utils",
+          "./VoiceIndicator",
+          "./ModelMarketplace",
+          "@/src/components/chat/WebSearchControl",
+          "@/src/components/chat/ArtifactControl",
+          "@/src/lib/tauri-utils",
+          "@/src/lib/mediaPaths",
+          "@/src/components/chat/FilePreviewModal",
+          "@/src/hooks/useFileDrop",
+          "@/src/hooks/useMicController",
+          "@/components/ui/switch",
+          "@/components/ui/tooltip"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/chat/CodeBlock.tsx",
+        "lines": 224,
+        "exports": [
+          "CodeBlock"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "shiki",
+          "motion/react",
+          "@/lib/utils",
+          "@/src/lib/colorUtils"
+        ]
+      },
+      {
+        "path": "src/components/chat/FilePreviewModal.tsx",
+        "lines": 616,
+        "exports": [
+          "PreviewFile",
+          "FilePreviewModal"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "motion/react",
+          "shiki",
+          "react-markdown",
+          "remark-gfm",
+          "@/src/lib/mediaPaths",
+          "@/src/lib/tauri-utils",
+          "@/src/components/chat/CodeBlock",
+          "@/src/components/ui/ExternalLink"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/chat/MessageBubble.tsx",
+        "lines": 400,
+        "exports": [
+          "MessageBubble"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/avatar",
+          "lucide-react",
+          "@/components/ui/tooltip",
+          "motion/react",
+          "@/lib/utils",
+          "react-markdown",
+          "remark-gfm",
+          "../../types/chat",
+          "./SearchStatus",
+          "./ThinkingBox",
+          "./MetadataRow",
+          "./CodeBlock",
+          "./ArtifactCard",
+          "@/src/components/ui/ExternalLink",
+          "@/src/lib/mediaPaths",
+          "@/src/store",
+          "@/src/components/chat/FilePreviewModal",
+          "@/src/lib/artifactParser"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/chat/MetadataRow.tsx",
+        "lines": 179,
+        "exports": [
+          "MetadataRow"
+        ],
+        "imports_from": [
+          "react",
+          "@/lib/utils",
+          "lucide-react",
+          "@/src/types/chat",
+          "motion/react",
+          "@/components/ui/button",
+          "sonner"
+        ]
+      },
+      {
+        "path": "src/components/chat/ModelMarketplace.tsx",
+        "lines": 157,
+        "exports": [
+          "WhisperModel",
+          "ModelMarketplace"
+        ],
+        "imports_from": [
+          "motion/react",
+          "lucide-react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "src/components/chat/ModelSelector.tsx",
+        "lines": 492,
+        "exports": [
+          "ModelSelector"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/button",
+          "lucide-react",
+          "sonner",
+          "motion/react",
+          "@/lib/utils",
+          "@/components/ui/bookmark-icon-button",
+          "@/src/lib/availableModels",
+          "@/src/lib/tauri-utils",
+          "@/src/lib/providers",
+          "@/src/store"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/chat/SearchOnboarding.tsx",
+        "lines": 225,
+        "exports": [
+          "SearchOnboarding"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "motion/react",
+          "@/components/ui/button",
+          "@/components/ui/input",
+          "sonner",
+          "@tauri-apps/api/core",
+          "@/lib/utils",
+          "@/src/lib/tauri-utils"
+        ]
+      },
+      {
+        "path": "src/components/chat/SearchStatus.tsx",
+        "lines": 143,
+        "exports": [
+          "SearchStatus"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "motion/react",
+          "@/lib/utils",
+          "@/src/components/ui/ExternalLink",
+          "@/src/types/chat"
+        ]
+      },
+      {
+        "path": "src/components/chat/ThinkingBox.tsx",
+        "lines": 30,
+        "exports": [
+          "ThinkingBox"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@/components/ui/shining-text"
+        ]
+      },
+      {
+        "path": "src/components/chat/VoiceIndicator.tsx",
+        "lines": 59,
+        "exports": [
+          "VoiceIndicator"
+        ],
+        "imports_from": [
+          "react",
+          "motion/react",
+          "@/lib/utils",
+          "@/src/hooks/useAudioVisualization"
+        ]
+      },
+      {
+        "path": "src/components/chat/WebSearchControl.tsx",
+        "lines": 234,
+        "exports": [
+          "WebSearchControl"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/button",
+          "lucide-react",
+          "sonner",
+          "@/lib/utils",
+          "motion/react",
+          "@/components/ui/popover",
+          "./SearchOnboarding",
+          "@tauri-apps/plugin-opener",
+          "@/src/lib/tauri-utils",
+          "@/components/ui/tooltip"
+        ]
+      },
+      {
+        "path": "src/components/dashboard/Dashboard.tsx",
+        "lines": 433,
+        "exports": [
+          "Dashboard"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/tooltip",
+          "sonner",
+          "../../types/chat",
+          "@/src/hooks/useChatPersistence",
+          "@/src/hooks/useAIStreaming",
+          "@/src/hooks/useKeyboardShortcuts",
+          "@/src/store",
+          "@/src/hooks/useInactivityEject",
+          "@/src/hooks/useModelPolling",
+          "@/src/hooks/useDynamicBackground",
+          "@/src/hooks/useChatSession",
+          "@/src/providers/ModalProvider",
+          "./DashboardHeader",
+          "./DashboardMain",
+          "@/components/ui/background-plus",
+          "@/src/lib/availableModels",
+          "@/src/components/profile/WallpaperPickerDialog",
+          "@/src/lib/mediaPaths",
+          "@/src/lib/dicebearAvatar",
+          "@/src/hooks/useChatEngine"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/dashboard/DashboardHeader.tsx",
+        "lines": 146,
+        "exports": [
+          "DashboardHeader"
+        ],
+        "imports_from": [
+          "@/components/ui/button",
+          "lucide-react",
+          "@/components/ui/sky-toggle",
+          "@/src/components/chat/ModelSelector",
+          "@/src/components/dashboard/WindowControls",
+          "@tauri-apps/api/core",
+          "sonner",
+          "@/src/store",
+          "./RightSidebarToggle",
+          "@/src/lib/providers"
+        ]
+      },
+      {
+        "path": "src/components/dashboard/DashboardMain.tsx",
+        "lines": 516,
+        "exports": [
+          "DashboardMain"
+        ],
+        "imports_from": [
+          "react",
+          "react-dom",
+          "@/components/ui/sidebar",
+          "@/components/ui/background-plus",
+          "@/components/ui/context-menu",
+          "@/src/components/sidebar/ChatSidebar",
+          "@/src/components/chat/ChatArea",
+          "@/src/components/chat/ChatInput",
+          "@/src/components/sidebar/RightSidebar",
+          "@/src/components/chat/ArtifactPanel",
+          "@/src/store",
+          "@/src/components/studio/StudioWorkspace",
+          "@/src/types/chat"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/dashboard/ProfileDialog.tsx",
+        "lines": 170,
+        "exports": [
+          "ProfileDialog"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/avatar",
+          "@/components/ui/button",
+          "@/components/ui/input",
+          "sonner",
+          "@/src/store",
+          "lucide-react",
+          "@/src/components/profile/AvatarPickerDialog",
+          "@/src/lib/mediaPaths"
+        ]
+      },
+      {
+        "path": "src/components/dashboard/ProviderSection.tsx",
+        "lines": 160,
+        "exports": [
+          "ProviderSection"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/button",
+          "@/components/ui/label",
+          "@/components/ui/input",
+          "@tauri-apps/api/core",
+          "@/src/lib/tauri-utils",
+          "lucide-react",
+          "motion/react",
+          "sonner"
+        ]
+      },
+      {
+        "path": "src/components/dashboard/RightSidebarToggle.tsx",
+        "lines": 29,
+        "exports": [
+          "RightSidebarToggleGated"
+        ],
+        "imports_from": [
+          "@/components/ui/button",
+          "@/src/store"
+        ]
+      },
+      {
+        "path": "src/components/dashboard/SettingsDialog.tsx",
+        "lines": 272,
+        "exports": [
+          "SettingsDialog"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/button",
+          "@/components/ui/switch",
+          "sonner",
+          "../../types/chat",
+          "@/components/ui/tabs",
+          "@/components/ui/label",
+          "@/components/ui/input",
+          "lucide-react",
+          "motion/react",
+          "./ProviderSection",
+          "@/src/store"
+        ]
+      },
+      {
+        "path": "src/components/dashboard/WindowControls.tsx",
+        "lines": 224,
+        "exports": [
+          "WindowControls"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@tauri-apps/api/window",
+          "@tauri-apps/api/dpi",
+          "@/src/hooks/useTauri",
+          "@/src/components/ui/Icons",
+          "@/components/ui/tooltip",
+          "motion/react"
+        ]
+      },
+      {
+        "path": "src/components/modals/ContextOverflowModal.tsx",
+        "lines": 60,
+        "exports": [
+          "ContextOverflowModal"
+        ],
+        "imports_from": [
+          "lucide-react"
+        ]
+      },
+      {
+        "path": "src/components/profile/AvatarPickerDialog.tsx",
+        "lines": 274,
+        "exports": [
+          "AvatarPickerDialog"
+        ],
+        "imports_from": [
+          "react",
+          "@tauri-apps/api/core",
+          "@tauri-apps/plugin-dialog",
+          "lucide-react",
+          "sonner",
+          "@/components/ui/button",
+          "@/src/lib/mediaRecents",
+          "@/src/lib/mediaPaths",
+          "@/src/components/profile/GifImpactWarningDialog",
+          "@/src/lib/tauri-utils",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "src/components/profile/GifImpactWarningDialog.tsx",
+        "lines": 75,
+        "exports": [
+          "GifImpactWarningDialog"
+        ],
+        "imports_from": []
+      },
+      {
+        "path": "src/components/profile/WallpaperPickerDialog.tsx",
+        "lines": 221,
+        "exports": [
+          "WallpaperPickerDialog"
+        ],
+        "imports_from": [
+          "react",
+          "@tauri-apps/api/core",
+          "@tauri-apps/plugin-dialog",
+          "lucide-react",
+          "sonner",
+          "@/components/ui/button",
+          "@/src/lib/mediaRecents",
+          "@/src/lib/mediaPaths",
+          "@/src/components/profile/GifImpactWarningDialog",
+          "@/src/lib/tauri-utils"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/ChatSidebar.tsx",
+        "lines": 440,
+        "exports": [
+          "ChatSidebar"
+        ],
+        "imports_from": [
+          "react",
+          "@/lib/utils",
+          "@/src/lib/mediaPaths",
+          "../../hooks/useDebounce",
+          "@/components/ui/button",
+          "@/components/ui/input",
+          "@/components/ui/avatar",
+          "sonner",
+          "../../types/chat",
+          "../../lib/chatHelpers",
+          "@/src/store",
+          "@/components/ui/pin-icon-button"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/sidebar/components/OutputSection.tsx",
+        "lines": 109,
+        "exports": [
+          "OutputSection"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@/src/store",
+          "@/components/ui/label",
+          "@/components/ui/tooltip",
+          "@/lib/utils",
+          "./ParameterZone",
+          "../MaxTokensSlider",
+          "../hooks/useSidebarTheme"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/components/ParameterZone.tsx",
+        "lines": 75,
+        "exports": [
+          "ParameterZone"
+        ],
+        "imports_from": [
+          "react",
+          "motion/react",
+          "lucide-react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/components/SamplingSection.tsx",
+        "lines": 229,
+        "exports": [
+          "SamplingSection"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@/src/store",
+          "@/components/ui/label",
+          "@/components/ui/tooltip",
+          "@/lib/utils",
+          "./ParameterZone",
+          "../hooks/useSidebarTheme",
+          "../hooks/useParameterGradients"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/components/StopWordsSection.tsx",
+        "lines": 96,
+        "exports": [
+          "StopWordsSection"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "motion/react",
+          "@/src/store",
+          "@/lib/utils",
+          "./ParameterZone",
+          "../hooks/useSidebarTheme"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/components/SystemPromptSection.tsx",
+        "lines": 84,
+        "exports": [
+          "SystemPromptSection"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@/src/store",
+          "@/components/ui/label",
+          "@/components/ui/tooltip",
+          "@/lib/utils",
+          "./ParameterZone",
+          "../hooks/useSidebarTheme"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/hooks/useParameterGradients.ts",
+        "lines": 94,
+        "exports": [
+          "useParameterGradients"
+        ],
+        "imports_from": [
+          "react"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/hooks/useSidebarTheme.ts",
+        "lines": 38,
+        "exports": [
+          "useSidebarTheme"
+        ],
+        "imports_from": [
+          "react"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/MaxTokensSlider.tsx",
+        "lines": 199,
+        "exports": [
+          "MaxTokensSlider"
+        ],
+        "imports_from": [
+          "react",
+          "@/src/store",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "src/components/sidebar/RightSidebar.tsx",
+        "lines": 90,
+        "exports": [
+          "RightSidebar"
+        ],
+        "imports_from": [
+          "react",
+          "@/src/store",
+          "@/components/ui/tooltip",
+          "@/components/ui/scroll-area",
+          "@/lib/utils",
+          "./components/SystemPromptSection",
+          "./components/SamplingSection",
+          "./components/OutputSection",
+          "./components/StopWordsSection",
+          "./hooks/useSidebarTheme"
+        ]
+      },
+      {
+        "path": "src/components/startup/ProfileCreation.tsx",
+        "lines": 504,
+        "exports": [
+          "ProfileCreationPayload",
+          "ProfileCreation"
+        ],
+        "imports_from": [
+          "react",
+          "motion/react",
+          "lucide-react",
+          "@tauri-apps/api/core",
+          "sonner",
+          "@/src/components/chat/SearchOnboarding",
+          "@/components/ui/button",
+          "@/src/components/profile/AvatarPickerDialog",
+          "@/src/lib/mediaPaths",
+          "@/src/lib/dicebearAvatar",
+          "@/src/lib/tauri-utils",
+          "@/lib/utils"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/startup/ProfileEditing.tsx",
+        "lines": 408,
+        "exports": [
+          "ProfileEditing"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "@tauri-apps/api/core",
+          "sonner",
+          "../../types/chat",
+          "@/src/components/chat/SearchOnboarding",
+          "@/components/ui/button",
+          "@/src/components/profile/AvatarPickerDialog",
+          "@/src/lib/mediaPaths",
+          "@/src/lib/tauri-utils",
+          "@/lib/utils"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/startup/ProfileSelection.tsx",
+        "lines": 200,
+        "exports": [
+          "ProfileSelection"
+        ],
+        "imports_from": [
+          "react",
+          "lucide-react",
+          "motion/react",
+          "../../types/chat",
+          "@/src/lib/mediaPaths"
+        ]
+      },
+      {
+        "path": "src/components/startup/StartupScreen.tsx",
+        "lines": 146,
+        "exports": [
+          "StartupScreen"
+        ],
+        "imports_from": [
+          "react",
+          "../../store",
+          "./ProfileSelection",
+          "./ProfileCreation",
+          "./ProfileEditing",
+          "../../types/chat",
+          "@/src/lib/dicebearAvatar"
+        ]
+      },
+      {
+        "path": "src/components/studio/StudioCanvas.tsx",
+        "lines": 850,
+        "exports": [
+          "StudioCanvasProps",
+          "PaletteNodeCard",
+          "StudioCanvas"
+        ],
+        "imports_from": [
+          "react",
+          "@/components/ui/tooltip",
+          "@/components/ui/context-menu",
+          "@/lib/utils",
+          "sonner",
+          "@/src/store/index",
+          "@/src/store/studioSlice",
+          "@/src/lib/jsonParser"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "src/components/studio/StudioWorkspace.tsx",
+        "lines": 155,
+        "exports": [
+          "StudioWorkspace"
+        ],
+        "imports_from": [
+          "react",
+          "@tauri-apps/api/core",
+          "@/src/components/studio/StudioCanvas",
+          "@/src/store/index",
+          "@/src/lib/jsonParser",
+          "@/src/lib/providers",
+          "@/src/store/studioSlice",
+          "@/src/types/chat",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "src/components/ui/ExternalLink.tsx",
+        "lines": 58,
+        "exports": [
+          "ExternalLink"
+        ],
+        "imports_from": [
+          "react",
+          "@tauri-apps/plugin-opener",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "src/components/ui/Icons.tsx",
+        "lines": 19,
+        "exports": [
+          "SketchX",
+          "SketchMinus",
+          "SketchSquare"
+        ],
+        "imports_from": []
+      },
+      {
+        "path": "src/main.tsx",
+        "lines": 11,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "react-dom/client",
+          "./App.tsx"
+        ]
+      },
+      {
+        "path": "components/ui/alert-dialog.tsx",
+        "lines": 188,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/alert-dialog",
+          "@/lib/utils",
+          "@/components/ui/button"
+        ]
+      },
+      {
+        "path": "components/ui/avatar.tsx",
+        "lines": 110,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/avatar",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/background-plus.tsx",
+        "lines": 47,
+        "exports": [
+          "BackgroundPlus"
+        ],
+        "imports_from": [
+          "react"
+        ]
+      },
+      {
+        "path": "components/ui/bookmark-icon-button.tsx",
+        "lines": 111,
+        "exports": [
+          "BookmarkIconButton"
+        ],
+        "imports_from": [
+          "react",
+          "motion/react",
+          "lucide-react",
+          "./button"
+        ]
+      },
+      {
+        "path": "components/ui/button.tsx",
+        "lines": 60,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/button",
+          "class-variance-authority",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/context-menu.tsx",
+        "lines": 81,
+        "exports": [],
+        "imports_from": [
+          "@base-ui/react/context-menu",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/dialog.tsx",
+        "lines": 159,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/dialog",
+          "@/lib/utils",
+          "@/components/ui/button",
+          "lucide-react"
+        ]
+      },
+      {
+        "path": "components/ui/dropdown-menu.tsx",
+        "lines": 267,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/menu",
+          "@/lib/utils",
+          "lucide-react"
+        ]
+      },
+      {
+        "path": "components/ui/input.tsx",
+        "lines": 21,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/input",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/label.tsx",
+        "lines": 21,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/pin-icon-button.tsx",
+        "lines": 110,
+        "exports": [
+          "PinIconButton"
+        ],
+        "imports_from": [
+          "react",
+          "motion/react",
+          "lucide-react"
+        ]
+      },
+      {
+        "path": "components/ui/popover.tsx",
+        "lines": 41,
+        "exports": [],
+        "imports_from": [
+          "@radix-ui/react-popover",
+          "react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/scroll-area.tsx",
+        "lines": 53,
+        "exports": [],
+        "imports_from": [
+          "@base-ui/react/scroll-area",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/separator.tsx",
+        "lines": 24,
+        "exports": [],
+        "imports_from": [
+          "@base-ui/react/separator",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/sheet.tsx",
+        "lines": 139,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/dialog",
+          "@/lib/utils",
+          "@/components/ui/button",
+          "lucide-react"
+        ]
+      },
+      {
+        "path": "components/ui/shining-text.tsx",
+        "lines": 28,
+        "exports": [
+          "ShiningText"
+        ],
+        "imports_from": [
+          "motion/react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/sidebar.tsx",
+        "lines": 730,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@base-ui/react/merge-props",
+          "@base-ui/react/use-render",
+          "class-variance-authority",
+          "@/hooks/use-mobile",
+          "@/lib/utils",
+          "@/components/ui/button",
+          "@/components/ui/input",
+          "@/components/ui/separator",
+          "@/components/ui/skeleton",
+          "lucide-react"
+        ],
+        "needs_split": true
+      },
+      {
+        "path": "components/ui/skeleton.tsx",
+        "lines": 15,
+        "exports": [],
+        "imports_from": [
+          "react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/sky-toggle.tsx",
+        "lines": 259,
+        "exports": [
+          "Switch"
+        ],
+        "imports_from": [
+          "react",
+          "styled-components"
+        ]
+      },
+      {
+        "path": "components/ui/switch.tsx",
+        "lines": 48,
+        "exports": [
+          "Switch"
+        ],
+        "imports_from": [
+          "react",
+          "motion/react",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/tabs.tsx",
+        "lines": 81,
+        "exports": [],
+        "imports_from": [
+          "@base-ui/react/tabs",
+          "class-variance-authority",
+          "@/lib/utils"
+        ]
+      },
+      {
+        "path": "components/ui/tooltip.tsx",
+        "lines": 67,
+        "exports": [],
+        "imports_from": [
+          "@base-ui/react/tooltip",
+          "@/lib/utils"
+        ]
+      }
+    ],
+    "hooks": [
+      {
+        "path": "src/components/sidebar/hooks/useParameterGradients.ts",
+        "lines": 94,
+        "purpose_one_line": "Theme-aware track and fill colors"
+      },
+      {
+        "path": "src/components/sidebar/hooks/useSidebarTheme.ts",
+        "lines": 38,
+        "purpose_one_line": "Theme Observer for zero-flash updates"
+      },
+      {
+        "path": "src/hooks/useAIStreaming.ts",
+        "lines": 252,
+        "purpose_one_line": "Flush any buffered text before aborting so no tokens are silently dropped"
+      },
+      {
+        "path": "src/hooks/useAudioVisualization.ts",
+        "lines": 123,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/hooks/useChatEngine.ts",
+        "lines": 532,
+        "purpose_one_line": "** Persist all artifacts in a completed message and return them with",
+        "needs_split": true
+      },
+      {
+        "path": "src/hooks/useChatPersistence.ts",
+        "lines": 161,
+        "purpose_one_line": "** Active Finch profile — chats are listed and migrated under this"
+      },
+      {
+        "path": "src/hooks/useChatSession.ts",
+        "lines": 163,
+        "purpose_one_line": "Intentionally not loading the most recent chat to default to a new"
+      },
+      {
+        "path": "src/hooks/useDebounce.ts",
+        "lines": 18,
+        "purpose_one_line": "Exports useDebounce"
+      },
+      {
+        "path": "src/hooks/useDynamicBackground.ts",
+        "lines": 93,
+        "purpose_one_line": "Susie's Signature Teal/Green Selection"
+      },
+      {
+        "path": "src/hooks/useFileDrop.ts",
+        "lines": 185,
+        "purpose_one_line": "Dialog system error — silently ignore"
+      },
+      {
+        "path": "src/hooks/useInactivityEject.ts",
+        "lines": 82,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/hooks/useKeyboardShortcuts.ts",
+        "lines": 43,
+        "purpose_one_line": "Check for Cmd (Mac) or Ctrl (Windows/Linux)"
+      },
+      {
+        "path": "src/hooks/useMicController.ts",
+        "lines": 223,
+        "purpose_one_line": "Store Controlled Settings"
+      },
+      {
+        "path": "src/hooks/useModelPolling.ts",
+        "lines": 197,
+        "purpose_one_line": "Non-fatal: progress estimation can still fall back to defaults."
+      },
+      {
+        "path": "src/hooks/useTauri.ts",
+        "lines": 44,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/hooks/useVoiceTranscription.ts",
+        "lines": 175,
+        "purpose_one_line": "Check which models are already downloaded on mount"
+      }
+    ],
+    "lib": [
+      {
+        "path": "src/lib/artifactParser.test.ts",
+        "lines": 133,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/artifactParser.ts",
+        "lines": 152,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/artifactPreview.test.ts",
+        "lines": 141,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/artifactPreview.ts",
+        "lines": 335,
+        "purpose_one_line": "Exports normalizeReactPreviewSource",
+        "needs_split": true
+      },
+      {
+        "path": "src/lib/artifactPreviewRuntime.ts",
+        "lines": 447,
+        "purpose_one_line": "Candidate not defined in snippet.",
+        "needs_split": true
+      },
+      {
+        "path": "src/lib/artifactSystemPrompt.ts",
+        "lines": 41,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/artifactTooling.test.ts",
+        "lines": 81,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/artifactTooling.ts",
+        "lines": 77,
+        "purpose_one_line": "INTEGRATION"
+      },
+      {
+        "path": "src/lib/availableModels.ts",
+        "lines": 107,
+        "purpose_one_line": "** Loads discoverable models the same way the in-app model picker does."
+      },
+      {
+        "path": "src/lib/chatHelpers.tsx",
+        "lines": 22,
+        "purpose_one_line": "Exports getChatIcon"
+      },
+      {
+        "path": "src/lib/colorUtils.ts",
+        "lines": 40,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/contextWindows.ts",
+        "lines": 59,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/dicebearAvatar.ts",
+        "lines": 9,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/jsonParser.ts",
+        "lines": 25,
+        "purpose_one_line": "Exports parseLenientJson"
+      },
+      {
+        "path": "src/lib/luminance.ts",
+        "lines": 63,
+        "purpose_one_line": "**"
+      },
+      {
+        "path": "src/lib/mediaPaths.ts",
+        "lines": 19,
+        "purpose_one_line": "** Local file paths or remote URLs for avatars / wallpapers."
+      },
+      {
+        "path": "src/lib/mediaRecents.ts",
+        "lines": 43,
+        "purpose_one_line": "Exports getRecentAvatars"
+      },
+      {
+        "path": "src/lib/providers.ts",
+        "lines": 5,
+        "purpose_one_line": "** Returns true for providers that run models locally via LM Studio"
+      },
+      {
+        "path": "src/lib/tauri-utils.ts",
+        "lines": 29,
+        "purpose_one_line": "**"
+      }
+    ],
+    "store_slices": [
+      {
+        "path": "src/store/chatSlice.ts",
+        "lines": 103,
+        "exported_state_keys": [
+          "activeWorkspace",
+          "selectedProvider",
+          "selectedModel",
+          "isIncognito",
+          "isRightSidebarOpen",
+          "tokensUsed",
+          "contextWindowSize",
+          "voiceStatus",
+          "isModelLoaded",
+          "isModelLoading",
+          "modelLoadProgress",
+          "isDark",
+          "isLeftSidebarOpen",
+          "holdToRecord",
+          "selectedMicDevice",
+          "input"
+        ],
+        "exported_actions": [
+          "setActiveWorkspace",
+          "setSelectedProvider",
+          "setSelectedModel",
+          "setIsIncognito",
+          "setIsRightSidebarOpen",
+          "incrementTokensUsed",
+          "setContextWindowSize",
+          "setVoiceStatus",
+          "setIsModelLoaded",
+          "setIsModelLoading",
+          "setModelLoadProgress",
+          "setIsDark",
+          "setIsLeftSidebarOpen",
+          "setHoldToRecord",
+          "setSelectedMicDevice",
+          "setInput",
+          "reset"
+        ]
+      },
+      {
+        "path": "src/store/index.ts",
+        "lines": 59,
+        "exported_state_keys": [],
+        "exported_actions": [
+          "partialize"
+        ]
+      },
+      {
+        "path": "src/store/modelParamsSlice.ts",
+        "lines": 85,
+        "exported_state_keys": [
+          "systemPrompt",
+          "temperature",
+          "topP",
+          "maxTokens",
+          "stopStrings",
+          "contextIntelligence",
+          "contextIntelligenceStatus",
+          "showRightSidebarToggle",
+          "showMessageStats"
+        ],
+        "exported_actions": [
+          "setSystemPrompt",
+          "setTemperature",
+          "setTopP",
+          "setMaxTokens",
+          "setStopStrings",
+          "addStopString",
+          "removeStopString",
+          "fetchContextIntelligence",
+          "resetContextIntelligence",
+          "setShowRightSidebarToggle",
+          "setShowMessageStats"
+        ]
+      },
+      {
+        "path": "src/store/profileSlice.ts",
+        "lines": 119,
+        "exported_state_keys": [
+          "activeProfile",
+          "profiles",
+          "isLoading",
+          "error"
+        ],
+        "exported_actions": [
+          "loadProfiles",
+          "setActiveProfile",
+          "saveProfile",
+          "deleteProfile"
+        ]
+      },
+      {
+        "path": "src/store/studioSlice.ts",
+        "lines": 70,
+        "exported_state_keys": [
+          "nodes",
+          "studioStreamBuffer",
+          "refinementNodeId",
+          "panOffset"
+        ],
+        "exported_actions": [
+          "addNode",
+          "updateNodePosition",
+          "updateNodePalette",
+          "setStreamBuffer",
+          "clearBuffer",
+          "setRefinementNodeId",
+          "setPanOffset",
+          "setZoom",
+          "deleteNode",
+          "deleteNodes"
+        ]
+      }
+    ],
+    "types": [
+      {
+        "path": "src/types/chat.ts",
+        "exported_types": [
+          "WebSearchResearchEvent",
+          "ArtifactKind",
+          "Artifact",
+          "MessageMetadata",
+          "Message",
+          "ChatSession",
+          "Profile"
+        ]
+      }
+    ]
+  },
+  "backend_files": {
+    "ipc_modules": [
+      {
+        "path": "src-tauri/src/ipc/artifacts.rs",
+        "registered_commands": [
+          "save_artifact_version"
+        ],
+        "lines": 146
+      },
+      {
+        "path": "src-tauri/src/ipc/chat.rs",
+        "registered_commands": [
+          "send_message",
+          "stream_message",
+          "abort_generation"
+        ],
+        "lines": 306,
+        "needs_split": true
+      },
+      {
+        "path": "src-tauri/src/ipc/media_import.rs",
+        "registered_commands": [],
+        "lines": 217
+      },
+      {
+        "path": "src-tauri/src/ipc/mod.rs",
+        "registered_commands": [],
+        "lines": 9
+      },
+      {
+        "path": "src-tauri/src/ipc/models.rs",
+        "registered_commands": [
+          "list_local_models",
+          "list_anthropic_models",
+          "list_openai_models",
+          "list_gemini_models",
+          "eject_model",
+          "preload_model",
+          "get_model_loaded_status",
+          "get_context_intelligence"
+        ],
+        "lines": 699,
+        "needs_split": true
+      },
+      {
+        "path": "src-tauri/src/ipc/profiles.rs",
+        "registered_commands": [
+          "get_profiles",
+          "save_profile",
+          "delete_profile"
+        ],
+        "lines": 59
+      },
+      {
+        "path": "src-tauri/src/ipc/sessions.rs",
+        "registered_commands": [
+          "list_chats",
+          "load_chat",
+          "save_chat",
+          "delete_chat"
+        ],
+        "lines": 30
+      },
+      {
+        "path": "src-tauri/src/ipc/settings.rs",
+        "registered_commands": [
+          "set_background_image",
+          "import_user_media",
+          "process_imported_media",
+          "remove_imported_media",
+          "get_provider_config",
+          "save_provider_config",
+          "update_search_config",
+          "get_hardware_info",
+          "get_file_size"
+        ],
+        "lines": 228
+      },
+      {
+        "path": "src-tauri/src/ipc/voice.rs",
+        "registered_commands": [
+          "start_recording",
+          "stop_recording",
+          "get_transcription_status",
+          "start_voice_preview",
+          "stop_voice_preview",
+          "get_voice_meter_level",
+          "list_audio_devices",
+          "set_audio_device",
+          "download_voice_model",
+          "list_downloaded_voice_models"
+        ],
+        "lines": 89
+      }
+    ],
+    "providers": [
+      {
+        "path": "src-tauri/src/providers/anthropic.rs",
+        "lines": 239,
+        "exported_fns": [
+          "new",
+          "call_anthropic",
+          "stream_anthropic"
+        ]
+      },
+      {
+        "path": "src-tauri/src/providers/gemini.rs",
+        "lines": 270,
+        "exported_fns": [
+          "send_message_gemini",
+          "stream_message_gemini"
+        ]
+      },
+      {
+        "path": "src-tauri/src/providers/local.rs",
+        "lines": 253,
+        "exported_fns": [
+          "send_message_local",
+          "stream_message_local"
+        ]
+      },
+      {
+        "path": "src-tauri/src/providers/mod.rs",
+        "lines": 285,
+        "exported_fns": [
+          "estimate_tokens",
+          "trim_history",
+          "get_context_window",
+          "prepare_messages",
+          "inject_attachments_into_messages",
+          "map_model"
+        ]
+      },
+      {
+        "path": "src-tauri/src/providers/openai.rs",
+        "lines": 184,
+        "exported_fns": [
+          "send_message_openai",
+          "stream_message_openai"
+        ]
+      }
+    ],
+    "core": [
+      {
+        "path": "src-tauri/src/download.rs",
+        "lines": 111,
+        "purpose_one_line": "Resolve paths"
+      },
+      {
+        "path": "src-tauri/src/lib.rs",
+        "lines": 87,
+        "purpose_one_line": "Ensure required directories exist"
+      },
+      {
+        "path": "src-tauri/src/main.rs",
+        "lines": 7,
+        "purpose_one_line": "Prevents additional console window on Windows in release, DO NOT REMOVE!!"
+      },
+      {
+        "path": "src-tauri/src/search.rs",
+        "lines": 134,
+        "purpose_one_line": "Synthesize the results into a context block for the LLM"
+      },
+      {
+        "path": "src-tauri/src/session.rs",
+        "lines": 118,
+        "purpose_one_line": "Finch profile that owns this chat. Missing on older files — listed"
+      },
+      {
+        "path": "src-tauri/src/types.rs",
+        "lines": 89,
+        "purpose_one_line": "Implements types.rs"
+      },
+      {
+        "path": "src-tauri/src/voice.rs",
+        "lines": 319,
+        "purpose_one_line": "Latest normalized input level (0–1) for the UI, written from the audio",
+        "needs_split": true
+      }
+    ]
+  },
+  "config_files": {
+    "capabilities_json": {
+      "path": "src-tauri/capabilities/default.json",
+      "allowed_commands": [
+        "core:default",
+        "opener:default",
+        {
+          "path": "$APPLOCALDATA/artifacts/**"
+        },
+        {
+          "url": "file://**"
+        },
+        "core:window:allow-close",
+        "core:window:allow-minimize",
+        "core:window:allow-maximize",
+        "core:window:allow-unmaximize",
+        "core:window:allow-set-size",
+        "core:window:allow-set-position",
+        "core:window:allow-is-maximized",
+        "core:window:allow-available-monitors",
+        "core:window:allow-set-resizable",
+        "core:window:allow-start-dragging",
+        "allow-get-provider-config",
+        "allow-save-provider-config",
+        "allow-list-anthropic-models",
+        "allow-list-openai-models",
+        "allow-list-gemini-models",
+        "allow-list-local-models",
+        "allow-send-message",
+        "allow-stream-message",
+        "allow-abort-generation",
+        "allow-list-chats",
+        "allow-load-chat",
+        "allow-save-chat",
+        "allow-delete-chat",
+        "allow-eject-model",
+        "allow-preload-model",
+        "allow-set-background-image",
+        "allow-import-user-media",
+        "allow-process-imported-media",
+        "allow-remove-imported-media",
+        "allow-get-model-loaded-status",
+        "allow-get-hardware-info",
+        "allow-get-file-size",
+        "allow-get-context-intelligence",
+        "allow-start-recording",
+        "allow-stop-recording",
+        "allow-get-transcription-status",
+        "allow-get-voice-meter-level",
+        "allow-start-voice-preview",
+        "allow-stop-voice-preview",
+        "allow-list-audio-devices",
+        "allow-set-audio-device",
+        "allow-download-voice-model",
+        "allow-list-downloaded-voice-models",
+        "allow-update-search-config",
+        "allow-save-artifact-version",
+        "allow-get-profiles",
+        "allow-save-profile",
+        "allow-delete-profile",
+        "dialog:default",
+        "store:default"
+      ]
+    },
+    "cargo_toml_deps": [
+      "tauri-build",
+      "tauri",
+      "tauri-plugin-opener",
+      "tauri-plugin-store",
+      "tauri-plugin-dialog",
+      "serde",
+      "serde_json",
+      "reqwest",
+      "tokio",
+      "futures-util",
+      "sha2",
+      "hex",
+      "uuid",
+      "chrono",
+      "sysinfo",
+      "cpal",
+      "whisper-rs",
+      "rubato",
+      "windows",
+      "image",
+      "base64"
+    ],
+    "package_json_deps": {
+      "@base-ui/react": "^1.3.0",
+      "@fontsource-variable/geist": "^5.2.8",
+      "@radix-ui/react-popover": "^1.1.15",
+      "@tailwindcss/vite": "^4.1.14",
+      "@tauri-apps/api": "^2.0.0",
+      "@tauri-apps/plugin-dialog": "^2.7.0",
+      "@tauri-apps/plugin-opener": "^2.5.3",
+      "@vitejs/plugin-react": "^5.0.4",
+      "class-variance-authority": "^0.7.1",
+      "clsx": "^2.1.1",
+      "esbuild-wasm": "^0.28.0",
+      "lucide-react": "^0.546.0",
+      "motion": "^12.38.0",
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0",
+      "react-markdown": "^10.1.0",
+      "remark-gfm": "^4.0.1",
+      "shadcn": "^4.2.0",
+      "shiki": "^4.0.2",
+      "sonner": "^2.0.7",
+      "styled-components": "^6.4.0",
+      "tailwind-merge": "^3.5.0",
+      "tinycolor2": "^1.6.0",
+      "tw-animate-css": "^1.4.0",
+      "vite": "^6.2.0",
+      "zustand": "^5.0.12",
+      "@tauri-apps/cli": "^2.0.0",
+      "@types/node": "^22.14.0",
+      "@types/tinycolor2": "^1.4.6",
+      "prettier": "^3.8.3",
+      "tailwindcss": "^4.1.14",
+      "tsx": "^4.21.0",
+      "typescript": "~5.8.2"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+---
+description: Finch frontend conventions (TypeScript, React 19, styling, motion)
+alwaysApply: false
+globs:
+  - "src/components/**"
+  - "components/ui/**/*.ts"
+  - "components/ui/**/*.tsx"
+---
+
+# Finch Frontend Standards
+
+## TypeScript & Imports
+- Shared types in `src/types/`. Local types stay local.
+- Always extend existing types (e.g. `MessageMetadata`); never duplicate.
+- Use `@/` for absolute imports. Never use `../../` paths >1 level deep.
+- *Legacy*: 13 deep-relative-import violations exist. Migrate to `@/` only when modifying those files; do not run a standalone migration.
+
+## Component Architecture
+- **Layout**: `components/ui/` = primitives. `src/components/{chat,dashboard,sidebar,studio,startup,profile,modals,artifacts}/` = domain.
+- **Exports**: Named exports only. No default exports for domain components.
+- **Logic**: Move complex state/effects into hooks in `src/hooks/`.
+- **States**: Every interactive element handles `hover`, `focus`, `active`, `disabled`.
+
+## Styling
+- Use OKLCH variables from `src/index.css`. NEVER use raw hex (`#xxxxxx`), `rgb()`, or `rgba()`.
+- Glassmorphism default: `bg-background/80 backdrop-blur-24px border-white/10`.
+- *Legacy*: 64 raw color violations across 18 files. Migrate colors only on files you touch; no global migration.
+
+## Motion (`motion` package)
+- Default entry: `opacity 0→1, y 12→0, duration 0.2s` ease-out.
+- Default hover: `translateY(-2px)`.
+- **CRITICAL**: Never combine `layout` prop with `height: auto` on a node whose state lives in Zustand and updates during interaction (slider drag conflict). Use CSS `max-height` transitions instead.
+
+## Performance & React 19
+- Shiki is an async singleton. Initialize once in `CodeBlock.tsx`. Never reinitialize per render.
+- Trust the React 19 compiler. No manual `useMemo`/`useCallback` without profiling evidence.

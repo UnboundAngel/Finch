@@ -1,0 +1,122 @@
+{
+  "current_rules": [
+    {
+      "file": "finch-architecture.mdc",
+      "chars": 2526,
+      "always_apply": true,
+      "globs": null
+    },
+    {
+      "file": "ipc-patterns.mdc",
+      "chars": 1153,
+      "always_apply": false,
+      "globs": "src-tauri/src/ipc/**/*.rs"
+    },
+    {
+      "file": "provider-patterns.mdc",
+      "chars": 1201,
+      "always_apply": false,
+      "globs": "src-tauri/src/providers/**/*.rs"
+    },
+    {
+      "file": "studio-canvas.mdc",
+      "chars": 403,
+      "always_apply": false,
+      "globs": "src/components/studio/**"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "A",
+      "minimum_files_needed": [
+        "src-tauri/src/ipc/chat.rs",
+        "src-tauri/src/lib.rs",
+        "src-tauri/capabilities/default.json"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "State Management",
+        "Component Architecture",
+        "Styling & Performance"
+      ]
+    },
+    {
+      "id": "B",
+      "minimum_files_needed": [
+        "src/components/chat/MessageBubble.tsx",
+        "src/index.css"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "Tauri & IPC",
+        "State Management",
+        "Git"
+      ]
+    },
+    {
+      "id": "C",
+      "minimum_files_needed": [
+        "src/store/chatSlice.ts"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "Tauri & IPC",
+        "Component Architecture",
+        "Styling & Performance",
+        "Git"
+      ]
+    },
+    {
+      "id": "D",
+      "minimum_files_needed": [
+        "src-tauri/src/providers/mistral.rs",
+        "src-tauri/src/providers/mod.rs",
+        "src-tauri/src/ipc/chat.rs",
+        "src-tauri/src/types.rs"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "State Management",
+        "Component Architecture",
+        "Styling & Performance",
+        "Git"
+      ]
+    },
+    {
+      "id": "E",
+      "minimum_files_needed": [
+        "src/components/studio/Canvas.tsx",
+        "src/store/studioSlice.ts"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "Tauri & IPC",
+        "Git"
+      ]
+    },
+    {
+      "id": "F",
+      "minimum_files_needed": [
+        "src-tauri/capabilities/default.json"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "State Management",
+        "TypeScript & Types",
+        "Component Architecture",
+        "Styling & Performance",
+        "Git"
+      ]
+    },
+    {
+      "id": "G",
+      "minimum_files_needed": [
+        "src/lib/artifactParser.ts",
+        "src/lib/artifactParser.test.ts"
+      ],
+      "irrelevant_alwaysApply_content": [
+        "Tauri & IPC",
+        "State Management",
+        "Git"
+      ]
+    }
+  ],
+  "token_waste_estimate": {
+    "always_apply_total_chars": 2526,
+    "avg_irrelevant_pct_per_scenario": 52
+  }
+}

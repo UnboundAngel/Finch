@@ -1,0 +1,46 @@
+---
+description: Surgical edit discipline for oversized files
+alwaysApply: false
+globs:
+  - "src/components/chat/ChatInput.tsx"
+  - "src/components/chat/FilePreviewModal.tsx"
+  - "src/components/chat/ArtifactPanel.tsx"
+  - "src/components/chat/ModelSelector.tsx"
+  - "src/components/chat/MessageBubble.tsx"
+  - "src-tauri/src/ipc/chat.rs"
+  - "src-tauri/src/ipc/models.rs"
+  - "src-tauri/src/voice.rs"
+---
+
+# Oversized File Discipline
+
+These files are >300 lines. High regression risk. Surgical precision mandatory.
+
+## High-Risk Registry
+- `src/components/chat/ChatInput.tsx`
+- `src/components/chat/FilePreviewModal.tsx`
+- `src/components/chat/ArtifactPanel.tsx`
+- `src/components/chat/ModelSelector.tsx`
+- `src/components/chat/MessageBubble.tsx`
+- `src-tauri/src/ipc/chat.rs`
+- `src-tauri/src/ipc/models.rs`
+- `src-tauri/src/voice.rs`
+
+## Pre-Edit
+- Use `grep`/`search` to locate the exact target region.
+- Quote 3-5 lines of surrounding context to confirm location.
+- State which lines/region will change BEFORE proposing the edit.
+
+## Forbidden
+- Output full file contents
+- Reformat unrelated code (whitespace, imports, comments)
+- "While I'm here" refactors of adjacent code
+- Suggest splitting the file as part of the current task (note ONCE at end if relevant; do not act)
+
+## Scope Limit
+If an edit touches >50 lines, STOP and ask the user whether to proceed or scope differently.
+
+## Post-Edit Verify
+- No accidental import additions/removals
+- No export changes
+- Function signatures outside the edited region untouched

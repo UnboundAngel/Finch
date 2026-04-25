@@ -1,0 +1,13 @@
+---
+description: Universal Finch rules. Loaded on every prompt.
+alwaysApply: true
+---
+
+Finch is a Tauri v2 + React 19 desktop AI chat app.
+
+- Remote: `origin` → private `Finch_full`. Branches: `main` (Windows), `linux` (Linux laptop).
+- Read `.planning/STATE.md` at session start (protocol in `02-session-startup.mdc`).
+- Stores: `useChatStore`, `useProfileStore`, `useModelParams`, `useStudioStore`. Never add a 5th. No React Context for global state (`ModalProvider` is the sole exception).
+- Alias `@/` resolves to project root, NOT `src/`. Primitives: `@/components/ui/`. App: `@/src/components/`.
+- Surgical edits only. Never output full file contents unless asked. Never rewrite a file outside scope.
+- Every `#[command]` requires `allow-{kebab-case-name}` in `src-tauri/capabilities/default.json` or it fails silently at runtime.

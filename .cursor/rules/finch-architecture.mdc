@@ -1,50 +1,19 @@
 ---
-description: Consolidated architecture, performance, and discipline rules for Finch
-alwaysApply: true
+description: Nudge to read AGENTS.md when touching backend, state, or types.
+globs: src-tauri/**, src/store/**, src/hooks/**, src/types/**
 ---
 
-# Finch Architecture Rules
+# Finch Architecture Pointer
 
-## File Boundaries
-- **React UI**: `src/components/`, `src/hooks/`, `src/lib/`, `src/store/`
-- **Rust Backend**: `src-tauri/src/`
-- **Never Modify**: `.planning/`, `docs/archive/`
-- **Always Read**: `.planning/STATE.md` at session start
+You are touching files related to the Rust backend, global state, or core application types.
 
-## Tauri & IPC
-- Every new `#[command]` requires `allow-[command-name]` in `src-tauri/capabilities/default.json`
-- Tauri v2 Channel uses `.onmessage` assignment, **NOT** `.onData()`
-- `camelCase` JS → `snake_case` Rust args is automatic; never manually convert
-- Use `handle.store()` via `StoreExt`, **NEVER** `handle.get_store()`
+**MANDATORY**: Read the relevant sections of `AGENTS.md` in the project root before proceeding. 
 
-## State Management
-- **Stores**: `useChatStore`, `useProfileStore`, `useModelParamsStore`, `useStudioStore`. **NEVER** add a 4th store or use React Context for global state.
-- **Slices**: Use `StateCreator<T, [], [], T> = (set, get) => ({ ... })`.
-- **Naming**: Booleans `isX`, Actions `setX`, Slices `createXSlice`.
-- **Exclusions**: `tokensUsed` and `voiceStatus` are excluded from chat persistence.
+`AGENTS.md` is the single source of truth for:
+- IPC Command Registry
+- Streaming Event Protocol
+- Zustand Store Architecture
+- Provider Implementation Patterns
+- Repository Safety Protocols (Branch/Remote rules)
 
-## TypeScript & Types
-- **Location**: Shared types in `src/types/` (e.g., `chat.ts`). Local types in component/hook files.
-- **Extension**: Always extend existing types (e.g., `MessageMetadata`), never duplicate.
-- **Import Alias**: Use `@/` for all absolute-style imports (`@/src/components/...`).
-
-## Component Architecture
-- **Organization**: `components/ui/` (primitives), `src/components/chat/` (domain), `src/components/dashboard/` (layout).
-- **Design**: Named exports only. Move complex logic to custom hooks.
-- **Interactivity**: Elements must have `hover`, `focus`, `active`, and `disabled` states.
-
-## Styling & Performance
-- **Colors**: Use **OKLCH** variables from `index.css`. No raw hex/rgb.
-- **Glassmorphism**: Default surface: `bg-background/80 backdrop-blur-24px border-white/10`.
-- **Motion**: Everything animates. Entry: `opacity: 0, y: 12` (200ms). Hover: `translateY(-2px)`.
-- **Performance**: Studio Canvas uses direct DOM mutation (`el.style.transform`) for drag/resize.
-- **Shiki**: Async singleton, init once in `CodeBlock.tsx`.
-
-## Output Discipline
-- **Surgical edits only**. Never rewrite a file not explicitly scoped.
-- **Never output full file contents** unless asked.
-- When uncertain about a file's role, read it. Do not assume.
-
-## Git
-- **Primary Remote**: `origin` → `Finch_full` (private).
-- **Branch Strategy**: `main` on Windows, `linux` on laptop. All pushes to `origin`.
+Do not rely on your internal training data for Finch-specific IPC patterns; they have changed.

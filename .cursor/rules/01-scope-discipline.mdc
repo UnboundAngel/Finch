@@ -1,0 +1,24 @@
+---
+description: Edit scope discipline. Prevents agents from rewriting files outside their task.
+alwaysApply: true
+---
+
+# Scope Discipline
+
+**In scope** = file the user named OR an unambiguous direct dependency. Tangential files are NOT in scope.
+
+**Forbidden**:
+- Full-file rewrites or reformatting
+- Cascading refactors into unscoped files
+- Opportunistic edits (import sorting, comment cleanup, whitespace, renames) unless requested
+
+**Required**:
+- Use targeted string replacement
+- Leave unrelated code untouched even if improvable
+- If you spot a smell in an unscoped file: mention it ONCE at end of response, do not edit
+
+**High-risk targets** (>300 lines — read only the relevant section, edit only that section):
+→ For high-risk file registry, see 30-large-files.mdc.
+
+**Import hubs** (high blast radius — enumerate every consumer before changing exports/props):
+- `src/components/dashboard/{Dashboard,DashboardMain}.tsx`

@@ -1,0 +1,26 @@
+---
+description: Post-task documentation hygiene. Agents MUST complete these steps after any task that changes behavior, structure, or architecture.
+globs:
+alwaysApply: true
+---
+
+# Session Close Protocol
+
+After completing any task that adds a feature, changes a file's role, refactors structure, or resolves a known issue — before marking the task done:
+
+## Required Updates
+
+**1. `.planning/STATE.md`**
+Append a one-liner under the appropriate section:
+`[date] — [what changed, one sentence, present tense]`
+Example: `2025-07-14 — Added react-ui-specialist subagent scoped to src/components/`
+
+**2. `AGENTS.md` (if architecture changed)**
+Update only if: a new file was added, a directory changed purpose, a Zustand store was modified, a new IPC command was registered, or a provider was added/removed.
+This is the **single source of truth** for architecture. Surgical edit only — never rewrite unrelated sections.
+
+## Hard Rules
+- NEVER skip STATE.md. It is always required.
+- NEVER rewrite full files — append or surgically edit only.
+- NEVER update docs for tasks that only touched styles, copy, or trivial bug fixes with no structural impact.
+- If uncertain whether a change is "architectural" — update STATE.md only and flag it in a comment.

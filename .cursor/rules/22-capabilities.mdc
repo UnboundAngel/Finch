@@ -1,0 +1,16 @@
+---
+description: Tauri capabilities/default.json edit rules
+alwaysApply: false
+globs:
+  - "src-tauri/capabilities/**/*.json"
+---
+
+# Tauri Capabilities
+
+This file is the security boundary. Every `#[command]` in `src-tauri/src/ipc/` MUST have a matching `allow-{kebab-case}` entry. Missing entries fail silently at runtime.
+
+- **Naming**: Rust `snake_case` → JSON `allow-{kebab-case}`. Example: `stream_message` → `allow-stream-message`.
+- **Order**: Group `allow-*` entries by owning module (chat, voice, models, etc.) for diff readability.
+- **Removal**: Never remove an `allow-*` entry without confirming the command is removed from BOTH the `ipc` module AND `lib.rs` `invoke_handler!`.
+- **No speculative adds**: Every `allow-*` entry must correspond to a real `#[command]` currently registered in `lib.rs`.
+- **Infrastructure entries** (`core:default`, `opener:default`, `$APPLOCALDATA/artifacts/**`, `file://**`, `dialog:default`, `store:default`, `core:window:*`) are stable. Do not modify unless explicitly asked.

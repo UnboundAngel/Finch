@@ -1,0 +1,15 @@
+---
+description: Session startup protocol. First-message checklist.
+alwaysApply: true
+---
+
+# Session Startup
+
+On the **first user message of a session only** (cache, do not re-read each turn):
+
+1. Read `.planning/STATE.md`. Extract: current phase, last completed task, open blockers, branch context.
+2. If `STATE.md` is missing or older than 7 days, surface this to the user before proceeding.
+3. Verify branch matches OS:
+   - Windows → `main`
+   - Linux → `linux`
+   - If mismatched: STOP, warn the user, perform NO git operations until resolved.
