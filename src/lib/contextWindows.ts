@@ -4,7 +4,10 @@
  */
 export function getContextWindowSize(modelId: string): number | null {
   const modelMap: { [key: string]: number } = {
-    // Anthropic
+    // Anthropic (curated v2 API ids)
+    'claude-opus-4-7': 200000,
+    'claude-sonnet-4-6': 200000,
+    'claude-haiku-4-5-20251001': 200000,
     'claude-4-7-opus': 500000,
     'claude-4-6-sonnet': 500000,
     'claude-4-5-haiku': 500000,
@@ -13,8 +16,10 @@ export function getContextWindowSize(modelId: string): number | null {
     'claude-3-opus-20240229': 200000,
     
     // OpenAI
+    'gpt-5.5': 256000,
     'gpt-5.4-pro': 256000,
     'gpt-5.4-thinking': 256000,
+    'gpt-5.4': 256000,
     'gpt-5.4-mini': 128000,
     'o3-preview': 200000,
     'o3-mini': 200000,
@@ -24,6 +29,9 @@ export function getContextWindowSize(modelId: string): number | null {
     'o1-mini': 128000,
     
     // Google Gemini
+    'gemini-3.1-pro-preview': 2000000,
+    'gemini-3-flash-preview': 2000000,
+    'gemini-3.1-flash-lite-preview': 2000000,
     'gemini-3.1-pro': 2000000,
     'gemini-3.1-flash': 2000000,
     'gemini-1.5-pro': 1000000,
@@ -39,18 +47,23 @@ export function getContextWindowSize(modelId: string): number | null {
   const lowerId = modelId.toLowerCase();
   
   // Anthropic
+  if (lowerId.includes('claude-opus-4') || lowerId.includes('claude-sonnet-4') || lowerId.includes('claude-haiku-4-5')) {
+    return 200000;
+  }
   if (lowerId.includes('claude-4')) return 500000;
   if (lowerId.includes('claude-3-5-sonnet')) return 200000;
   if (lowerId.includes('claude-3-haiku')) return 200000;
   if (lowerId.includes('claude-3-opus')) return 200000;
 
   // OpenAI
-  if (lowerId.includes('gpt-5.4')) return 256000;
+  if (lowerId.includes('gpt-5.5') || lowerId.includes('gpt-5.4')) return 256000;
   if (lowerId.includes('o3')) return 200000;
   if (lowerId.includes('gpt-4o')) return 128000;
 
   // Google Gemini
-  if (lowerId.includes('gemini-3.1')) return 2000000;
+  if (lowerId.includes('gemini-3.1') || lowerId.includes('gemini-3-flash') || lowerId.includes('gemini-3-')) {
+    return 2000000;
+  }
   if (lowerId.includes('gemini-1.5-pro')) return 1000000;
   if (lowerId.includes('gemini-1.5-flash')) return 1000000;
 

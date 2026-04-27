@@ -46,6 +46,7 @@ progress:
 - Phase 10 (Refactor): Right Sidebar Split (Completed)
 
 # Quick Tasks Completed
+- [2026-04-27] Aligned `map_model` legacy aliases, curated `CURATED_*` constants in `ipc/models.rs`, default chat model, and `contextWindows.ts` to current Big-3 model IDs.
 - [2026-04-27] Model Discovery v2 plan locked in `.planning/quick/model-discovery-v2-revised.md`; Phase A: `map_model` pass-through for Anthropic API ids (plus `cargo test` unblocking fixes on `linux`).
 - [2026-04-16] Create AIreadme.md for AI agent orientation.
 - [2026-04-16] Project structure audit: Identified source fragmentation, legacy artifacts, and documentation sprawl.

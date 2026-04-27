@@ -41,11 +41,11 @@ export interface ChatState {
 export const createChatSlice: StateCreator<ChatState, [], [], ChatState> = (set) => ({
   activeWorkspace: 'chat',
   selectedProvider: 'anthropic',
-  selectedModel: 'claude-3-5-sonnet-20240620',
+  selectedModel: 'claude-sonnet-4-6',
   isIncognito: false,
   isRightSidebarOpen: false,
   tokensUsed: 0,
-  contextWindowSize: getContextWindowSize('claude-3-5-sonnet-20240620'),
+  contextWindowSize: getContextWindowSize('claude-sonnet-4-6'),
   voiceStatus: 'idle',
   isModelLoaded: true,
   isModelLoading: false,

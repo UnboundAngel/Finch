@@ -5,6 +5,29 @@ use sysinfo::System;
 use tauri::{command, AppHandle};
 use tauri_plugin_store::StoreExt;
 
+/// Curated default model ids per cloud provider (Model Discovery v2, Phase B). Local lists are never filtered.
+/// Verify against current provider docs when changing.
+#[allow(dead_code)]
+pub const CURATED_ANTHROPIC: [&str; 3] = [
+    "claude-opus-4-7",
+    "claude-sonnet-4-6",
+    "claude-haiku-4-5-20251001",
+];
+
+#[allow(dead_code)]
+pub const CURATED_OPENAI: [&str; 3] = [
+    "gpt-5.5",
+    "gpt-5.4",
+    "gpt-5.4-mini",
+];
+
+#[allow(dead_code)]
+pub const CURATED_GEMINI: [&str; 3] = [
+    "gemini-3.1-pro-preview",
+    "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
+];
+
 fn normalize_model_base(model_id: &str) -> &str {
     model_id.split(':').next().unwrap_or(model_id)
 }

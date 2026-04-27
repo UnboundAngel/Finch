@@ -279,8 +279,8 @@ pub fn inject_attachments_into_messages(
 /// unchanged so the model picker and discovery can use real API ids.
 pub fn map_model(model_name: &str) -> String {
     match model_name {
-        "Finch 3.5 Sonnet" => "claude-3-5-sonnet-20240620".to_string(),
-        "Finch 3 Haiku" => "claude-3-haiku-20240307".to_string(),
+        "Finch 3.5 Sonnet" => "claude-sonnet-4-6".to_string(),
+        "Finch 3 Haiku" => "claude-haiku-4-5-20251001".to_string(),
         _ => model_name.to_string(),
     }
 }
@@ -291,16 +291,15 @@ mod map_model_tests {
 
     #[test]
     fn legacy_finch_names_map_to_api_ids() {
-        assert_eq!(map_model("Finch 3.5 Sonnet"), "claude-3-5-sonnet-20240620");
-        assert_eq!(map_model("Finch 3 Haiku"), "claude-3-haiku-20240307");
+        assert_eq!(map_model("Finch 3.5 Sonnet"), "claude-sonnet-4-6");
+        assert_eq!(map_model("Finch 3 Haiku"), "claude-haiku-4-5-20251001");
     }
 
     #[test]
     fn api_ids_passthrough() {
-        assert_eq!(map_model("claude-opus-4-1"), "claude-opus-4-1");
-        assert_eq!(
-            map_model("claude-3-5-sonnet-20241022"),
-            "claude-3-5-sonnet-20241022"
-        );
+        assert_eq!(map_model("claude-opus-4-7"), "claude-opus-4-7");
+        assert_eq!(map_model("claude-sonnet-4-6"), "claude-sonnet-4-6");
+        assert_eq!(map_model("gpt-5.5"), "gpt-5.5");
+        assert_eq!(map_model("gemini-3.1-pro-preview"), "gemini-3.1-pro-preview");
     }
 }

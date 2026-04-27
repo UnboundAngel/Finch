@@ -7,8 +7,8 @@ Plan-only revision. Implementation tracks phases; Phases B/C follow Phase A merg
 | Provider | Policy | IDs (initial targets) |
 |----------|--------|------------------------|
 | Anthropic | Static 3 in Rust | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5-20251001` |
-| OpenAI | Do **not** hardcode from memory | At implementation: read [OpenAI models docs](https://platform.openai.com/docs/models) for current **flagship**, **instant**, and **reasoning** model IDs (API surface changed Feb 2026). |
-| Gemini | Static 3; verify deprecations | `gemini-3.1-pro-preview`, `gemini-3-flash-preview`, plus one more **current stable** ID. Confirm `gemini-3-pro-preview` shutdown (March 9, 2026) before including. |
+| OpenAI | Static 3 in Rust | `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini` (revisit if platform defaults change) |
+| Gemini | Static 3 in Rust | `gemini-3.1-pro-preview`, `gemini-3-flash-preview`, `gemini-3.1-flash-lite-preview` (`gemini-3-pro-preview` retired 2026-03-09 → `gemini-3.1-pro-preview`) |
 | Local (Ollama / LM Studio) | **Always unfiltered**, never curated | No change to list behavior beyond existing endpoints. |
 
 ## 2. Reasoning effort
@@ -37,7 +37,11 @@ Plan-only revision. Implementation tracks phases; Phases B/C follow Phase A merg
 ## 6. `map_model` (Phase A)
 
 - Ships **first** as its **own commit** (correctness; do not bundle with discovery v2 or effort).
-- **Behavior:** legacy “Finch …” display names → fixed API ids; **all other** strings pass through unchanged (no default-to-Sonnet).
+- **Behavior:** legacy “Finch …” display names → fixed API ids (`Finch 3.5 Sonnet` → `claude-sonnet-4-6`, `Finch 3 Haiku` → `claude-haiku-4-5-20251001`); **all other** strings pass through unchanged (no default-to-Sonnet).
+
+### Rust curated constants (source of truth for Phase B)
+
+See `src-tauri/src/ipc/models.rs`: `CURATED_ANTHROPIC`, `CURATED_OPENAI`, `CURATED_GEMINI`.
 
 ## 7. Git
 
