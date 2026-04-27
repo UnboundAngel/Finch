@@ -345,7 +345,6 @@ pub async fn preload_model(
                 .send()
                 .await
                 .map_err(|e| e.to_string())?;
-            let status = resp.status();
             resp.error_for_status().map_err(|e| e.to_string())?;
             Ok(())
         }

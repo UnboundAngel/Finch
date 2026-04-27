@@ -117,8 +117,12 @@ pub async fn stream_message_local(
         .map_err(|e| e.to_string())?;
 
     if !resp.status().is_success() {
-        let error_text = resp.text().await.unwrap_or_else(|_| "Could not read error body".to_string());
-        return Err(format!("Local provider error ({}): {}", resp.status(), error_text));
+        let status = resp.status();
+        let error_text = resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "Could not read error body".to_string());
+        return Err(format!("Local provider error ({}): {}", status, error_text));
     }
 
     let mut stream = resp.bytes_stream();

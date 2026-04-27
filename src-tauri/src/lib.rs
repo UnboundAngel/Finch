@@ -7,7 +7,7 @@ mod types;
 mod voice;
 
 use std::fs;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_store::StoreExt;
 use types::AppState;
 
@@ -20,9 +20,13 @@ pub fn run() {
         ..Default::default()
     });
 
+    let sentry_client = sentry::Hub::current()
+        .client()
+        .expect("Sentry must initialize a client");
+
     tauri::Builder::default()
         .manage(AppState::default())
-        .plugin(tauri_plugin_sentry::init())
+        .plugin(tauri_plugin_sentry::init(sentry_client.as_ref()))
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -44,14 +48,12 @@ pub fn run() {
             }
 
             // Initialize stores safely
-            let config_res = app.get_store("finch_config.json");
-            if config_res.is_err() {
+            if app.get_store("finch_config.json").is_none() {
                 eprintln!("CRITICAL: Failed to initialize finch_config.json store. Using defaults.");
                 let _ = app.emit("store-error", "finch_config.json initialization failed");
             }
 
-            let profiles_res = app.get_store("finch_profiles.json");
-            if profiles_res.is_err() {
+            if app.get_store("finch_profiles.json").is_none() {
                 eprintln!("CRITICAL: Failed to initialize finch_profiles.json store. Using defaults.");
                 let _ = app.emit("store-error", "finch_profiles.json initialization failed");
             }

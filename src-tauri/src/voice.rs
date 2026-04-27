@@ -318,12 +318,14 @@ impl VoiceManager {
 
             match state.full(params, &audio_data) {
                 Ok(_) => {
-                    let num_segments = state.full_n_segments();
-                    if num_segments < 0 {
-                        let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
-                        *s = VoiceStatus::Error("Failed to get segments".to_string());
-                        return;
-                    }
+                    let num_segments = match state.full_n_segments() {
+                        Ok(n) if n >= 0 => n,
+                        Ok(_) | Err(_) => {
+                            let mut s = status.lock().unwrap_or_else(|e| e.into_inner());
+                            *s = VoiceStatus::Error("Failed to get segments".to_string());
+                            return;
+                        }
+                    };
                     let mut result = String::new();
                     for i in 0..num_segments {
                         if let Ok(segment) = state.full_get_segment_text(i) {
