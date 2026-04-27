@@ -275,10 +275,32 @@ pub fn inject_attachments_into_messages(
     Ok(())
 }
 
+/// Maps legacy in-app display names to Anthropic API model ids. All other values pass through
+/// unchanged so the model picker and discovery can use real API ids.
 pub fn map_model(model_name: &str) -> String {
     match model_name {
         "Finch 3.5 Sonnet" => "claude-3-5-sonnet-20240620".to_string(),
         "Finch 3 Haiku" => "claude-3-haiku-20240307".to_string(),
-        _ => "claude-3-5-sonnet-20240620".to_string(), // Default
+        _ => model_name.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod map_model_tests {
+    use super::map_model;
+
+    #[test]
+    fn legacy_finch_names_map_to_api_ids() {
+        assert_eq!(map_model("Finch 3.5 Sonnet"), "claude-3-5-sonnet-20240620");
+        assert_eq!(map_model("Finch 3 Haiku"), "claude-3-haiku-20240307");
+    }
+
+    #[test]
+    fn api_ids_passthrough() {
+        assert_eq!(map_model("claude-opus-4-1"), "claude-opus-4-1");
+        assert_eq!(
+            map_model("claude-3-5-sonnet-20241022"),
+            "claude-3-5-sonnet-20241022"
+        );
     }
 }
